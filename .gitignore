@@ -1,0 +1,12 @@
+node_modules
+src/**.js
+
+.nyc_output
+*.log
+
+.idea
+dist
+bundles
+coverage
+yarn.lock
+package-lock.json

@@ -1,0 +1,14 @@
+src
+config
+tsconfig.json
+tslint.json
+gulpfile.js
+yarn.lock
+yarn-error.log
+.travis.yml
+.github
+
+coverage
+.nyc_output
+*.log
+.idea

@@ -1,0 +1,35 @@
+{
+  "extends": "./config/tsconfig.flexible", // also available: "./config/tsconfig.strict"
+  "compilerOptions": {
+    "target": "es5",
+    "rootDir": "src",
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "declaration": true,
+    "importHelpers": true,
+    "inlineSourceMap": true,
+    "listFiles": false,
+    "traceResolution": false,
+    "pretty": true,
+    "lib" : [
+      "dom",
+      "es2017",
+      "es6",
+      "es5"
+    ],
+    "types" : [
+      "node"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules/**",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ],
+  "compileOnSave": false
+}
