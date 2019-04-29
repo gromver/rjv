@@ -1,3 +1,4 @@
+/// <reference path="./defaultKeywords.ts" />
 import { Subject } from 'rxjs/Subject';
 import Ref from './Ref';
 import Event from './events/Event';
