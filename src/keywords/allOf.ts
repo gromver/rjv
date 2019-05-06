@@ -22,52 +22,28 @@ const keyword: IKeyword = {
       rules.push(compile(item, parentSchema));  // all rules have validate() fn
     });
 
-    const async = rules.some((rule) => !!rule.async);
+    const validate = async (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+      : Promise<IRuleValidationResult> => {
+      const results: IRuleValidationResult[] = [];
 
-    let validate: (ref: Ref, validateAttributeFn: ValidateAttributeFn)
-      => IRuleValidationResult | Promise<IRuleValidationResult>;
+      for (const rule of rules) {
+        const res = await (rule as any).validate(ref, validateAttributeFn);
+        results.push(res);
+      }
 
-    if (async) {
-      validate = async (ref, validateAttributeFn) => {
-        const results: IRuleValidationResult[] = [];
+      const validRules = results.filter((result) => result.valid === true).length;
 
-        for (const rule of rules) {
-          const res = await (rule as any)
-            .validate(ref, validateAttributeFn) as IRuleValidationResult;
-          results.push(res);
-        }
+      if (validRules === results.length) {
+        return ref.createSuccessResult();
+      }
 
-        const validRules = results.filter((result) => result.valid === true).length;
-
-        if (validRules === results.length) {
-          return ref.createSuccessResult();
-        }
-
-        return ref.createErrorResult({
-          keyword: keyword.name,
-          description: 'Should match all schema in allOf',
-        });
-      };
-    } else {
-      validate = (ref, validateAttributeFn) => {
-        const results = rules
-          .map((rule) => (rule as any).validate(ref, validateAttributeFn) as IRuleValidationResult);
-
-        const validRules = results.filter((result) => result.valid === true);
-
-        if (validRules.length === results.length) {
-          return ref.createSuccessResult();
-        }
-
-        return ref.createErrorResult({
-          keyword: keyword.name,
-          description: 'Should match all schema in allOf',
-        });
-      };
-    }
+      return ref.createErrorResult({
+        keyword: keyword.name,
+        description: 'Should match all schema in allOf',
+      });
+    };
 
     return {
-      async,
       validate,
     };
   },

@@ -8,7 +8,7 @@ import Model from '../Model';
 import { StateTypes } from '../interfaces/IState';
 
 describe('presence keyword', () => {
-  it('Some integration tests', () => {
+  it('Some integration tests', async () => {
     const model = new Model(
       {
         properties: {
@@ -35,7 +35,7 @@ describe('presence keyword', () => {
     expect(barRef.isShouldNotBeBlank).toBe(false);
     expect(carRef.isShouldNotBeBlank).toBe(false);
 
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
     expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
     expect(barRef.state.type).toBe(StateTypes.PRISTINE);
@@ -45,29 +45,29 @@ describe('presence keyword', () => {
     expect(carRef.isShouldNotBeBlank).toBe(false);
 
     fooRef.set('');
-    ref.validateSync();
+    await ref.validate();
     expect(fooRef.state.type).toBe(StateTypes.ERROR);
 
     fooRef.set('abc');
-    ref.validateSync();
+    await ref.validate();
     expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
 
     fooRef.set(null);
-    ref.validateSync();
+    await ref.validate();
     expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
 
     barRef.set('   ');
-    ref.validateSync();
+    await ref.validate();
     expect(barRef.state.type).toBe(StateTypes.ERROR);
     expect(barRef.value).toBe('');
 
     barRef.set(' foo ');
-    ref.validateSync();
+    await ref.validate();
     expect(barRef.state.type).toBe(StateTypes.SUCCESS);
     expect(barRef.value).toBe('foo');
   });
 
-  it('Test default and presence keywords case 1', () => {
+  it('Test default and presence keywords case 1', async () => {
     const model = new Model(
       {
         properties: {
@@ -84,12 +84,12 @@ describe('presence keyword', () => {
 
     const ref = model.ref();
     const fooRef = ref.relativeRef(['foo']);
-
-    model.validateSync();
+// model.observable.subscribe((s) => console.log('ev', s))
+    await model.validate();
     expect(fooRef.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('Test default and presence keywords case 2', () => {
+  it('Test default and presence keywords case 2', async () => {
     const model = new Model(
       {
         properties: {
@@ -107,7 +107,7 @@ describe('presence keyword', () => {
     const ref = model.ref();
     const fooRef = ref.relativeRef(['foo']);
 
-    model.validateSync();
+    await model.validate();
     expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
     expect(fooRef.value).toBe('abc');
   });

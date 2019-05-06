@@ -14,7 +14,6 @@ export default class Ref {
   private validated = false;
   private dirty = false;
   private touched = false;
-  private lock = 0;
 
   public readonly key: string;
   public readonly path: Path;
@@ -40,29 +39,12 @@ export default class Ref {
    * Validation
    */
 
-  validate(options: IValidationOptions = {})
-    : IModelValidationResult | Promise<IModelValidationResult> {
+  validate(options: IValidationOptions = {}): Promise<IModelValidationResult> {
     options.scope = this.path;
     this.validated = true;
     this.touched = true;
 
     return this.model.validate(options);
-  }
-
-  validateSync(options: IValidationOptions = {}): IModelValidationResult {
-    options.scope = this.path;
-    this.validated = true;
-    this.touched = true;
-
-    return this.model.validateSync(options);
-  }
-
-  validateAsync(options: IValidationOptions = {}): Promise<IModelValidationResult> {
-    options.scope = this.path;
-    this.validated = true;
-    this.touched = true;
-
-    return this.model.validateAsync(options);
   }
 
   /**
@@ -73,10 +55,6 @@ export default class Ref {
     if (this.path.length) {
       return this.model.ref(this.path.slice(0, -1));
     }
-  }
-
-  get validationLock(): number {
-    return this.lock += 1;
   }
 
   /**

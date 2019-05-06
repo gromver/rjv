@@ -17,26 +17,26 @@ const model = new Model(
 );
 
 describe('enum keyword', () => {
-  it('Some integration tests', () => {
+  it('Some integration tests', async () => {
     const ref = model.ref();
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
     expect(ref.state.enum).toBe(ENUM);
 
     ref.set(2);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set({ foo: 'bar' });
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 3]);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2]);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 });

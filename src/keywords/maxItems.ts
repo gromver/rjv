@@ -19,7 +19,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      validate(ref: Ref): IRuleValidationResult {
+      async validate(ref: Ref): Promise<IRuleValidationResult> {
         if (ref.checkDataType('array')) {
           const value = ref.get();
 

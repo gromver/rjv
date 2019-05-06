@@ -19,9 +19,9 @@ const keyword: IKeyword = {
     }
 
     return {
-      validate(ref: Ref): IRuleValidationResult {
+      async validate(ref: Ref): Promise<IRuleValidationResult> {
         if (ref.get() === undefined) {
-          return ref.createUndefinedResult();
+          return Promise.resolve(ref.createUndefinedResult());
         }
 
         const valid = types.some((type) => ref.checkDataType(type));

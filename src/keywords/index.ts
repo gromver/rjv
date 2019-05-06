@@ -28,8 +28,6 @@ export { default as items } from './items';
 export { default as maxItems } from './maxItems';
 export { default as minItems } from './minItems';
 export { default as contains } from './contains';
-// custom
-export { default as asyncSchema } from './asyncSchema';
-export { default as syncSchema } from './syncSchema';
-export { default as asyncValidate } from './asyncValidate';
-export { default as syncValidate } from './syncValidate';
+// new keywords
+export { default as resolveSchema } from './resolveSchema';
+export { default as validate } from './validate';

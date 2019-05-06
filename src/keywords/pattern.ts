@@ -15,7 +15,7 @@ const keyword: IKeyword = {
     const regexp = new RegExp(schema);
 
     return {
-      validate(ref: Ref): IRuleValidationResult {
+      async validate(ref: Ref): Promise<IRuleValidationResult> {
         if (ref.checkDataType('string')) {
           const value = ref.get();
 
