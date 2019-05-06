@@ -17,19 +17,19 @@ describe('format keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set('foo');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set('');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -65,18 +65,18 @@ describe('format keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.format).toBe(undefined);
 
     ref.set('test@mail.com');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
     expect(ref.state).toMatchObject({
       format: 'email',
     });
 
     ref.set('foo');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(ref.state).toMatchObject({
       format: 'email',

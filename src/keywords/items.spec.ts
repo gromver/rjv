@@ -22,15 +22,15 @@ describe('items keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 'test', null]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -45,19 +45,19 @@ describe('items keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 'test']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set([]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -73,31 +73,31 @@ describe('items keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 'test']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 'test', 2]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(['test', 1]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(['test']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set([]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -133,15 +133,15 @@ describe('items keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set([1, 2]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 'abc']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
@@ -158,23 +158,23 @@ describe('items keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set([1, 2]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 'abc']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 'abc']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set([1, 'abc', 2]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
@@ -191,19 +191,19 @@ describe('items keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set([1, 2]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 'abc']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 3]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
@@ -220,15 +220,15 @@ describe('items keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set([1, 2]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 3]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(ref.state.message).toMatchObject({
       description: 'Should not have more than 2 items',
@@ -240,23 +240,21 @@ describe('items keyword', () => {
     const model = new Model(
       {
         items: { type: 'integer' },
-        additionalItems: { asyncSchema: () => Promise.resolve({ type: 'string' }) },
+        additionalItems: { resolveSchema: () => Promise.resolve({ type: 'string' }) },
       },
       [],
     );
 
-    expect(model.async).toBe(true);
-
     const ref = model.ref();
-    await  ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set([1, 2]);
-    await  ref.validateAsync();
+    await  ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 'abc']);
-    await  ref.validateAsync();
+    await  ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
@@ -264,7 +262,7 @@ describe('items keyword', () => {
     const model = new Model(
       {
         items: [
-          { asyncSchema: () => Promise.resolve({ type: 'integer' }) },
+          { resolveSchema: () => Promise.resolve({ type: 'integer' }) },
           { type: 'integer' },
         ],
         additionalItems: true,
@@ -272,26 +270,24 @@ describe('items keyword', () => {
       [],
     );
 
-    expect(model.async).toBe(true);
-
     const ref = model.ref();
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set([1, 2]);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 'abc']);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 'abc']);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set([1, 'abc', 2]);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
@@ -299,7 +295,7 @@ describe('items keyword', () => {
     const model = new Model(
       {
         items: [
-          { asyncSchema: () => Promise.resolve({ type: 'integer' }) },
+          { resolveSchema: () => Promise.resolve({ type: 'integer' }) },
           { type: 'integer' },
         ],
         additionalItems: { type: 'string' },
@@ -307,22 +303,20 @@ describe('items keyword', () => {
       [],
     );
 
-    expect(model.async).toBe(true);
-
     const ref = model.ref();
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set([1, 2]);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 'abc']);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 3]);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
@@ -333,27 +327,25 @@ describe('items keyword', () => {
           { type: 'integer' },
           { type: 'integer' },
         ],
-        additionalItems: { asyncSchema: () => Promise.resolve({ type: 'string' }) },
+        additionalItems: { resolveSchema: () => Promise.resolve({ type: 'string' }) },
       },
       [],
     );
 
-    expect(model.async).toBe(true);
-
     const ref = model.ref();
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set([1, 2]);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 'abc']);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 3]);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
@@ -361,7 +353,7 @@ describe('items keyword', () => {
     const model = new Model(
       {
         items: [
-          { asyncSchema: () => Promise.resolve({ type: 'integer' }) },
+          { resolveSchema: () => Promise.resolve({ type: 'integer' }) },
           { type: 'integer' },
         ],
         additionalItems: false,
@@ -369,18 +361,16 @@ describe('items keyword', () => {
       [],
     );
 
-    expect(model.async).toBe(true);
-
     const ref = model.ref();
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set([1, 2]);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([1, 2, 3]);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(ref.state.message).toMatchObject({
       description: 'Should not have more than 2 items',

@@ -13,73 +13,39 @@ const keyword: IKeyword = {
     }
 
     const rule: IRule = compile(schema, parentSchema);
-    const async: boolean = !!rule.async;
 
-    let validate: (ref: Ref, validateAttributeFn: ValidateAttributeFn)
-      => IRuleValidationResult | Promise<IRuleValidationResult>;
+    const validate = async (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+      : Promise<IRuleValidationResult> => {
+      const value = ref.get() as [];
+      let hasValidItem = false;
 
-    if (async) {
-      validate = async (ref, validateAttributeFn) => {
-        const value = ref.get() as [];
-        let hasValidItem = false;
-
-        if (ref.checkDataType('array')) {
-          for (const index in value) {
-            if (rule.validate) {
-              const res = await validateAttributeFn(
-                ref.relativeRef([index]), rule as IRule,
-              ) as IRuleValidationResult;
-
-              if (res.valid) {
-                hasValidItem = true;
-              }
-            }
-          }
-
-          if (!hasValidItem) {
-            return ref.createErrorResult({
-              keyword: keyword.name,
-              description: 'Should contain a valid item',
-            });
-          }
-
-          return ref.createSuccessResult();
-        }
-
-        return ref.createUndefinedResult();
-      };
-    } else {
-      validate = (ref, validateAttributeFn) => {
-        const value = ref.get() as [];
-        let hasValidItem = false;
-
-        if (ref.checkDataType('array')) {
-          value.forEach((itemValue, index) => {
-            const res = validateAttributeFn(
+      if (ref.checkDataType('array')) {
+        for (const index in value) {
+          if (rule.validate) {
+            const res = await validateAttributeFn(
               ref.relativeRef([index]), rule as IRule,
             ) as IRuleValidationResult;
 
             if (res.valid) {
               hasValidItem = true;
             }
-          });
-
-          if (!hasValidItem) {
-            return ref.createErrorResult({
-              keyword: keyword.name,
-              description: 'Should contain a valid item',
-            });
           }
-
-          return ref.createSuccessResult();
         }
 
-        return ref.createUndefinedResult();
-      };
-    }
+        if (!hasValidItem) {
+          return ref.createErrorResult({
+            keyword: keyword.name,
+            description: 'Should contain a valid item',
+          });
+        }
+
+        return ref.createSuccessResult();
+      }
+
+      return ref.createUndefinedResult();
+    };
 
     return {
-      async,
       validate,
     };
   },

@@ -19,19 +19,19 @@ describe('contains keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([null, 'test']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set([]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -39,28 +39,26 @@ describe('contains keyword', () => {
     const model = new Model(
       {
         contains: {
-          asyncSchema: () => Promise.resolve({ type: 'number' }),
+          resolveSchema: () => Promise.resolve({ type: 'number' }),
         },
       },
       [1, 'a', null],
     );
 
-    expect(model.async).toBe(true);
-
     const ref = model.ref();
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([null, 'test']);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set([]);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(null);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -78,19 +76,19 @@ describe('contains keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set([null, 'test']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set([]);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
   });
 

@@ -5,29 +5,25 @@ import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 
 const keyword: IKeyword = {
-  name: 'syncSchema',
+  name: 'resolveSchema',
   compile(compile: CompileFn, schema: (ref: Ref) => ISchema, parentSchema: ISchema): IRule {
     if (typeof schema !== 'function') {
       throw new Error(
-        'The schema of the "syncSchema" keyword should be a function returns a schema.',
+        'The schema of the "resolveSchema" keyword should be a function returns a schema.',
       );
     }
 
     return {
-      async: false,
-      validate(ref: Ref, validateAttributeFn: ValidateAttributeFn): IRuleValidationResult {
-        const resolvedSchema = schema(ref);
+      async validate(ref: Ref, validateAttributeFn: ValidateAttributeFn)
+        : Promise<IRuleValidationResult> {
+        const resolvedSchema = await schema(ref);
         const rule = compile(resolvedSchema, parentSchema);
 
-        if (rule.async) {
-          throw new Error('The syncSchema\'s schema can\'t be async.');
-        }
-
         if (rule.validate) {
-          return rule.validate(ref, validateAttributeFn) as IRuleValidationResult;
+          return rule.validate(ref, validateAttributeFn);
         }
 
-        return ref.createUndefinedResult();
+        return Promise.resolve(ref.createUndefinedResult());
       },
     };
   },
@@ -37,6 +33,6 @@ export default keyword;
 
 declare module '../interfaces/ISchema' {
   export default interface ISchema {
-    syncSchema?: (ref: Ref) => ISchema;
+    resolveSchema?: (ref: Ref) => Promise<ISchema>;
   }
 }

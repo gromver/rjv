@@ -5,7 +5,7 @@ const version = '${RJV-VERSION}';
 
 const stateTypes = {
   PRISTINE: StateTypes.PRISTINE,
-  PENDING: StateTypes.PENDING,
+  VALIDATING: StateTypes.VALIDATING,
   SUCCESS: StateTypes.SUCCESS,
   ERROR: StateTypes.ERROR,
 };

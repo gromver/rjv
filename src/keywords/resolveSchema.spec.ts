@@ -7,8 +7,8 @@ declare const require;
 import Model from '../Model';
 import { StateTypes } from '../interfaces/IState';
 
-describe('syncSchema keyword', () => {
-  it('Some integration tests', () => {
+describe('resolveSchema keyword', () => {
+  it('Some integration tests', async () => {
     const model = new Model(
       {
         properties: {
@@ -16,12 +16,12 @@ describe('syncSchema keyword', () => {
             enum: ['string', 'number'],
           },
           value: {
-            syncSchema: (ref) => {
+            resolveSchema: (ref) => {
               const expect = ref.absoluteRef(['expect']).get();
 
-              return {
+              return Promise.resolve({
                 type: expect,
-              };
+              });
             },
           },
         },
@@ -36,26 +36,26 @@ describe('syncSchema keyword', () => {
     const expectRef = model.ref(['expect']);
     const valueRef = model.ref(['value']);
 
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     valueRef.set('foo');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     expectRef.set('string');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     valueRef.set(1);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('Check state merging', () => {
+  it('Check state merging', async () => {
     const model = new Model(
       {
-        syncSchema: () => ({
+        resolveSchema: () => Promise.resolve({
           properties: {
             foo: {
               readOnly: true,
@@ -64,7 +64,7 @@ describe('syncSchema keyword', () => {
         }),
         properties: {
           foo: {
-            type: ['string', 'number'],
+            type: 'string',
           },
         },
       },
@@ -75,7 +75,7 @@ describe('syncSchema keyword', () => {
 
     const ref = model.ref();
     const fooRef = model.ref(['foo']);
-    ref.validate();
+    await ref.validate();
     expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
     expect(fooRef.state.readOnly).toBe(true);
   });
@@ -85,24 +85,10 @@ describe('syncSchema keyword', () => {
       new Model(
         {
           // @ts-ignore
-          syncSchema: {},
+          resolveSchema: {},
         },
         '',
       );
-    }).toThrow('The schema of the "syncSchema" keyword should be a function returns a schema.');
-
-    const model = new Model(
-      {
-        // @ts-ignore
-        syncSchema: () => ({
-          asyncSchema: () => ({}),
-        }),
-      },
-      '',
-    );
-
-    expect(() => {
-      model.validate();
-    }).toThrow('The syncSchema\'s schema can\'t be async.');
+    }).toThrow('The schema of the "resolveSchema" keyword should be a function returns a schema.');
   });
 });

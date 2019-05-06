@@ -19,7 +19,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      validate(ref: Ref): IRuleValidationResult {
+      async validate(ref: Ref): Promise<IRuleValidationResult> {
         const value = ref.get();
         const valid = allowedValues.some((item) => _.isEqual(value, item));
 

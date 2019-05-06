@@ -30,19 +30,19 @@ describe('oneOf keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set('abc');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(4);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set('abcd');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
@@ -81,19 +81,19 @@ describe('oneOf keyword', () => {
 
     const ref = model.ref();
     const aRef = ref.relativeRef(['a']);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     aRef.set('abc');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     aRef.set(4);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     aRef.set('ab');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 

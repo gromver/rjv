@@ -9,43 +9,6 @@ import Ref from './Ref';
 import { StateTypes } from './interfaces/IState';
 
 describe('Ref tests', () => {
-  it('Should properly validate nested refs.', () => {
-    const model = new Model(
-      {
-        required: ['foo', 'bar'],
-        properties: {
-          foo: { type: 'number' },
-          bar: { type: 'number' },
-        },
-      },
-      {
-        foo: 'test',
-      },
-    );
-
-    const fooRef = model.ref(['foo']);
-    const barRef = model.ref(['bar']);
-
-    let result = model.validateSync();
-    expect(result.valid).toBe(false);
-    expect((result.firstErrorRef as Ref).state).toMatchObject({
-      type: StateTypes.ERROR,
-      message: {
-        keyword: 'required',
-      },
-    });
-    expect((result.firstErrorRef as Ref).path).toMatchObject([]);
-
-    expect(model.ref().isRequired).toBe(false);
-    expect(fooRef.isRequired).toBe(true);
-    expect(barRef.isRequired).toBe(true);
-
-    fooRef.set(1);
-    barRef.set(1);
-    result = model.validateSync();
-    expect(result.valid).toBe(true);
-  });
-
   it('Ref\'s getters and setters', () => {
     const initialData = {
       foo: 'bar',
@@ -98,7 +61,7 @@ describe('Ref tests', () => {
     expect(fooParent.parent).toBe(undefined);
   });
 
-  it('Ref::state', () => {
+  it('Ref::state', async () => {
     const model = new Model(
       {
         type: 'number',
@@ -116,7 +79,7 @@ describe('Ref tests', () => {
       writeOnly: false,
     });
 
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state).toMatchObject({
       type: StateTypes.ERROR,
       path: [],
@@ -129,7 +92,7 @@ describe('Ref tests', () => {
     });
   });
 
-  it('Ref::errors', () => {
+  it('Ref::errors', async () => {
     const model = new Model(
       {
         properties: {
@@ -152,7 +115,7 @@ describe('Ref tests', () => {
     const ref = model.ref();
     expect(ref.errors).toHaveLength(0);
 
-    ref.validateSync();
+    await ref.validate();
     expect(ref.errors).toHaveLength(3);
 
     expect(ref.relativeRef(['foo']).errors).toHaveLength(2);
@@ -197,7 +160,7 @@ describe('Ref tests', () => {
     expect(ref.isDirty).toBe(true);
   });
 
-  it('Ref::isRequired', () => {
+  it('Ref::isRequired', async () => {
     const model = new Model(
       {
         required: ['foo'],
@@ -209,11 +172,11 @@ describe('Ref tests', () => {
     const fooRef = model.ref(['foo']);
     expect(fooRef.isRequired).toBe(false);
 
-    ref.validateSync();
+    await ref.validate();
     expect(fooRef.isRequired).toBe(true);
   });
 
-  it('Ref::isMutable, Ref::isReadOnly, Ref::isWriteOnly', () => {
+  it('Ref::isMutable, Ref::isReadOnly, Ref::isWriteOnly', async () => {
     const model = new Model(
       {
         readOnly: true,
@@ -227,13 +190,13 @@ describe('Ref tests', () => {
     expect(ref.isReadOnly).toBe(false);
     expect(ref.isWriteOnly).toBe(false);
 
-    ref.validateSync();
+    await ref.validate();
     expect(ref.isMutable).toBe(false);
     expect(ref.isReadOnly).toBe(true);
     expect(ref.isWriteOnly).toBe(true);
   });
 
-  it('Ref::isValidated', () => {
+  it('Ref::isValidated', async () => {
     const model = new Model(
       {},
       1,
@@ -242,14 +205,14 @@ describe('Ref tests', () => {
     const ref = model.ref();
     expect(ref.isValidated).toBe(false);
 
-    model.validateSync();
+    await model.validate();
     expect(ref.isValidated).toBe(false);
 
-    ref.validateSync();
+    await ref.validate();
     expect(ref.isValidated).toBe(true);
   });
 
-  it('Ref::isValid, Ref::isInvalid', () => {
+  it('Ref::isValid, Ref::isInvalid', async () => {
     const model = new Model(
       {
         type: 'number',
@@ -261,20 +224,20 @@ describe('Ref tests', () => {
     expect(ref.isValid).toBe(false);
     expect(ref.isInvalid).toBe(false);
 
-    ref.validateSync();
+    await ref.validate();
     expect(ref.isValid).toBe(true);
     expect(ref.isInvalid).toBe(false);
 
     ref.value = '';
-    ref.validateSync();
+    await ref.validate();
     expect(ref.isValid).toBe(false);
     expect(ref.isInvalid).toBe(true);
   });
 
-  it('Ref::isPending, Ref::isPristine', async () => {
+  it('Ref::isValidating, Ref::isPristine', async () => {
     const model = new Model(
       {
-        asyncSchema: () => Promise.resolve({
+        resolveSchema: () => Promise.resolve({
           type: 'number',
         }),
       },
@@ -283,24 +246,24 @@ describe('Ref tests', () => {
 
     const ref = model.ref();
     expect(ref.isPristine).toBe(true);
-    expect(ref.isPending).toBe(false);
+    expect(ref.isValidating).toBe(false);
 
     const fn = jest.fn(() => {
       if (fn.mock.length === 2) {
         expect(ref.isPristine).toBe(false);
-        expect(ref.isPending).toBe(true);
+        expect(ref.isValidating).toBe(true);
       } else if (fn.mock.length === 3) {
         expect(ref.isPristine).toBe(false);
-        expect(ref.isPending).toBe(false);
+        expect(ref.isValidating).toBe(false);
         expect(ref.isValid).toBe(true);
       }
     });
     model.observable.subscribe(fn);
 
-    await ref.validateAsync();
+    await ref.validate();
   });
 
-  it('Ref::isShouldNotBeBlank', () => {
+  it('Ref::isShouldNotBeBlank', async () => {
     const model = new Model(
       {
         properties: {
@@ -315,11 +278,11 @@ describe('Ref tests', () => {
     const fooRef = model.ref(['foo']);
     expect(fooRef.isShouldNotBeBlank).toBe(false);
 
-    model.validateSync();
+    await model.validate();
     expect(fooRef.isShouldNotBeBlank).toBe(true);
   });
 
-  it('Ref::isTouched, Ref::isUntouched', () => {
+  it('Ref::isTouched, Ref::isUntouched', async () => {
     const model = new Model(
       {},
       {},
@@ -329,7 +292,7 @@ describe('Ref tests', () => {
     expect(ref.isTouched).toBe(false);
     expect(ref.isUntouched).toBe(true);
 
-    ref.validateSync();
+    await ref.validate();
     expect(ref.isTouched).toBe(true);
     expect(ref.isUntouched).toBe(false);
   });

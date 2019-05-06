@@ -26,7 +26,7 @@ describe('required keyword', () => {
     expect(barRef.isRequired).toBe(false);
     expect(carRef.isRequired).toBe(false);
 
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
     expect(barRef.state.type).toBe(StateTypes.PRISTINE);
@@ -36,12 +36,12 @@ describe('required keyword', () => {
     expect(carRef.isRequired).toBe(false);
 
     fooRef.set(undefined);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
     expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
 
     fooRef.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
     expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
   });

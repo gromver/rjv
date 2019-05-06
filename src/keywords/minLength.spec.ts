@@ -17,15 +17,15 @@ describe('minLength keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set('ab');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -59,18 +59,18 @@ describe('minLength keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.minLength).toBe(undefined);
 
     ref.set('abc');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
     expect(ref.state).toMatchObject({
       minLength: 3,
     });
 
     ref.set('ab');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(ref.state).toMatchObject({
       minLength: 3,

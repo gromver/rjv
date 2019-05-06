@@ -17,15 +17,15 @@ describe('maxLength keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set('abcd');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -59,18 +59,18 @@ describe('maxLength keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.maxLength).toBe(undefined);
 
     ref.set('abc');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
     expect(ref.state).toMatchObject({
       maxLength: 3,
     });
 
     ref.set('abcd');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(ref.state).toMatchObject({
       maxLength: 3,

@@ -5,7 +5,7 @@ import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 
 const keyword: IKeyword = {
-  name: 'asyncValidate',
+  name: 'validate',
   compile(
     compile: CompileFn,
     schema: (ref: Ref, validateAttributeFn: ValidateAttributeFn) => Promise<IRuleValidationResult>,
@@ -13,12 +13,11 @@ const keyword: IKeyword = {
   ): IRule {
     if (typeof schema !== 'function') {
       throw new Error(
-        'The schema of the "asyncValidate" keyword should be an async validation function.',
+        'The schema of the "validate" keyword should be an async validation function.',
       );
     }
 
     return {
-      async: true,
       validate(ref: Ref, validateAttributeFn: ValidateAttributeFn): Promise<IRuleValidationResult> {
         return schema(ref, validateAttributeFn);
       },
@@ -30,7 +29,7 @@ export default keyword;
 
 declare module '../interfaces/ISchema' {
   export default interface ISchema {
-    asyncValidate?: (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+    validate?: (ref: Ref, validateAttributeFn: ValidateAttributeFn)
       => Promise<IRuleValidationResult>;
   }
 }
