@@ -234,7 +234,7 @@ describe('Ref tests', () => {
     expect(ref.isInvalid).toBe(true);
   });
 
-  it('Ref::isPending, Ref::isPristine', async () => {
+  it('Ref::isValidating, Ref::isPristine', async () => {
     const model = new Model(
       {
         resolveSchema: () => Promise.resolve({
@@ -246,15 +246,15 @@ describe('Ref tests', () => {
 
     const ref = model.ref();
     expect(ref.isPristine).toBe(true);
-    expect(ref.isPending).toBe(false);
+    expect(ref.isValidating).toBe(false);
 
     const fn = jest.fn(() => {
       if (fn.mock.length === 2) {
         expect(ref.isPristine).toBe(false);
-        expect(ref.isPending).toBe(true);
+        expect(ref.isValidating).toBe(true);
       } else if (fn.mock.length === 3) {
         expect(ref.isPristine).toBe(false);
-        expect(ref.isPending).toBe(false);
+        expect(ref.isValidating).toBe(false);
         expect(ref.isValid).toBe(true);
       }
     });

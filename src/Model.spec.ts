@@ -391,7 +391,7 @@ describe('Model test', () => {
     model.ref().value = 'bar';
     await model.ref().validate();
 
-    expect(fn).toHaveBeenCalledTimes(3); // set => pending => success
+    expect(fn).toHaveBeenCalledTimes(3); // set => validating => success
   });
 
   it('Should properly validate nested refs', async () => {

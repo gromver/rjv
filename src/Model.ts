@@ -341,13 +341,13 @@ export default class Model {
 
       if (!ignoreValidationStates && !(onlyDirtyRefs && !ref.isDirty)) {
         if (isRefInScope && refScope.length >= scope.length) {
-          // pending state
+          // validating state
           const curState = this.getRefState(ref);
 
           this.setRefState({
             ...curState,
             lock,
-            type: StateTypes.PENDING,
+            type: StateTypes.VALIDATING,
           });
         }
       }

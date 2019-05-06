@@ -180,10 +180,10 @@ export default class Ref {
     return state.type === StateTypes.ERROR;
   }
 
-  get isPending(): boolean {
+  get isValidating(): boolean {
     const state = this.model.getRefState(this);
 
-    return state.type === StateTypes.PENDING;
+    return state.type === StateTypes.VALIDATING;
   }
 
   get isPristine(): boolean {

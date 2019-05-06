@@ -4,7 +4,7 @@ import IStateMetadata from './IStateMetadata';
 
 export enum StateTypes {
   PRISTINE,
-  PENDING,
+  VALIDATING,
   SUCCESS,
   ERROR,
 }
