@@ -27,8 +27,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      async: false,
-      validate(ref: Ref): IRuleValidationResult {
+      async validate(ref: Ref): Promise<IRuleValidationResult> {
         if (presence && ref.checkDataType('string')) {
           let value = ref.value as string;
 

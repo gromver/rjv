@@ -25,15 +25,15 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.relativeRef(['foo']).set('test');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(null);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -52,7 +52,7 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
   });
 
@@ -72,7 +72,7 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
   });
 
@@ -90,11 +90,11 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.relativeRef(['bar']).set('bar');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect((ref.state as any).message.bindings).toMatchObject({
       invalidProperties: ['bar'],
@@ -117,15 +117,15 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.relativeRef(['bar']).set('bar');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.relativeRef(['bar']).set(1);
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect((ref.state as any).message.bindings).toMatchObject({
       invalidProperties: ['bar'],
@@ -135,7 +135,7 @@ describe('properties keyword', () => {
   it('Async test with additionalProperties=sync schema', async () => {
     const model = new Model(
       {
-        asyncSchema: () => Promise.resolve({
+        resolveSchema: () => Promise.resolve({
           properties: {
             foo: { type: 'number' },
           },
@@ -150,15 +150,15 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.relativeRef(['bar']).set('bar');
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.relativeRef(['bar']).set(1);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect((ref.state as any).message.bindings).toMatchObject({
       invalidProperties: ['bar'],
@@ -168,12 +168,12 @@ describe('properties keyword', () => {
   it('Async test with additionalProperties=async schema', async () => {
     const model = new Model(
       {
-        asyncSchema: () => Promise.resolve({
+        resolveSchema: () => Promise.resolve({
           properties: {
             foo: { type: 'number' },
           },
           additionalProperties: {
-            asyncSchema: () => Promise.resolve({
+            resolveSchema: () => Promise.resolve({
               type: 'string',
             }),
           },
@@ -185,15 +185,15 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.relativeRef(['bar']).set('bar');
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.relativeRef(['bar']).set(1);
-    await ref.validateAsync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect((ref.state as any).message.bindings).toMatchObject({
       invalidProperties: ['bar'],

@@ -1,13 +1,10 @@
 import Ref from '../Ref';
 import IRuleValidationResult from './IRuleValidationResult';
 
-export type ValidateAttributeFn = (ref: Ref, rule: IRule)
-  => IRuleValidationResult | Promise<IRuleValidationResult>;
+export type ValidateAttributeFn = (ref: Ref, rule: IRule) => Promise<IRuleValidationResult>;
 
 export default interface IRule {
-  async?: boolean;
-  validate?: (ref: Ref, validateAttributeFn: ValidateAttributeFn)
-    => IRuleValidationResult | Promise<IRuleValidationResult>;
+  validate?: (ref: Ref, validateAttributeFn: ValidateAttributeFn) => Promise<IRuleValidationResult>;
 }
 
 export interface IRuleCompiled extends IRule {

@@ -25,10 +25,6 @@ const keyword: IKeyword = {
       properties[propName] = compile(propSchema, parentSchema); // all rules have validate() fn
     });
 
-    const propEntries = Object.entries(properties);
-
-    let async = Object.values(properties).some((rule) => !!rule.async);
-
     const allowAdditional =
       parentSchema.additionalProperties === undefined
       || parentSchema.additionalProperties === true;
@@ -37,154 +33,71 @@ const keyword: IKeyword = {
 
     if (utils.isObject(parentSchema.additionalProperties)) {
       additionalRule = compile(parentSchema.additionalProperties, parentSchema);
-
-      if (additionalRule.async) {
-        async = true;
-      }
     }
 
-    let validate: (ref: Ref, validateAttributeFn: ValidateAttributeFn)
-      => IRuleValidationResult | Promise<IRuleValidationResult>;
+    const validate = async (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+      : Promise<IRuleValidationResult> => {
+      const invalidProperties: string[] = [];
+      let hasValidProps = false;
+      let hasInvalidProps = false;
 
-    if (async) {
-      // async flow
-      validate = async (ref, validateAttributeFn) => {
-        const invalidProperties: string[] = [];
-        let hasValidProps = false;
-        let hasInvalidProps = false;
+      if (ref.checkDataType('object')) {
+        for (const propName in properties) {
+          const propRule = properties[propName];
+          const propRef = ref.relativeRef([propName]);
 
-        if (ref.checkDataType('object')) {
-          for (const propName in properties) {
-            const propRule = properties[propName];
-            const propRef = ref.relativeRef([propName]);
+          const result = await validateAttributeFn(propRef, propRule);
 
-            const job = (
-              propRule.async
-                ? validateAttributeFn(propRef, propRule) as Promise<IRuleValidationResult>
-                : Promise.resolve(validateAttributeFn(propRef, propRule) as IRuleValidationResult)
-            );
-
-            const result = await job;
-
-            if (result.valid === true) {
-              hasValidProps = true;
-            } else if (result.valid === false) {
-              hasInvalidProps = true;
-              invalidProperties.push(propName);
-            }
-          }
-
-          // check additional props
-          if (!allowAdditional) {
-            const valueProps = Object.keys(ref.get());
-
-            for (const propName of valueProps) {
-              if (!Object.prototype.hasOwnProperty.call(properties, propName)) {
-                if (additionalRule) {
-                  const propRef = ref.relativeRef([propName]);
-
-                  const job = (
-                    additionalRule.async
-                      // tslint:disable-next-line:max-line-length
-                      ? validateAttributeFn(propRef, additionalRule) as Promise<IRuleValidationResult>
-                      // tslint:disable-next-line:max-line-length
-                      : Promise.resolve(validateAttributeFn(propRef, additionalRule) as IRuleValidationResult)
-                  );
-
-                  const result = await job;
-
-                  if (result.valid === true) {
-                    hasValidProps = true;
-                  } else if (result.valid === false) {
-                    hasInvalidProps = true;
-                    invalidProperties.push(propName);
-                  }
-                } else {
-                  hasInvalidProps = true;
-                  invalidProperties.push(propName);
-                }
-              }
-            }
-          }
-
-          if (hasInvalidProps) {
-            return ref.createErrorResult({
-              keyword: keyword.name,
-              description: 'Should have valid properties',
-              bindings: { invalidProperties },
-            });
-          }
-
-          if (hasValidProps) {
-            return ref.createSuccessResult();
+          if (result.valid === true) {
+            hasValidProps = true;
+          } else if (result.valid === false) {
+            hasInvalidProps = true;
+            invalidProperties.push(propName);
           }
         }
 
-        return ref.createUndefinedResult();
-      };
-    } else {
-      // sync flow
-      validate = (ref, validateAttributeFn) => {
-        const invalidProperties: string[] = [];
-        let hasValidProps = false;
-        let hasInvalidProps = false;
+        // check additional props
+        if (!allowAdditional) {
+          const valueProps = Object.keys(ref.get());
 
-        if (ref.checkDataType('object')) {
-          propEntries.forEach(([propName, propRule]) => {
-            const propRef = ref.relativeRef([propName]);
-            const result = validateAttributeFn(propRef, propRule) as IRuleValidationResult;
+          for (const propName of valueProps) {
+            if (!Object.prototype.hasOwnProperty.call(properties, propName)) {
+              if (additionalRule) {
+                const propRef = ref.relativeRef([propName]);
 
-            if (result.valid === true) {
-              hasValidProps = true;
-            } else if (result.valid === false) {
-              hasInvalidProps = true;
-              invalidProperties.push(propName);
+                const result = await validateAttributeFn(propRef, additionalRule);
+
+                if (result.valid === true) {
+                  hasValidProps = true;
+                } else if (result.valid === false) {
+                  hasInvalidProps = true;
+                  invalidProperties.push(propName);
+                }
+              } else {
+                hasInvalidProps = true;
+                invalidProperties.push(propName);
+              }
             }
+          }
+        }
+
+        if (hasInvalidProps) {
+          return ref.createErrorResult({
+            keyword: keyword.name,
+            description: 'Should have valid properties',
+            bindings: { invalidProperties },
           });
-
-          // check additional props
-          if (!allowAdditional) {
-            Object.keys(ref.get()).forEach((propName) => {
-              if (!Object.prototype.hasOwnProperty.call(properties, propName)) {
-                if (additionalRule) {
-                  const propRef = ref.relativeRef([propName]);
-
-                  const result =
-                    validateAttributeFn(propRef, additionalRule) as IRuleValidationResult;
-
-                  if (result.valid === true) {
-                    hasValidProps = true;
-                  } else if (result.valid === false) {
-                    hasInvalidProps = true;
-                    invalidProperties.push(propName);
-                  }
-                } else {
-                  hasInvalidProps = true;
-                  invalidProperties.push(propName);
-                }
-              }
-            });
-          }
-
-          if (hasInvalidProps) {
-            return ref.createErrorResult({
-              keyword: keyword.name,
-              description: 'Should have valid properties',
-              bindings: { invalidProperties },
-            });
-          }
-
-          if (hasValidProps) {
-            return ref.createSuccessResult();
-          }
         }
 
-        return ref.createUndefinedResult();
-      };
-    }
+        if (hasValidProps) {
+          return ref.createSuccessResult();
+        }
+      }
+
+      return ref.createUndefinedResult();
+    };
 
     return {
-      async,
       validate,
     };
   },

@@ -14,30 +14,29 @@ const keyword: IKeyword = {
     }
 
     const propRequiredRule: IRule = {
-      async: false,
-      validate(ref: Ref): IRuleValidationResult {
-        return ref.createUndefinedResult({
+      validate(ref: Ref): Promise<IRuleValidationResult> {
+        return Promise.resolve(ref.createUndefinedResult({
           required: true,
-        });
+        }));
       },
     };
 
     return {
-      async: false,
-      validate(ref: Ref, validateAttributeFn: ValidateAttributeFn): IRuleValidationResult {
+      async validate(ref: Ref, validateAttributeFn: ValidateAttributeFn)
+        : Promise<IRuleValidationResult> {
         if (ref.checkDataType('object')) {
           const value = ref.get();
           const invalidProperties: string[] = [];
 
-          required.forEach((propName) => {
+          for (const propName of required) {
             const propRef = ref.relativeRef([propName]);
 
-            validateAttributeFn(propRef, propRequiredRule);
+            await validateAttributeFn(propRef, propRequiredRule);
 
             if (!Object.prototype.hasOwnProperty.call(value, propName)) {
               invalidProperties.push(propName);
             }
-          });
+          }
 
           if (invalidProperties.length) {
             return ref.createErrorResult({

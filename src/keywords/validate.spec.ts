@@ -7,25 +7,27 @@ declare const require;
 import Model from '../Model';
 import { StateTypes } from '../interfaces/IState';
 
-describe('syncValidate keyword', () => {
-  it('Some integration tests', () => {
+describe('validate keyword', () => {
+  it('Some integration tests', async () => {
     const model = new Model(
       {
-        syncValidate: (ref) => {
-          if (ref.checkDataType('number')) {
-            const value = ref.get();
+        validate: (ref) => {
+          return Promise.resolve().then(() => {
+            if (ref.checkDataType('number')) {
+              const value = ref.get();
 
-            if (value > 5) {
-              return ref.createSuccessResult();
+              if (value > 5) {
+                return ref.createSuccessResult();
+              }
+
+              return ref.createErrorResult({
+                keyword: 'customFn',
+                description: 'Value should be greater than 5.',
+              });
             }
 
-            return ref.createErrorResult({
-              keyword: 'customFn',
-              description: 'Value should be greater than 5.',
-            });
-          }
-
-          return ref.createUndefinedResult();
+            return ref.createUndefinedResult();
+          });
         },
       },
       10,
@@ -33,11 +35,11 @@ describe('syncValidate keyword', () => {
 
     const ref = model.ref();
 
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(5);
-    ref.validate();
+    await ref.validate();
     expect(ref.state).toMatchObject({
       type: StateTypes.ERROR,
       message: {
@@ -47,7 +49,7 @@ describe('syncValidate keyword', () => {
     });
 
     ref.set('string');
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
@@ -56,10 +58,10 @@ describe('syncValidate keyword', () => {
       new Model(
         {
           // @ts-ignore
-          syncValidate: {},
+          validate: {},
         },
         '',
       );
-    }).toThrow('The schema of the "syncValidate" keyword should be a sync validation function.');
+    }).toThrow('The schema of the "validate" keyword should be an async validation function.');
   });
 });

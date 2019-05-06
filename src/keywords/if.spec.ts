@@ -8,8 +8,7 @@ import Model from '../Model';
 import { StateTypes } from '../interfaces/IState';
 
 describe('if keyword', () => {
-  // todo test async flow
-  it('Some integration tests', () => {
+  it('Some integration tests', async () => {
     const model = new Model(
       {
         if: {
@@ -27,27 +26,27 @@ describe('if keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(4.5);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(6);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set('abc');
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(null);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('Properties integration tests', () => {
+  it('Properties integration tests', async () => {
     const model = new Model(
       {
         if: {
@@ -62,27 +61,27 @@ describe('if keyword', () => {
     );
 
     const ref = model.ref();
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set({ power: 1000, confidence: true });
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set({});
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
 
     ref.set({ power: 10000 });
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set({ power: 10000, confidence: true });
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set({ power: 1000 });
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 

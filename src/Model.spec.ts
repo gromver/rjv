@@ -11,7 +11,7 @@ import Ref from './Ref';
 import { StateTypes } from './interfaces/IState';
 
 describe('Model test', () => {
-  it('Should set default value.', () => {
+  it('Should set default value.', async () => {
     const model = new Model(
       {
         type: 'number',
@@ -22,7 +22,7 @@ describe('Model test', () => {
 
     const ref = model.ref();
 
-    const result = ref.validateSync();
+    const result = await ref.validate();
     expect(result.valid).toBe(true);
     expect(ref.get()).toBe(123);
   });
@@ -44,7 +44,7 @@ describe('Model test', () => {
     );
 
     const ref = model.ref();
-    const result = ref.validateSync();
+    const result = await ref.validate();
     expect((result.firstErrorRef as any).path).toMatchObject(['car', 'a']);
   });
 
@@ -60,7 +60,7 @@ describe('Model test', () => {
     );
 
     const ref = model.ref();
-    ref.validate();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
     expect(ref.state).toMatchObject({
       title: 'title',
@@ -90,7 +90,7 @@ describe('Model test', () => {
     const refA = model.ref(['a']);
     const refB = model.ref(['b']);
     const refC = model.ref(['c']);
-    let result = ref.validateSync({
+    let result = await ref.validate({
       onlyDirtyRefs: true,
     });
     expect(result.valid).toBe(false);
@@ -100,7 +100,7 @@ describe('Model test', () => {
     expect(refC.state.type).toBe(StateTypes.PRISTINE);
 
     refC.set(1);
-    result = ref.validateSync({
+    result = await ref.validate({
       onlyDirtyRefs: true,
     });
     expect(result.valid).toBe(false);
@@ -110,7 +110,7 @@ describe('Model test', () => {
     expect(refC.state.type).toBe(StateTypes.SUCCESS);
 
     refB.set(6);
-    result = ref.validateSync({
+    result = await ref.validate({
       onlyDirtyRefs: true,
     });
     expect(result.valid).toBe(false);
@@ -120,7 +120,7 @@ describe('Model test', () => {
     expect(refC.state.type).toBe(StateTypes.SUCCESS);
   });
 
-  it('Test default keyword', () => {
+  it('Test default keyword', async () => {
     const schema = {
       properties: {
         foo: { default: 'foo' },
@@ -133,15 +133,15 @@ describe('Model test', () => {
     };
 
     const m1 = new Model(schema, {});
-    m1.prepareSync();
+    await m1.prepare();
     expect(m1.ref().get()).toMatchObject(expectedObject);
 
     const m2 = new Model(schema, {});
-    m2.prepareSync();
+    await m2.prepare();
     expect(m2.ref().get()).toMatchObject(expectedObject);
   });
 
-  it('Test default keyword validation priority', () => {
+  it('Test default keyword validation priority', async () => {
     const schema = {
       properties: {
         foo: { default: 'foo', type: 'string', minLength: 1 },
@@ -149,17 +149,17 @@ describe('Model test', () => {
     };
 
     const m1 = new Model(schema, {});
-    m1.validateSync();
+    await m1.validate();
     expect(m1.ref().state.type).toBe(StateTypes.SUCCESS);
   });
 
-  it('Test filter keyword', () => {
+  it('Test filter keyword', async () => {
     const schema = {
       filter: (v) => v.trim(),
     };
 
     const model = new Model(schema, ' foo  ');
-    model.prepareSync();
+    await model.prepare();
     expect(model.ref().get()).toBe('foo');
   });
 
@@ -175,7 +175,7 @@ describe('Model test', () => {
     }).toThrow('The schema of the "filter" keyword should be a function.');
   });
 
-  it('Test error keyword', () => {
+  it('Test error keyword', async () => {
     const model = new Model(
       {
         minLength: 1,
@@ -183,12 +183,12 @@ describe('Model test', () => {
       },
       '',
     );
-    model.validateSync();
+    await model.validate();
     // @ts-ignore
     expect(model.ref().state.message.description).toBe('Value can\'t be blank.');
   });
 
-  it('Test warning keyword 1', () => {
+  it('Test warning keyword 1', async () => {
     const model = new Model(
       {
         minLength: 1,
@@ -196,42 +196,42 @@ describe('Model test', () => {
       },
       'a',
     );
-    model.validateSync();
+    await model.validate();
     // @ts-ignore
     expect(model.ref().state.message).toBe(undefined);
   });
 
-  it('Test warning keyword 2', () => {
-    const validator = (ref: Ref) => ref.createSuccessResult({
+  it('Test warning keyword 2', async () => {
+    const validator = async (ref: Ref) => ref.createSuccessResult({
       keyword: 'custom',
       description: 'Validator\'s warning message.',
     });
 
     const m1 = new Model(
       {
-        syncValidate: validator,
+        validate: validator,
       },
       '',
     );
 
-    m1.validateSync();
+    await m1.validate();
     // @ts-ignore
     expect(m1.ref().state.message.description).toBe('Validator\'s warning message.');
 
     const m2 = new Model(
       {
-        syncValidate: validator,
+        validate: validator,
         warning: 'Custom warning message.',
       },
       '',
     );
 
-    m2.validateSync();
+    await m2.validate();
     // @ts-ignore
     expect(m2.ref().state.message.description).toBe('Custom warning message.');
   });
 
-  it('Test keywords option', () => {
+  it('Test keywords option', async () => {
     const model = new Model(
       {
         // @ts-ignore
@@ -244,8 +244,7 @@ describe('Model test', () => {
             name: 'newKeyword',
             compile(): IRule {
               return {
-                async: false,
-                validate: (ref) => (ref.createSuccessResult({
+                validate: async (ref) => (ref.createSuccessResult({
                   keyword: 'newKeyword',
                   description: 'Ok',
                 })),
@@ -255,7 +254,7 @@ describe('Model test', () => {
         ],
       },
     );
-    model.validateSync();
+    await model.validate();
     const ref = model.ref();
 
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
@@ -265,7 +264,7 @@ describe('Model test', () => {
     });
   });
 
-  it('Test model\'s errors option', () => {
+  it('Test model\'s errors option', async () => {
     const model = new Model(
       {
         properties: {
@@ -283,7 +282,7 @@ describe('Model test', () => {
         },
       },
     );
-    model.validateSync();
+    await model.validate();
     const ref = model.ref(['foo']);
 
     expect(ref.state.message).toMatchObject({
@@ -291,11 +290,11 @@ describe('Model test', () => {
     });
   });
 
-  it('Test model\'s warnings option', () => {
+  it('Test model\'s warnings option', async () => {
     const model = new Model(
       {
         // @ts-ignore
-        syncValidate: (ref) => ref.createSuccessResult({
+        validate: async (ref) => ref.createSuccessResult({
           keyword: 'customValidation',
           description: 'default warning',
         }),
@@ -307,7 +306,7 @@ describe('Model test', () => {
         },
       },
     );
-    model.validateSync();
+    await model.validate();
     const ref = model.ref();
 
     expect(ref.state.message).toMatchObject({
@@ -316,7 +315,7 @@ describe('Model test', () => {
     });
   });
 
-  it('Test schema\'s errors keyword', () => {
+  it('Test schema\'s errors keyword', async () => {
     const model = new Model(
       {
         properties: {
@@ -337,7 +336,7 @@ describe('Model test', () => {
         },
       },
     );
-    model.validateSync();
+    await model.validate();
     const ref = model.ref(['foo']);
 
     expect(ref.state.message).toMatchObject({
@@ -345,11 +344,11 @@ describe('Model test', () => {
     });
   });
 
-  it('Test schema\'s warnings keyword', () => {
+  it('Test schema\'s warnings keyword', async () => {
     const model = new Model(
       {
         // @ts-ignore
-        syncValidate: (ref) => ref.createSuccessResult({
+        validate: async (ref) => ref.createSuccessResult({
           keyword: 'customValidation',
           description: 'default warning',
         }),
@@ -364,12 +363,72 @@ describe('Model test', () => {
         },
       },
     );
-    model.validateSync();
+    await model.validate();
     const ref = model.ref();
 
     expect(ref.state.message).toMatchObject({
       keyword: 'customValidation',
       description: 'schema\'s custom warning message',
     });
+  });
+
+  it('Test async flow', async () => {
+    const model = new Model(
+      {
+        type: 'string',
+        title: 'test',
+        validate: (ref) => {
+          return new Promise((res) => {
+            setTimeout(res, 0, ref.createSuccessResult());
+          });
+        },
+      },
+      'foo',
+    );
+
+    const fn = jest.fn();
+    model.observable.subscribe(fn);
+    model.ref().value = 'bar';
+    await model.ref().validate();
+
+    expect(fn).toHaveBeenCalledTimes(3); // set => validating => success
+  });
+
+  it('Should properly validate nested refs', async () => {
+    const model = new Model(
+      {
+        properties: {
+          a: { type: 'string' },
+          b: { type: 'string' },
+          c: { type: 'string' },
+        },
+      },
+      {
+        a: 'str',
+        b: 123,
+        c: 123,
+      },
+    );
+
+    const rootRef = model.ref();
+    const bRef = model.ref(['b']);
+    const cRef = model.ref(['c']);
+
+    await rootRef.validate();
+    expect(rootRef.state.type).toBe(StateTypes.ERROR);
+    expect(bRef.state.type).toBe(StateTypes.ERROR);
+    expect(cRef.state.type).toBe(StateTypes.ERROR);
+
+    bRef.value = 'str';
+    await bRef.validate();
+    expect(rootRef.state.type).toBe(StateTypes.ERROR);
+    expect(bRef.state.type).toBe(StateTypes.SUCCESS);
+    expect(cRef.state.type).toBe(StateTypes.ERROR);
+
+    cRef.value = 'str';
+    await cRef.validate();
+    expect(rootRef.state.type).toBe(StateTypes.ERROR);
+    expect(bRef.state.type).toBe(StateTypes.SUCCESS);
+    expect(cRef.state.type).toBe(StateTypes.SUCCESS);
   });
 });

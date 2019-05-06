@@ -133,6 +133,8 @@ export default class Model {
   private readonly keywords: IKeywordMap;
   private readonly rule: IRuleCompiled;
   private isPrepared = false;
+  private lock = 0;
+  private validationProcesses = 0;
 
   public value: any;
   public states: AttributeStatesMap;
@@ -165,10 +167,6 @@ export default class Model {
     this.rule = this.compile(schema);
   }
 
-  get async(): boolean {
-    return !!this.rule.async;
-  }
-
   /**
    * Dispatch event
    * @param event
@@ -189,7 +187,7 @@ export default class Model {
         required: curState.required,
         readOnly: curState.readOnly,
         writeOnly: curState.writeOnly,
-        lock: ref.validationLock,
+        lock: curState.lock,
       };
     }
 
@@ -205,10 +203,9 @@ export default class Model {
     const { key } = ref;
     const curState = this.getRefState(ref);
 
-    if (curState && curState.lock > state.lock) {
+    if (curState.lock > state.lock) {
       return;
     }
-
     this.states[key] = state;
 
     this.dispatch(new ChangeRefStateEvent(state.path, state));
@@ -293,8 +290,23 @@ export default class Model {
       .filter((state) => state.type === StateTypes.ERROR);
   }
 
-  validate(options: IValidationOptions = {})
-    : IModelValidationResult | Promise<IModelValidationResult> {
+  get validationLock(): number {
+    return this.lock += 1;
+  }
+
+  validationProcessStarted() {
+    this.validationProcesses += 1;
+  }
+
+  validationProcessFinished() {
+    this.validationProcesses -= 1;
+  }
+
+  validate(options: IValidationOptions = {}): Promise<IModelValidationResult> {
+    this.validationProcessStarted();
+
+    const lock = this.validationLock;
+
     if (this.options.debug && !this.isPrepared) {
       console.warn('You are trying to validate an unprepared model. ' +
         'In most cases, it is recommended to prepare the model before validation.');
@@ -308,170 +320,95 @@ export default class Model {
       ? options.onlyDirtyRefs
       : this.options.onlyDirtyRefs;
     const results: { [path: string]: IRuleValidationResult } = {};
-    // tslint:disable-next-line
-    const model: this = this;
+
     let firstErrorRef: Ref | undefined = undefined;
 
     // validate attribute function
-    function validateAttributeFn(ref: Ref, rule: IRule)
-      : IRuleValidationResult | Promise<IRuleValidationResult> {
-      function createUndefinedResult() {
-        return rule.async
-          ? Promise.resolve(ref.createUndefinedResult())
-          : ref.createUndefinedResult();
-      }
-
+    const validateAttributeFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
       if (!rule.validate) {
-        return createUndefinedResult();
+        return Promise.resolve(ref.createUndefinedResult());
       }
 
-      // skip jobs
-      if (scope) {
-        const refScope = ref.path.join('.');
+      const refScope = ref.path.join('.');
 
-        if (refScope.length < scope.length) {
-          if (!scope.startsWith(refScope)) return createUndefinedResult();
-        } else {
-          if (!refScope.startsWith(scope)) return createUndefinedResult();
-        }
+      const isRefInScope = !scope || (refScope.length < scope.length
+        ? scope.startsWith(refScope)
+        : refScope.startsWith(scope));
+
+      if (!isRefInScope) {
+        return Promise.resolve(ref.createUndefinedResult());
       }
 
-      // async validation
-      if (rule.async) {
-        if (!ignoreValidationStates) {
-          // pending state
-          const curState = model.getRefState(ref);
+      if (!ignoreValidationStates && !(onlyDirtyRefs && !ref.isDirty)) {
+        if (isRefInScope && refScope.length >= scope.length) {
+          // validating state
+          const curState = this.getRefState(ref);
 
-          model.setRefState({
+          this.setRefState({
             ...curState,
-            type: StateTypes.PENDING,
-            lock: ref.validationLock,
+            lock,
+            type: StateTypes.VALIDATING,
           });
         }
+      }
 
-        const lock = ref.validationLock;
+      return rule.validate(ref, validateAttributeFn)
+        .then((result: IRuleValidationResult) => {
+          const key = ref.key;
+          const curResult = results[key] || {};
+          const mergedResult = results[key] = mergeResults([curResult, result]);
 
-        return (rule.validate(ref, validateAttributeFn) as Promise<IRuleValidationResult>)
-          .then((result: IRuleValidationResult) => {
-            const key = JSON.stringify(ref.path);
-            const curResult = results[key] || {};
-            const mergedResult = results[key] = mergeResults([curResult, result]);
-
-            const state = resultToState(mergedResult, ref.path, lock);
-
-            if (ignoreValidationStates || (onlyDirtyRefs && !ref.isDirty)) {
-              const curState = model.getRefState(ref);
-
-              model.setRefState({
-                ...curState,
-                ...state,
-                type: curState.type,
-                message: curState.message,
-              });
-            } else {
-              model.setRefState(state);
+          const state = resultToState(mergedResult, ref.path, lock);
+          if (!ignoreValidationStates && !(onlyDirtyRefs && !ref.isDirty)) {
+            if (isRefInScope && refScope.length >= scope.length) {
+              this.setRefState(state);
 
               if (state.type === StateTypes.ERROR && firstErrorRef === undefined) {
                 firstErrorRef = ref;
               }
             }
+          } else {
+            const curState = this.getRefState(ref);
 
-            return result;
-          });
-      }
+            this.setRefState({
+              ...curState,
+              ...state,
+              type: curState.type,
+              message: curState.message,
+            });
+          }
 
-      const key = JSON.stringify(ref.path);
-      const curResult = results[key] || {};
-      const result = results[key] = mergeResults(
-        [curResult, rule.validate(ref, validateAttributeFn) as IRuleValidationResult],
-      );
-
-      const state = resultToState(result, ref.path, ref.validationLock);
-
-      if (ignoreValidationStates || (onlyDirtyRefs && !ref.isDirty)) {
-        const curState = model.getRefState(ref);
-
-        model.setRefState({
-          ...curState,
-          ...state,
-          type: curState.type,
-          message: curState.message,
+          return result;
         });
-      } else {
-        model.setRefState(state);
-
-        if (state.type === StateTypes.ERROR && firstErrorRef === undefined) {
-          firstErrorRef = ref;
-        }
-      }
-
-      return result;
-    }
+    };
 
     this.clearAttributeStates(options.scope || []);
 
-    if (this.rule.async) {
-      return (validateAttributeFn(this.ref(), this.rule) as Promise<IRuleValidationResult>)
-        .then((result) => {
-          if (this.options.debug && result.valid === undefined) {
-            console.warn(UNDEFINED_RESULT_WARNING);
-          }
+    return validateAttributeFn(this.ref(), this.rule)
+      .then((result) => {
+        if (this.options.debug && result.valid === undefined) {
+          console.warn(UNDEFINED_RESULT_WARNING);
+        }
 
-          return {
-            firstErrorRef,
-            valid: !!result.valid,
-          };
-        });
-    }
+        this.validationProcessFinished();
 
-    const result = validateAttributeFn(this.ref(), this.rule) as IRuleValidationResult;
+        return {
+          firstErrorRef,
+          valid: !!result.valid,
+        };
+      })
+      .catch((error) => {
+        this.validationProcessFinished();
 
-    if (this.options.debug && result.valid === undefined) {
-      console.warn(UNDEFINED_RESULT_WARNING);
-    }
-
-    return {
-      firstErrorRef,
-      valid: !!result.valid,
-    };
+        return Promise.reject(error);
+      });
   }
 
-  validateSync(options: IValidationOptions = {}): IModelValidationResult {
-    if (this.async) {
-      throw new Error('Can\'t validate in synchronized mode.');
-    }
-
-    return this.validate(options) as IModelValidationResult;
-  }
-
-  validateAsync(options: IValidationOptions = {}): Promise<IModelValidationResult> {
-    if (this.async) {
-      return this.validate(options) as Promise<IModelValidationResult>;
-    }
-
-    return Promise.resolve(this.validate(options) as IModelValidationResult);
-  }
-
-  prepare(options: IValidationOptions = {})
-    : IModelValidationResult | Promise<IModelValidationResult> {
+  prepare(options: IValidationOptions = {}): Promise<IModelValidationResult> {
     options.ignoreValidationStates = true;
     this.isPrepared = true;
 
     return this.validate(options);
-  }
-
-  prepareSync(options: IValidationOptions = {}): IModelValidationResult {
-    options.ignoreValidationStates = true;
-    this.isPrepared = true;
-
-    return this.validateSync(options);
-  }
-
-  prepareAsync(options: IValidationOptions = {}): Promise<IModelValidationResult> {
-    options.ignoreValidationStates = true;
-    this.isPrepared = true;
-
-    return this.validateAsync(options);
   }
 
   private compile = (schema: ISchema): IRuleCompiled => {
@@ -518,8 +455,7 @@ export default class Model {
     // get rules
     const rules: IRuleCompiled[] = [{
       keyword: 'annotations',
-      async: false,
-      validate: (ref: Ref) => {
+      validate: async (ref: Ref) => {
         const value = ref.get();
 
         if (value === undefined) {
@@ -557,37 +493,22 @@ export default class Model {
       rules.push(rule);
     });
 
-    const async = rules.some((item) => !!item.async);
+    const validate = async (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+      : Promise<IRuleValidationResult> => {
+      const results: IRuleValidationResult[] = [];
 
-    let validate: (ref: Ref, validateAttributeFn: ValidateAttributeFn)
-      => IRuleValidationResult | Promise<IRuleValidationResult>;
+      for (const rule of rules) {
+        if (rule.validate) {
+          const res = await rule.validate(ref, validateAttributeFn);
 
-    if (async) {
-      validate = async (ref, validateAttributeFn) => {
-        const results: IRuleValidationResult[] = [];
-
-        for (const rule of rules) {
-          if (rule.validate) {
-            const res = await validateAttributeFn(ref, rule) as IRuleValidationResult;
-            results.push(res);
-          }
+          results.push(res);
         }
+      }
 
-        return addSchemaMessageDescriptions(mergeResults(results));
-      };
-    } else {
-      validate = (ref, validateAttributeFn) => {
-        const results = rules
-          .map((rule) => rule.validate && validateAttributeFn(ref, rule))
-          .filter((item) => !!item) as IRuleValidationResult[];
+      return addSchemaMessageDescriptions(mergeResults(results));
+    };
 
-        return addSchemaMessageDescriptions(mergeResults(results));
-      };
-    }
-
-    // think about adding the "schema" keyword and use it
     return {
-      async,
       validate,
       keyword: 'schema',
     };

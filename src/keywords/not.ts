@@ -5,6 +5,12 @@ import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import utils from '../utils';
 
+const validateFn: ValidateAttributeFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+  return rule.validate
+    ? rule.validate(ref, validateFn)
+    : Promise.resolve({});
+};
+
 const keyword: IKeyword = {
   name: 'not',
   compile(compile: CompileFn, schema: ISchema, parentSchema: ISchema): IRule {
@@ -14,39 +20,20 @@ const keyword: IKeyword = {
 
     const rule: IRule = compile(schema, parentSchema);  // all rules have validate() fn
 
-    const async = !!rule.async;
-
     return {
-      async,
-      validate(ref: Ref, validateAttributeFn: ValidateAttributeFn)
-        : IRuleValidationResult | Promise<IRuleValidationResult> {
-        // async flow
-        if (async) {
-          return ((rule as any)
-            .validate(ref, validateAttributeFn) as Promise<IRuleValidationResult>)
-            .then((result) => {
-              if (result.valid === false) {
-                return ref.createSuccessResult();
-              }
+      validate(ref: Ref): Promise<IRuleValidationResult> {
+        return ((rule as any)
+          .validate(ref, validateFn) as Promise<IRuleValidationResult>)
+          .then((result) => {
+            if (result.valid === false) {
+              return ref.createSuccessResult();
+            }
 
-              return ref.createErrorResult({
-                keyword: keyword.name,
-                description: 'Should not be valid',
-              });
+            return ref.createErrorResult({
+              keyword: keyword.name,
+              description: 'Should not be valid',
             });
-        }
-
-        // sync flow
-        const result = (rule as any).validate(ref, validateAttributeFn) as IRuleValidationResult;
-
-        if (result.valid === false) {
-          return ref.createSuccessResult();
-        }
-
-        return ref.createErrorResult({
-          keyword: keyword.name,
-          description: 'Should not be valid',
-        });
+          });
       },
     };
   },

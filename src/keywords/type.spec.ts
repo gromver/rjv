@@ -8,7 +8,7 @@ import Model from '../Model';
 import { StateTypes } from '../interfaces/IState';
 
 describe('type keyword', () => {
-  it('Test string', () => {
+  it('Test string', async () => {
     const model = new Model(
       {
         type: 'string',
@@ -16,26 +16,26 @@ describe('type keyword', () => {
       'abc',
     );
     const ref = model.ref();
-    const result = model.validateSync();
+    const result = await model.validate();
     expect(result).toMatchObject({
       valid: true,
     });
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set({});
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(1);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(undefined);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
-  it('Test number', () => {
+  it('Test number', async () => {
     const model = new Model(
       {
         type: 'number',
@@ -43,30 +43,30 @@ describe('type keyword', () => {
       1,
     );
     const ref = model.ref();
-    const result = model.validateSync();
+    const result = await model.validate();
     expect(result).toMatchObject({
       valid: true,
     });
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(1.5);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set({});
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set('1');
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(undefined);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
-  it('Test integer', () => {
+  it('Test integer', async () => {
     const model = new Model(
       {
         type: 'integer',
@@ -74,30 +74,30 @@ describe('type keyword', () => {
       1,
     );
     const ref = model.ref();
-    const result = model.validateSync();
+    const result = await model.validate();
     expect(result).toMatchObject({
       valid: true,
     });
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(1.5);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set({});
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set('1');
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(undefined);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
-  it('Test boolean', () => {
+  it('Test boolean', async () => {
     const model = new Model(
       {
         type: 'boolean',
@@ -105,34 +105,34 @@ describe('type keyword', () => {
       false,
     );
     const ref = model.ref();
-    const result = model.validateSync();
+    const result = await model.validate();
     expect(result).toMatchObject({
       valid: true,
     });
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(true);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set({});
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set('1');
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(1);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(undefined);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
-  it('Test array', () => {
+  it('Test array', async () => {
     const model = new Model(
       {
         type: 'array',
@@ -140,30 +140,30 @@ describe('type keyword', () => {
       [],
     );
     const ref = model.ref();
-    const result = model.validateSync();
+    const result = await model.validate();
     expect(result).toMatchObject({
       valid: true,
     });
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(1);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set({});
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set('1');
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(undefined);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
-  it('Test object', () => {
+  it('Test object', async () => {
     const model = new Model(
       {
         type: 'object',
@@ -171,30 +171,30 @@ describe('type keyword', () => {
       {},
     );
     const ref = model.ref();
-    const result = model.validateSync();
+    const result = await model.validate();
     expect(result).toMatchObject({
       valid: true,
     });
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(1);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set([]);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set('1');
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(undefined);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 
-  it('Test multiple types', () => {
+  it('Test multiple types', async () => {
     const model = new Model(
       {
         type: ['array', 'integer'],
@@ -202,26 +202,26 @@ describe('type keyword', () => {
       [],
     );
     const ref = model.ref();
-    const result = ref.validateSync();
+    const result = await ref.validate();
     expect(result).toMatchObject({
       valid: true,
     });
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set({});
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(1);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(1.23);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
 
     ref.set(undefined);
-    ref.validateSync();
+    await ref.validate();
     expect(ref.state.type).toBe(StateTypes.PRISTINE);
   });
 });

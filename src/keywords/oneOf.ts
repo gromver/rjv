@@ -5,9 +5,10 @@ import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import utils from '../utils';
 
-const validateFn: ValidateAttributeFn = (ref: Ref, rule: IRule):
-  IRuleValidationResult | Promise<IRuleValidationResult> => {
-  return rule.validate ? rule.validate(ref, validateFn) : {};
+const validateFn: ValidateAttributeFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+  return rule.validate
+    ? rule.validate(ref, validateFn)
+    : Promise.resolve({});
 };
 
 const keyword: IKeyword = {
@@ -27,61 +28,31 @@ const keyword: IKeyword = {
       rules.push(compile(item, parentSchema));  // all rules have validate() fn
     });
 
-    const async = rules.some((rule) => !!rule.async);
-
     return {
-      async,
-      validate(ref: Ref, validateAttributeFn: ValidateAttributeFn)
-        : IRuleValidationResult | Promise<IRuleValidationResult> {
-        // async flow
-        if (async) {
-          const jobs: Promise<IRuleValidationResult>[] = rules
-            .map(
-              (rule) => (rule as any)
-                .validate(ref, validateFn) as Promise<IRuleValidationResult>,
-            );
+      validate(ref: Ref, validateAttributeFn: ValidateAttributeFn): Promise<IRuleValidationResult> {
+        const jobs: Promise<IRuleValidationResult>[] = rules
+          .map(
+            (rule) => (rule as any)
+              .validate(ref, validateFn) as Promise<IRuleValidationResult>,
+          );
 
-          return Promise.all(jobs).then((results) => {
-            const validRules: IRule[] = [];
+        return Promise.all(jobs).then((results) => {
+          const validRules: IRule[] = [];
 
-            results.forEach((result, index) => {
-              if (result.valid === true) {
-                validRules.push(rules[index]);
-              }
-            });
-
-            if (validRules.length === 1) {
-              return validateAttributeFn(ref, validRules[0]);
+          results.forEach((result, index) => {
+            if (result.valid === true) {
+              validRules.push(rules[index]);
             }
-
-            return ref.createErrorResult({
-              keyword: keyword.name,
-              description: 'Should match exactly one schema in oneOf',
-            });
           });
-        }
 
-        // sync flow
-        const results = rules
-          .map((rule) => (rule as any).validate(ref, validateFn) as IRuleValidationResult);
-
-        const validRules: IRule[] = [];
-
-        results.forEach((result, index) => {
-          if (result.valid === true) {
-            validRules.push(rules[index]);
+          if (validRules.length === 1) {
+            return validateAttributeFn(ref, validRules[0]);
           }
-        });
 
-        if (validRules.length === 1) {
-          validateAttributeFn(ref, validRules[0]);
-
-          return ref.createSuccessResult();
-        }
-
-        return ref.createErrorResult({
-          keyword: keyword.name,
-          description: 'Should match exactly one schema in oneOf',
+          return ref.createErrorResult({
+            keyword: keyword.name,
+            description: 'Should match exactly one schema in oneOf',
+          });
         });
       },
     };
