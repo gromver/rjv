@@ -431,4 +431,26 @@ describe('Model test', () => {
     expect(bRef.state.type).toBe(StateTypes.SUCCESS);
     expect(cRef.state.type).toBe(StateTypes.SUCCESS);
   });
+
+  it('Test firstErrorRef behavior', async () => {
+    const model = new Model(
+      {
+        properties: {
+          a: { type: 'string' },
+          b: { type: 'string' },
+          c: { type: 'string' },
+        },
+      },
+      {
+        a: '1',
+        b: 2,
+        c: '3',
+      },
+    );
+
+    const ref = model.ref();
+
+    const result = await ref.validate();
+    expect((result as any).firstErrorRef.path).toMatchObject(['b']);
+  });
 });

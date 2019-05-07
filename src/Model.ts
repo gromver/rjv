@@ -182,12 +182,8 @@ export default class Model {
       const curState = this.getRefState(ref);
 
       this.states[key] = {
-        path,
+        ...curState,
         type: StateTypes.PRISTINE,
-        required: curState.required,
-        readOnly: curState.readOnly,
-        writeOnly: curState.writeOnly,
-        lock: curState.lock,
       };
     }
 
