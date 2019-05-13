@@ -179,10 +179,10 @@ export default class Model {
     const { key, path } = ref;
 
     if (this.options.clearStateOnSet) {
-      const curState = this.getRefState(ref);
+      const { type, message, ...inheritedState } = this.getRefState(ref);
 
       this.states[key] = {
-        ...curState,
+        ...inheritedState,
         type: StateTypes.PRISTINE,
       };
     }

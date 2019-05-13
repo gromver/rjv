@@ -11,6 +11,30 @@ import Ref from './Ref';
 import { StateTypes } from './interfaces/IState';
 
 describe('Model test', () => {
+  it('Must correctly change the current attribute\'s state when the value changes', async () => {
+    const model = new Model(
+      {
+        type: 'number',
+      },
+      'not a number',
+    );
+
+    const ref = model.ref();
+
+    await ref.validate();
+    expect(ref.state).toMatchObject({ type: StateTypes.ERROR, message: expect.any(Object) });
+
+    ref.value = 123;
+
+    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.message).toBeUndefined();
+
+    await ref.validate();
+
+    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.message).toBeUndefined();
+  });
+
   it('Should set default value.', async () => {
     const model = new Model(
       {
