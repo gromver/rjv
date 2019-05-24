@@ -32,7 +32,8 @@ const keyword: IKeyword = {
           let value = ref.value as string;
 
           if (trim) {
-            ref.value = value = value.trim();
+            value = value.trim();
+            ref.set(value, false);
           }
 
           if (!value.length) {

@@ -68,11 +68,12 @@ export default class Ref {
   /**
    * Set value as method
    * @param value
+   * @param dispatch
    */
-  set(value: any) {
+  set(value: any, dispatch = true) {
     this.dirty = true;
 
-    this.model.setRefValue(this, value);
+    this.model.setRefValue(this, value, dispatch);
   }
 
   /**
@@ -90,7 +91,7 @@ export default class Ref {
   set value(value: any) {
     this.dirty = true;
 
-    this.model.setRefValue(this, value);
+    this.model.setRefValue(this, value, true);
   }
 
   /**

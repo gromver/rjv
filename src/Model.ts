@@ -252,15 +252,16 @@ export default class Model {
    * Set value
    * @param ref
    * @param value
+   * @param dispatch
    */
-  setRefValue(ref: Ref, value: any) {
+  setRefValue(ref: Ref, value: any, dispatch) {
     if (ref.path.length) {
       _.set(this.value, ref.path, value);
     } else {
       this.value = value;
     }
 
-    this.dispatchChangeValue(ref);
+    dispatch && this.dispatchChangeValue(ref);
   }
 
   /**
@@ -456,14 +457,14 @@ export default class Model {
 
         if (value === undefined) {
           if (defaultValue !== undefined) {
-            this.setRefValue(ref, defaultValue);
+            this.setRefValue(ref, defaultValue, false);
           }
         } else {
           if (filterFn) {
             const filteredValue = filterFn(value);
 
             if (filteredValue !== value) {
-              this.setRefValue(ref, filteredValue);
+              this.setRefValue(ref, filteredValue, false);
             }
           }
         }
