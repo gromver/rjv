@@ -7,6 +7,7 @@ declare const require;
 import Model from './Model';
 import Ref from './Ref';
 import { StateTypes } from './interfaces/IState';
+import ChangeRefValueEvent from './events/ChangeRefValueEvent';
 
 describe('Ref tests', () => {
   it('Ref\'s getters and setters', () => {
@@ -34,6 +35,50 @@ describe('Ref tests', () => {
 
     ref.value = 2;
     expect(ref.value).toBe(2);
+  });
+
+  it('Ref::set(value) should dispatch ChangeRefValueEvent', () => {
+    const model = new Model(
+      { type: 'string' },
+      'foo',
+    );
+    const ref = model.ref();
+    const fn = jest.fn();
+    model.observable.subscribe(fn);
+
+    ref.set('bar');
+
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toBeCalledWith(expect.any(ChangeRefValueEvent));
+  });
+
+  it('Ref::set(value, false) should NOT dispatch ChangeRefValueEvent', () => {
+    const model = new Model(
+      { type: 'string' },
+      'foo',
+    );
+    const ref = model.ref();
+    const fn = jest.fn();
+    model.observable.subscribe(fn);
+
+    ref.set('bar', false);
+
+    expect(fn).toHaveBeenCalledTimes(0);
+  });
+
+  it('Ref::value should dispatch ChangeRefValueEvent', () => {
+    const model = new Model(
+      { type: 'string' },
+      'foo',
+    );
+    const ref = model.ref();
+    const fn = jest.fn();
+    model.observable.subscribe(fn);
+
+    ref.value = 'bar';
+
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toBeCalledWith(expect.any(ChangeRefValueEvent));
   });
 
   it('Ref::parent()', () => {
