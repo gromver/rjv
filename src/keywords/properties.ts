@@ -1,6 +1,6 @@
 import ISchema from '../interfaces/ISchema';
 import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateAttributeFn } from '../interfaces/IRule';
+import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import utils from '../utils';
@@ -9,7 +9,12 @@ type PropertiesSchema = { [propertyName: string]: ISchema };
 
 const keyword: IKeyword = {
   name: 'properties',
-  reserveNames: ['additionalProperties', 'patternProperties', 'propertyNames'], // todo
+  reserveNames: [
+    'additionalProperties',
+    'removeAdditional',
+    'patternProperties',
+    'propertyNames',
+  ], // todo
   compile(compile: CompileFn, schema: PropertiesSchema, parentSchema: ISchema): IRule {
     if (!utils.isObject(schema)) {
       throw new Error('The schema of the "properties" keyword should be an object.');
@@ -35,7 +40,7 @@ const keyword: IKeyword = {
       additionalRule = compile(parentSchema.additionalProperties, parentSchema);
     }
 
-    const validate = async (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
       : Promise<IRuleValidationResult> => {
       const invalidProperties: string[] = [];
       let hasValidProps = false;
@@ -46,7 +51,7 @@ const keyword: IKeyword = {
           const propRule = properties[propName];
           const propRef = ref.relativeRef([propName]);
 
-          const result = await validateAttributeFn(propRef, propRule);
+          const result = await validateRuleFn(propRef, propRule);
 
           if (result.valid === true) {
             hasValidProps = true;
@@ -65,7 +70,7 @@ const keyword: IKeyword = {
               if (additionalRule) {
                 const propRef = ref.relativeRef([propName]);
 
-                const result = await validateAttributeFn(propRef, additionalRule);
+                const result = await validateRuleFn(propRef, additionalRule);
 
                 if (result.valid === true) {
                   hasValidProps = true;

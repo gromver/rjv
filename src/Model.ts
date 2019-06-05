@@ -6,12 +6,13 @@ import ChangeRefStateEvent from './events/ChangeRefStateEvent';
 import ChangeRefValueEvent from './events/ChangeRefValueEvent';
 import ISchema from './interfaces/ISchema';
 import IState, { StateTypes } from './interfaces/IState';
-import IRule, { IRuleCompiled, ValidateAttributeFn } from './interfaces/IRule';
+import IRule, { IRuleCompiled, ValidateRuleFn } from './interfaces/IRule';
 import IKeyword from './interfaces/IKeyword';
 import defaultKeywords, { addKeyword } from './defaultKeywords';
 import IKeywordMap from './interfaces/IKeywordMap';
 import IRuleValidationResult from './interfaces/IRuleValidationResult';
 import IModelValidationResult from './interfaces/IModelValidationResult';
+import IValidationOptions from './interfaces/IValidationOptions';
 
 const _ = {
   extend: require('lodash/extend'),
@@ -25,12 +26,6 @@ export type Path = (string|number)[];
 
 export type AttributeStatesMap = { [key: string]: IState };
 
-export interface IValidationOptions {
-  scope?: Path;
-  ignoreValidationStates?: boolean;
-  onlyDirtyRefs?: boolean;
-}
-
 export interface IModelOptionsPartial extends IValidationOptions {
   clearStateOnSet?: boolean;
   keywords?: IKeyword[];
@@ -40,8 +35,12 @@ export interface IModelOptionsPartial extends IValidationOptions {
 }
 
 export interface IModelOptions extends IModelOptionsPartial {
+  // validation's process default opts
+  coerceTypes: boolean;
+  removeAdditional: boolean;
   ignoreValidationStates: boolean;
   onlyDirtyRefs: boolean;
+  // model's default opts
   clearStateOnSet: boolean;
   keywords: IKeyword[];
   errors: { [keywordName: string]: any };
@@ -50,9 +49,11 @@ export interface IModelOptions extends IModelOptionsPartial {
 }
 
 const DEFAULT_OPTIONS: IModelOptions = {
-  clearStateOnSet: true,
+  coerceTypes: false,
+  removeAdditional: false,
   ignoreValidationStates: false,
   onlyDirtyRefs: false,
+  clearStateOnSet: true,
   keywords: [],
   errors: {},
   warnings: {},
@@ -316,12 +317,19 @@ export default class Model {
     const onlyDirtyRefs = options.onlyDirtyRefs !== undefined
       ? options.onlyDirtyRefs
       : this.options.onlyDirtyRefs;
+    const coerceTypes = options.coerceTypes !== undefined
+      ? options.coerceTypes
+      : this.options.coerceTypes;
+    const removeAdditional = options.removeAdditional !== undefined
+      ? options.removeAdditional
+      : this.options.removeAdditional;
     const results: { [path: string]: IRuleValidationResult } = {};
 
     let firstErrorRef: Ref | undefined = undefined;
 
     // validate attribute function
-    const validateAttributeFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+    const validateRuleFn: ValidateRuleFn = (ref: Ref, rule: IRule)
+      : Promise<IRuleValidationResult> => {
       if (!rule.validate) {
         return Promise.resolve(ref.createUndefinedResult());
       }
@@ -349,7 +357,7 @@ export default class Model {
         }
       }
 
-      return rule.validate(ref, validateAttributeFn)
+      return rule.validate(ref, validateRuleFn)
         .then((result: IRuleValidationResult) => {
           const key = ref.key;
           const curResult = results[key] || {};
@@ -379,9 +387,14 @@ export default class Model {
         });
     };
 
+    validateRuleFn.options = {
+      coerceTypes,
+      removeAdditional,
+    };
+
     this.clearAttributeStates(options.scope || []);
 
-    return validateAttributeFn(this.ref(), this.rule)
+    return validateRuleFn(this.ref(), this.rule)
       .then((result) => {
         if (this.options.debug && result.valid === undefined) {
           console.warn(UNDEFINED_RESULT_WARNING);
@@ -490,13 +503,13 @@ export default class Model {
       rules.push(rule);
     });
 
-    const validate = async (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
       : Promise<IRuleValidationResult> => {
       const results: IRuleValidationResult[] = [];
 
       for (const rule of rules) {
         if (rule.validate) {
-          const res = await rule.validate(ref, validateAttributeFn);
+          const res = await rule.validate(ref, validateRuleFn);
 
           results.push(res);
         }

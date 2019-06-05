@@ -1,14 +1,18 @@
 import ISchema from '../interfaces/ISchema';
 import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateAttributeFn } from '../interfaces/IRule';
+import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import utils from '../utils';
 
-const validateFn: ValidateAttributeFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
   return rule.validate
     ? rule.validate(ref, validateFn)
     : Promise.resolve({});
+};
+validateFn.options = {
+  coerceTypes: false,
+  removeAdditional: false,
 };
 
 async function findValidSchemaRule(rules: IRule[], ref: Ref) {
@@ -41,11 +45,11 @@ const keyword: IKeyword = {
     });
 
     return {
-      validate(ref: Ref, validateAttributeFn: ValidateAttributeFn): Promise<IRuleValidationResult> {
+      validate(ref: Ref, validateRuleFn: ValidateRuleFn): Promise<IRuleValidationResult> {
         return findValidSchemaRule(rules, ref)
           .then((rule) => {
             if (rule) {
-              return validateAttributeFn(ref, rule);
+              return validateRuleFn(ref, rule);
             }
 
             return ref.createErrorResult({

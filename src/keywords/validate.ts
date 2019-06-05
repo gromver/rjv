@@ -1,6 +1,6 @@
 import ISchema from '../interfaces/ISchema';
 import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateAttributeFn } from '../interfaces/IRule';
+import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 
@@ -8,7 +8,7 @@ const keyword: IKeyword = {
   name: 'validate',
   compile(
     compile: CompileFn,
-    schema: (ref: Ref, validateAttributeFn: ValidateAttributeFn) => Promise<IRuleValidationResult>,
+    schema: (ref: Ref, validateRuleFn: ValidateRuleFn) => Promise<IRuleValidationResult>,
     parentSchema: ISchema,
   ): IRule {
     if (typeof schema !== 'function') {
@@ -18,8 +18,8 @@ const keyword: IKeyword = {
     }
 
     return {
-      validate(ref: Ref, validateAttributeFn: ValidateAttributeFn): Promise<IRuleValidationResult> {
-        return schema(ref, validateAttributeFn);
+      validate(ref: Ref, validateRuleFn: ValidateRuleFn): Promise<IRuleValidationResult> {
+        return schema(ref, validateRuleFn);
       },
     };
   },
@@ -29,7 +29,7 @@ export default keyword;
 
 declare module '../interfaces/ISchema' {
   export default interface ISchema {
-    validate?: (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+    validate?: (ref: Ref, validateRuleFn: ValidateRuleFn)
       => Promise<IRuleValidationResult>;
   }
 }

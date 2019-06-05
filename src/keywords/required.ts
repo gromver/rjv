@@ -1,6 +1,6 @@
 import ISchema from '../interfaces/ISchema';
 import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateAttributeFn } from '../interfaces/IRule';
+import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 
@@ -22,7 +22,7 @@ const keyword: IKeyword = {
     };
 
     return {
-      async validate(ref: Ref, validateAttributeFn: ValidateAttributeFn)
+      async validate(ref: Ref, validateRuleFn: ValidateRuleFn)
         : Promise<IRuleValidationResult> {
         if (ref.checkDataType('object')) {
           const value = ref.get();
@@ -31,7 +31,7 @@ const keyword: IKeyword = {
           for (const propName of required) {
             const propRef = ref.relativeRef([propName]);
 
-            await validateAttributeFn(propRef, propRequiredRule);
+            await validateRuleFn(propRef, propRequiredRule);
 
             if (!Object.prototype.hasOwnProperty.call(value, propName)) {
               invalidProperties.push(propName);

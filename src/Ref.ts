@@ -1,8 +1,9 @@
-import Model, { Path, IValidationOptions } from './Model';
+import Model, { Path } from './Model';
 import IState, { StateTypes } from './interfaces/IState';
 import IRuleValidationResult from './interfaces/IRuleValidationResult';
-import IValidationMessage from './interfaces/IValidationMessage';
 import IModelValidationResult from './interfaces/IModelValidationResult';
+import IValidationMessage from './interfaces/IValidationMessage';
+import IValidationOptions from './interfaces/IValidationOptions';
 
 const _ = {
   isEqual: require('lodash/isEqual'),

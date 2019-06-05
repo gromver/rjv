@@ -1,14 +1,18 @@
 import ISchema from '../interfaces/ISchema';
 import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateAttributeFn } from '../interfaces/IRule';
+import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import utils from '../utils';
 
-const validateFn: ValidateAttributeFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
   return rule.validate
     ? rule.validate(ref, validateFn)
     : Promise.resolve({});
+};
+validateFn.options = {
+  coerceTypes: false,
+  removeAdditional: false,
 };
 
 const keyword: IKeyword = {
@@ -29,7 +33,7 @@ const keyword: IKeyword = {
     });
 
     return {
-      validate(ref: Ref, validateAttributeFn: ValidateAttributeFn): Promise<IRuleValidationResult> {
+      validate(ref: Ref, validateRuleFn: ValidateRuleFn): Promise<IRuleValidationResult> {
         const jobs: Promise<IRuleValidationResult>[] = rules
           .map(
             (rule) => (rule as any)
@@ -46,7 +50,7 @@ const keyword: IKeyword = {
           });
 
           if (validRules.length === 1) {
-            return validateAttributeFn(ref, validRules[0]);
+            return validateRuleFn(ref, validRules[0]);
           }
 
           return ref.createErrorResult({
