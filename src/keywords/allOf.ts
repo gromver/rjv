@@ -1,6 +1,6 @@
 import ISchema from '../interfaces/ISchema';
 import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateAttributeFn } from '../interfaces/IRule';
+import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import utils from '../utils';
@@ -22,12 +22,12 @@ const keyword: IKeyword = {
       rules.push(compile(item, parentSchema));  // all rules have validate() fn
     });
 
-    const validate = async (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
       : Promise<IRuleValidationResult> => {
       const results: IRuleValidationResult[] = [];
 
       for (const rule of rules) {
-        const res = await (rule as any).validate(ref, validateAttributeFn);
+        const res = await (rule as any).validate(ref, validateRuleFn);
         results.push(res);
       }
 

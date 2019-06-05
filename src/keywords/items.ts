@@ -1,6 +1,6 @@
 import ISchema from '../interfaces/ISchema';
 import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateAttributeFn } from '../interfaces/IRule';
+import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import utils from '../utils';
@@ -36,7 +36,7 @@ const keyword: IKeyword = {
       additionalRule = compile(parentSchema.additionalItems, parentSchema);
     }
 
-    const validate = async (ref: Ref, validateAttributeFn: ValidateAttributeFn)
+    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
       : Promise<IRuleValidationResult> => {
       const results: IRuleValidationResult[] = [];
       const invalidIndexes: number[] = [];
@@ -51,7 +51,7 @@ const keyword: IKeyword = {
             const itemRule = rule[index];
 
             if (itemRule.validate) {
-              const res = await validateAttributeFn(
+              const res = await validateRuleFn(
                 ref.relativeRef([index]), itemRule,
               ) as IRuleValidationResult;
 
@@ -65,7 +65,7 @@ const keyword: IKeyword = {
               hasItemsOverflow = true;
             } else if (additionalRule) {
               for (let i = value.length - 1; i < value.length; i += 1) {
-                const res = await validateAttributeFn(
+                const res = await validateRuleFn(
                   ref.relativeRef([i]), additionalRule,
                 ) as IRuleValidationResult;
 
@@ -76,7 +76,7 @@ const keyword: IKeyword = {
         } else {
           for (const index in value) {
             if (rule.validate) {
-              const res = await validateAttributeFn(
+              const res = await validateRuleFn(
                 ref.relativeRef([index]), rule as IRule,
               ) as IRuleValidationResult;
 

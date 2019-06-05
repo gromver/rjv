@@ -1,12 +1,26 @@
 import ISchema from '../interfaces/ISchema';
 import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule from '../interfaces/IRule';
+import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import Ref, { DataType } from '../Ref';
 
+/**
+ * Like typeof but supports 'array' type
+ * @param value
+ */
+function getValueType(value: any): string {
+  const type = typeof value;
+
+  if (type === 'object' && Array.isArray(type)) {
+    return 'array';
+  }
+
+  return type;
+}
+
 const keyword: IKeyword = {
   name: 'type',
-  reserveNames: ['coerceType'], // todo
+  reserveNames: ['coerceTypes'],
   compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
     // Type can be: number, integer, string, boolean, array, object or null.
     let types: DataType[] = [];
@@ -18,13 +32,75 @@ const keyword: IKeyword = {
       types = data;
     }
 
+    const coerceTypes = !!parentSchema.coerceTypes;
+
     return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.get() === undefined) {
+      async validate(ref: Ref, validateRuleFn: ValidateRuleFn)
+        : Promise<IRuleValidationResult> {
+        const curValue = ref.get();
+        const curType = getValueType(curValue);
+
+        if (curValue === undefined) {
           return Promise.resolve(ref.createUndefinedResult());
         }
 
-        const valid = types.some((type) => ref.checkDataType(type));
+        const valid = types.some((type) => {
+          if (!ref.checkDataType(type)) {
+            // try to coerce type
+            if (coerceTypes || validateRuleFn.options.coerceTypes) {
+              switch (type) {
+                case 'string':
+                  if (curType === 'number' || curType === 'boolean') {
+                    ref.set(`${curValue}`, false);
+                  }
+                  break;
+
+                case 'number':
+                  if (
+                    curType === 'boolean' || curValue === null
+                    // tslint:disable-next-line:triple-equals
+                    || (curType === 'string' && curValue && curValue == +curValue)
+                  ) {
+                    ref.set(+curValue, false);
+                  }
+                  break;
+
+                case 'integer':
+                  if (
+                    curType === 'boolean' || curValue === null
+                    || (
+                      // tslint:disable-next-line:triple-equals
+                      curType === 'string' && curValue && curValue == +curValue && !(curValue % 1)
+                    )
+                  ) {
+                    ref.set(+curValue, false);
+                  }
+                  break;
+
+                case 'boolean':
+                  if (curValue === 'false' || curValue === 0 || curValue === null) {
+                    ref.set(false, false);
+                  } else if (curValue === 'true' || curValue === 1) {
+                    ref.set(true, false);
+                  }
+                  break;
+
+                case 'null':
+                  if (curValue === '' || curValue === 0 || curValue === false) {
+                    ref.set(null, false);
+                  }
+                  break;
+              }
+
+              // check type again
+              return ref.checkDataType(type);
+            }
+
+            return false;
+          }
+
+          return true;
+        });
 
         return valid
           ? ref.createSuccessResult()
@@ -43,5 +119,6 @@ export default keyword;
 declare module '../interfaces/ISchema' {
   export default interface ISchema {
     type?: string | string[];
+    coerceTypes?: boolean;
   }
 }

@@ -1,14 +1,18 @@
 import ISchema from '../interfaces/ISchema';
 import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateAttributeFn } from '../interfaces/IRule';
+import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
 import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import utils from '../utils';
 
-const validateFn: ValidateAttributeFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
   return rule.validate
     ? rule.validate(ref, validateFn)
     : Promise.resolve({});
+};
+validateFn.options = {
+  coerceTypes: false,
+  removeAdditional: false,
 };
 
 const keyword: IKeyword = {
@@ -31,7 +35,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref, validateAttributeFn: ValidateAttributeFn)
+      async validate(ref: Ref, validateRuleFn: ValidateRuleFn)
         : Promise<IRuleValidationResult> {
         return (
           (ifRule as any).validate(ref, validateFn) as Promise<IRuleValidationResult>
@@ -39,11 +43,11 @@ const keyword: IKeyword = {
           .then((result) => {
             if (result.valid === false) {
               if (elseRule) {
-                return (elseRule as any).validate(ref, validateAttributeFn);
+                return (elseRule as any).validate(ref, validateRuleFn);
               }
             } else if (result.valid === true) {
               if (thenRule) {
-                return (thenRule as any).validate(ref, validateAttributeFn);
+                return (thenRule as any).validate(ref, validateRuleFn);
               }
             }
 
