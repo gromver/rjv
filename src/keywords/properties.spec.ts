@@ -200,4 +200,103 @@ describe('properties keyword', () => {
     });
   });
 
+  it('Test removeAdditional keyword', async () => {
+    const model = new Model(
+      {
+        additionalProperties: false,
+        removeAdditional: true,
+        properties: {
+          foo: { type: 'number' },
+          bar: {
+            additionalProperties: { type: 'number' },
+            removeAdditional: true,
+            properties: {
+              baz: { type: 'string' },
+            },
+          },
+        },
+      },
+      {
+        car: { a: true },
+        foo: 0,
+        additional1: 1,
+        bar: {
+          baz: 'abc',
+          additional2: 2,
+        },
+      },
+    );
+
+    const ref = model.ref();
+    const result = await ref.validate();
+    expect(result).toMatchObject({ valid: true });
+    expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
+  });
+
+  it('Test removeAdditional model\'s option', async () => {
+    const model = new Model(
+      {
+        additionalProperties: false,
+        properties: {
+          foo: { type: 'number' },
+          bar: {
+            additionalProperties: { type: 'number' },
+            properties: {
+              baz: { type: 'string' },
+            },
+          },
+        },
+      },
+      {
+        car: { a: true },
+        foo: 0,
+        additional1: 1,
+        bar: {
+          baz: 'abc',
+          additional2: 2,
+        },
+      },
+      {
+        removeAdditional: true,
+      },
+    );
+
+    const ref = model.ref();
+    const result = await ref.validate();
+    expect(result).toMatchObject({ valid: true });
+    expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
+  });
+
+  it('Test removeAdditional validation\'s option', async () => {
+    const model = new Model(
+      {
+        additionalProperties: false,
+        properties: {
+          foo: { type: 'number' },
+          bar: {
+            additionalProperties: { type: 'number' },
+            properties: {
+              baz: { type: 'string' },
+            },
+          },
+        },
+      },
+      {
+        car: { a: true },
+        foo: 0,
+        additional1: 1,
+        bar: {
+          baz: 'abc',
+          additional2: 2,
+        },
+      },
+    );
+
+    const ref = model.ref();
+    const result = await ref.validate({
+      removeAdditional: true,
+    });
+    expect(result).toMatchObject({ valid: true });
+    expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
+  });
 });
