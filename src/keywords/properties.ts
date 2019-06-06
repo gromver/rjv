@@ -12,9 +12,9 @@ const keyword: IKeyword = {
   reserveNames: [
     'additionalProperties',
     'removeAdditional',
-    'patternProperties',
-    'propertyNames',
-  ], // todo
+    'patternProperties',    // todo
+    'propertyNames',        // todo
+  ],
   compile(compile: CompileFn, schema: PropertiesSchema, parentSchema: ISchema): IRule {
     if (!utils.isObject(schema)) {
       throw new Error('The schema of the "properties" keyword should be an object.');
@@ -40,6 +40,8 @@ const keyword: IKeyword = {
       additionalRule = compile(parentSchema.additionalProperties, parentSchema);
     }
 
+    const removeAdditional = !!parentSchema.removeAdditional;
+
     const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
       : Promise<IRuleValidationResult> => {
       const invalidProperties: string[] = [];
@@ -63,7 +65,8 @@ const keyword: IKeyword = {
 
         // check additional props
         if (!allowAdditional) {
-          const valueProps = Object.keys(ref.get());
+          const value = ref.value;
+          const valueProps = Object.keys(value);
 
           for (const propName of valueProps) {
             if (!Object.prototype.hasOwnProperty.call(properties, propName)) {
@@ -75,12 +78,22 @@ const keyword: IKeyword = {
                 if (result.valid === true) {
                   hasValidProps = true;
                 } else if (result.valid === false) {
+                  if (removeAdditional || validateRuleFn.options.removeAdditional) {
+                    // remove prop
+                    delete value[propName];
+                  } else {
+                    hasInvalidProps = true;
+                    invalidProperties.push(propName);
+                  }
+                }
+              } else {
+                if (removeAdditional || validateRuleFn.options.removeAdditional) {
+                  // remove prop
+                  delete value[propName];
+                } else {
                   hasInvalidProps = true;
                   invalidProperties.push(propName);
                 }
-              } else {
-                hasInvalidProps = true;
-                invalidProperties.push(propName);
               }
             }
           }
@@ -114,5 +127,6 @@ declare module '../interfaces/ISchema' {
   export default interface ISchema {
     properties?: PropertiesSchema;
     additionalProperties?: boolean | ISchema;
+    removeAdditional?: boolean;
   }
 }
