@@ -25,6 +25,14 @@ describe('type keyword', () => {
     ref.set({});
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'type',
+      description: 'Should be string',
+      bindings: {
+        types: ['string'],
+        typesAsString: 'string',
+      },
+    });
 
     ref.set(1);
     await ref.validate();
@@ -211,6 +219,14 @@ describe('type keyword', () => {
     ref.set({});
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'type',
+      description: 'Should be array, integer',
+      bindings: {
+        types: ['array', 'integer'],
+        typesAsString: 'array, integer',
+      },
+    });
 
     ref.set(1);
     await ref.validate();

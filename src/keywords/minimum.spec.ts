@@ -23,6 +23,10 @@ describe('minimum keyword', () => {
     ref.set(4);
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'minimum',
+      description: 'Should be greater than or equal 5',
+    });
 
     ref.set(null);
     await ref.validate();
@@ -45,6 +49,10 @@ describe('minimum keyword', () => {
     ref.set(5);
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'minimum_exclusive',
+      description: 'Should be greater than 5',
+    });
   });
 
   it('Should throw errors', async () => {

@@ -106,7 +106,7 @@ const keyword: IKeyword = {
           const limit = (rule as IRule[]).length;
 
           return ref.createErrorResult({
-            keyword: keyword.name,
+            keyword: `${keyword.name}_overflow`,
             description: `Should not have more than ${limit} items`,
             bindings: { limit },
           });

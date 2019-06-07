@@ -29,7 +29,7 @@ const keyword: IKeyword = {
           if (exclusive ? value >= limit : value > limit) {
             return ref.createErrorResult(
               {
-                keyword: keyword.name,
+                keyword: exclusive ? `${keyword.name}_exclusive` : keyword.name,
                 description: exclusive
                   ? `Should be less than ${limit}`
                   : `Should be less than or equal ${limit}`,
