@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.3.0"></a>
+# [2.3.0](https://github.com/gromver/rjv/compare/v2.2.0...v2.3.0) (2019-06-07)
+
+
+### Bug Fixes
+
+* **package.json:** fix jest warnings ([1b0e970](https://github.com/gromver/rjv/commit/1b0e970))
+
+
+### Features
+
+* **coerceTypes:** add coerceTypes keyword ([fa5b62b](https://github.com/gromver/rjv/commit/fa5b62b))
+* **removeAdditional:** add removeAdditional keyword ([4ea776e](https://github.com/gromver/rjv/commit/4ea776e))
+* **State:** use more descriptive keywords in the validation states ([9ce5872](https://github.com/gromver/rjv/commit/9ce5872))
+
+
+
 <a name="2.2.0"></a>
 # [2.2.0](https://github.com/gromver/rjv/compare/v2.1.1...v2.2.0) (2019-05-24)
 
