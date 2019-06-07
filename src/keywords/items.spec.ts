@@ -123,7 +123,7 @@ describe('items keyword', () => {
     }).toThrow('Each item of the "items" keyword should be a schema object.');
   });
 
-  it('additionalItems sync test 1', async () => {
+  it('additionalItems test 1', async () => {
     const model = new Model(
       {
         items: { type: 'integer' },
@@ -145,7 +145,7 @@ describe('items keyword', () => {
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('additionalItems sync test 2', async () => {
+  it('additionalItems test 2', async () => {
     const model = new Model(
       {
         items: [
@@ -178,7 +178,7 @@ describe('items keyword', () => {
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('additionalItems sync test 3', async () => {
+  it('additionalItems test 3', async () => {
     const model = new Model(
       {
         items: [
@@ -207,7 +207,7 @@ describe('items keyword', () => {
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('additionalItems sync test 4', async () => {
+  it('additionalItems test 4', async () => {
     const model = new Model(
       {
         items: [
@@ -236,7 +236,7 @@ describe('items keyword', () => {
     });
   });
 
-  it('additionalItems async test 1', async () => {
+  it('additionalItems test 1', async () => {
     const model = new Model(
       {
         items: { type: 'integer' },
@@ -258,7 +258,7 @@ describe('items keyword', () => {
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('additionalItems async test 2', async () => {
+  it('additionalItems test 2', async () => {
     const model = new Model(
       {
         items: [
@@ -291,7 +291,7 @@ describe('items keyword', () => {
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('additionalItems async test 3', async () => {
+  it('additionalItems test 3', async () => {
     const model = new Model(
       {
         items: [
@@ -320,7 +320,7 @@ describe('items keyword', () => {
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('additionalItems async test 4', async () => {
+  it('additionalItems test 4', async () => {
     const model = new Model(
       {
         items: [
@@ -349,7 +349,7 @@ describe('items keyword', () => {
     expect(ref.state.type).toBe(StateTypes.ERROR);
   });
 
-  it('additionalItems async test 5', async () => {
+  it('additionalItems test 5', async () => {
     const model = new Model(
       {
         items: [
@@ -373,6 +373,7 @@ describe('items keyword', () => {
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(ref.state.message).toMatchObject({
+      keyword: 'items_overflow',
       description: 'Should not have more than 2 items',
       bindings: { limit: 2 },
     });

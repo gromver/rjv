@@ -23,6 +23,10 @@ describe('maximum keyword', () => {
     ref.set(6);
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'maximum',
+      description: 'Should be less than or equal 5',
+    });
 
     ref.set(null);
     await ref.validate();
@@ -45,6 +49,10 @@ describe('maximum keyword', () => {
     ref.set(5);
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'maximum_exclusive',
+      description: 'Should be less than 5',
+    });
   });
 
   it('Should throw errors', async () => {

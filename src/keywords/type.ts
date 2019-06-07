@@ -102,12 +102,14 @@ const keyword: IKeyword = {
           return true;
         });
 
+        const typesAsString = types.join(', ');
+
         return valid
           ? ref.createSuccessResult()
           : ref.createErrorResult({
             keyword: keyword.name,
-            description: `Should be ${types.join(', ')}`,
-            bindings: { types },
+            description: `Should be ${typesAsString}`,
+            bindings: { types, typesAsString },
           });
       },
     };
