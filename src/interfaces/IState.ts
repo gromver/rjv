@@ -12,7 +12,8 @@ export enum StateTypes {
 export default interface IState extends IStateMetadata {
   type: StateTypes;
   path: Path;
-  lock: number;
+  valLock: number;
+  errLock?: number;
   required: boolean;
   readOnly: boolean;
   writeOnly: boolean;

@@ -46,8 +46,8 @@ describe('Model test', () => {
 
     const ref = model.ref();
 
-    const result = await ref.validate();
-    expect(result.valid).toBe(true);
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.get()).toBe(123);
   });
 
@@ -68,8 +68,8 @@ describe('Model test', () => {
     );
 
     const ref = model.ref();
-    const result = await ref.validate();
-    expect((result.firstErrorRef as any).path).toMatchObject(['car', 'a']);
+    await ref.validate();
+    expect((ref.firstError as any).path).toMatchObject(['car', 'a']);
   });
 
   it('Should expose metadata', async () => {
@@ -114,31 +114,28 @@ describe('Model test', () => {
     const refA = model.ref(['a']);
     const refB = model.ref(['b']);
     const refC = model.ref(['c']);
-    let result = await ref.validate({
+    let isValid = await ref.validate({
       onlyDirtyRefs: true,
     });
-    expect(result.valid).toBe(false);
-    expect(result.firstErrorRef).toBe(undefined);
+    expect(isValid).toBe(false);
     expect(refA.state.type).toBe(StateTypes.PRISTINE);
     expect(refB.state.type).toBe(StateTypes.PRISTINE);
     expect(refC.state.type).toBe(StateTypes.PRISTINE);
 
     refC.set(1);
-    result = await ref.validate({
+    isValid = await ref.validate({
       onlyDirtyRefs: true,
     });
-    expect(result.valid).toBe(false);
-    expect(result.firstErrorRef).toBe(undefined);
+    expect(isValid).toBe(false);
     expect(refA.state.type).toBe(StateTypes.PRISTINE);
     expect(refB.state.type).toBe(StateTypes.PRISTINE);
     expect(refC.state.type).toBe(StateTypes.SUCCESS);
 
     refB.set(6);
-    result = await ref.validate({
+    isValid = await ref.validate({
       onlyDirtyRefs: true,
     });
-    expect(result.valid).toBe(false);
-    expect(result.firstErrorRef).toMatchObject({ path: ['b'] });
+    expect(isValid).toBe(false);
     expect(refA.state.type).toBe(StateTypes.PRISTINE);
     expect(refB.state.type).toBe(StateTypes.ERROR);
     expect(refC.state.type).toBe(StateTypes.SUCCESS);
@@ -173,7 +170,7 @@ describe('Model test', () => {
     };
 
     const m1 = new Model(schema, {});
-    await m1.validate();
+    await m1.ref().validate();
     expect(m1.ref().state.type).toBe(StateTypes.SUCCESS);
   });
 
@@ -207,7 +204,7 @@ describe('Model test', () => {
       },
       '',
     );
-    await model.validate();
+    await model.ref().validate();
     // @ts-ignore
     expect(model.ref().state.message.description).toBe('Value can\'t be blank.');
   });
@@ -220,7 +217,7 @@ describe('Model test', () => {
       },
       'a',
     );
-    await model.validate();
+    await model.ref().validate();
     // @ts-ignore
     expect(model.ref().state.message).toBe(undefined);
   });
@@ -238,7 +235,7 @@ describe('Model test', () => {
       '',
     );
 
-    await m1.validate();
+    await m1.ref().validate();
     // @ts-ignore
     expect(m1.ref().state.message.description).toBe('Validator\'s warning message.');
 
@@ -250,7 +247,7 @@ describe('Model test', () => {
       '',
     );
 
-    await m2.validate();
+    await m2.ref().validate();
     // @ts-ignore
     expect(m2.ref().state.message.description).toBe('Custom warning message.');
   });
@@ -278,8 +275,8 @@ describe('Model test', () => {
         ],
       },
     );
-    await model.validate();
     const ref = model.ref();
+    await ref.validate();
 
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
     expect(ref.state.message).toMatchObject({
@@ -306,7 +303,7 @@ describe('Model test', () => {
         },
       },
     );
-    await model.validate();
+    await model.ref().validate();
     const ref = model.ref(['foo']);
 
     expect(ref.state.message).toMatchObject({
@@ -330,7 +327,7 @@ describe('Model test', () => {
         },
       },
     );
-    await model.validate();
+    await model.ref().validate();
     const ref = model.ref();
 
     expect(ref.state.message).toMatchObject({
@@ -360,10 +357,10 @@ describe('Model test', () => {
         },
       },
     );
-    await model.validate();
-    const ref = model.ref(['foo']);
+    await model.ref().validate();
+    const fooRef = model.ref(['foo']);
 
-    expect(ref.state.message).toMatchObject({
+    expect(fooRef.state.message).toMatchObject({
       description: 'schema\'s custom error message',
     });
   });
@@ -387,8 +384,8 @@ describe('Model test', () => {
         },
       },
     );
-    await model.validate();
     const ref = model.ref();
+    await ref.validate();
 
     expect(ref.state.message).toMatchObject({
       keyword: 'customValidation',
@@ -434,47 +431,25 @@ describe('Model test', () => {
       },
     );
 
-    const rootRef = model.ref();
+    const ref = model.ref();
     const bRef = model.ref(['b']);
     const cRef = model.ref(['c']);
 
-    await rootRef.validate();
-    expect(rootRef.state.type).toBe(StateTypes.ERROR);
+    await ref.validate();
+    expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(bRef.state.type).toBe(StateTypes.ERROR);
     expect(cRef.state.type).toBe(StateTypes.ERROR);
 
     bRef.value = 'str';
     await bRef.validate();
-    expect(rootRef.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(bRef.state.type).toBe(StateTypes.SUCCESS);
     expect(cRef.state.type).toBe(StateTypes.ERROR);
 
     cRef.value = 'str';
     await cRef.validate();
-    expect(rootRef.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.type).toBe(StateTypes.ERROR);
     expect(bRef.state.type).toBe(StateTypes.SUCCESS);
     expect(cRef.state.type).toBe(StateTypes.SUCCESS);
-  });
-
-  it('Test firstErrorRef behavior', async () => {
-    const model = new Model(
-      {
-        properties: {
-          a: { type: 'string' },
-          b: { type: 'string' },
-          c: { type: 'string' },
-        },
-      },
-      {
-        a: '1',
-        b: 2,
-        c: '3',
-      },
-    );
-
-    const ref = model.ref();
-
-    const result = await ref.validate();
-    expect((result as any).firstErrorRef.path).toMatchObject(['b']);
   });
 });

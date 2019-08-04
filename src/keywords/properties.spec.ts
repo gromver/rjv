@@ -228,8 +228,8 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    const result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
   });
 
@@ -262,8 +262,8 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    const result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
   });
 
@@ -293,10 +293,10 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    const result = await ref.validate({
+    const isValid = await ref.validate({
       removeAdditional: true,
     });
-    expect(result).toMatchObject({ valid: true });
+    expect(isValid).toBe(true);
     expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
   });
 });

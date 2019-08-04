@@ -108,7 +108,7 @@ function mergeResults(results: IRuleValidationResult[]): IRuleValidationResult {
   return result;
 }
 
-function resultToState(result: IRuleValidationResult, path: Path, lock: number): IState {
+function resultToState(result: IRuleValidationResult, path: Path, valLock: number): IState {
   let type: StateTypes = StateTypes.PRISTINE;
   const { required, readOnly, writeOnly, valid, message, ...metadata } = result;
 
@@ -121,7 +121,7 @@ function resultToState(result: IRuleValidationResult, path: Path, lock: number):
   return {
     ...metadata,
     path,
-    lock,
+    valLock,
     type,
     message,
     required: typeof required === 'boolean' ? required : false,
@@ -134,8 +134,8 @@ export default class Model {
   private readonly keywords: IKeywordMap;
   private readonly rule: IRuleCompiled;
   private isPrepared = false;
-  private lock = 0;
-  private validationProcesses = 0;
+  private valLock = 0;
+  private errLock = 0;
 
   public value: any;
   public states: AttributeStatesMap;
@@ -200,7 +200,7 @@ export default class Model {
     const { key } = ref;
     const curState = this.getRefState(ref);
 
-    if (curState.lock > state.lock) {
+    if (curState.valLock > state.valLock) {
       return;
     }
     this.states[key] = state;
@@ -223,7 +223,7 @@ export default class Model {
         required: false,
         readOnly: false,
         writeOnly: false,
-        lock: 0,
+        valLock: 0,
       };
     }
 
@@ -289,28 +289,22 @@ export default class Model {
   }
 
   get validationLock(): number {
-    return this.lock += 1;
+    return this.valLock += 1;
   }
 
-  validationProcessStarted() {
-    this.validationProcesses += 1;
+  get errorLock(): number {
+    return this.errLock += 1;
   }
 
-  validationProcessFinished() {
-    this.validationProcesses -= 1;
-  }
-
-  validate(options: IValidationOptions = {}): Promise<IModelValidationResult> {
-    this.validationProcessStarted();
-
-    const lock = this.validationLock;
+  validateRef(ref: Ref, options: IValidationOptions = {}): Promise<boolean> {
+    const valLock = this.validationLock;
 
     if (this.options.debug && !this.isPrepared) {
       console.warn('You are trying to validate an unprepared model. ' +
         'In most cases, it is recommended to prepare the model before validation.');
     }
 
-    const scope = options.scope ? options.scope.join('.') : '';
+    const scope = ref.path.join('.') || '';
     const ignoreValidationStates = options.ignoreValidationStates !== undefined
       ? options.ignoreValidationStates
       : this.options.ignoreValidationStates;
@@ -325,55 +319,43 @@ export default class Model {
       : this.options.removeAdditional;
     const results: { [path: string]: IRuleValidationResult } = {};
 
-    let firstErrorRef: Ref | undefined = undefined;
-
     // validate attribute function
-    const validateRuleFn: ValidateRuleFn = (ref: Ref, rule: IRule)
+    const validateRuleFn: ValidateRuleFn = (curRef: Ref, rule: IRule)
       : Promise<IRuleValidationResult> => {
       if (!rule.validate) {
-        return Promise.resolve(ref.createUndefinedResult());
+        return Promise.resolve(curRef.createUndefinedResult());
       }
 
-      const refScope = ref.path.join('.');
+      const curScope = curRef.path.join('.');
 
-      const isRefInScope = !scope || (refScope.length < scope.length
-        ? scope.startsWith(refScope)
-        : refScope.startsWith(scope));
+      const isRefInScope = !scope || curScope.startsWith(scope);
 
-      if (!isRefInScope) {
-        return Promise.resolve(ref.createUndefinedResult());
+      if (isRefInScope && !ignoreValidationStates && !(onlyDirtyRefs && !curRef.isDirty)) {
+        // validating state
+        const curState = this.getRefState(curRef);
+
+        this.setRefState({
+          ...curState,
+          valLock,
+          type: StateTypes.VALIDATING,
+        });
       }
 
-      if (!ignoreValidationStates && !(onlyDirtyRefs && !ref.isDirty)) {
-        if (isRefInScope && refScope.length >= scope.length) {
-          // validating state
-          const curState = this.getRefState(ref);
-
-          this.setRefState({
-            ...curState,
-            lock,
-            type: StateTypes.VALIDATING,
-          });
-        }
-      }
-
-      return rule.validate(ref, validateRuleFn)
+      return rule.validate(curRef, validateRuleFn)
         .then((result: IRuleValidationResult) => {
-          const key = ref.key;
+          const key = curRef.key;
           const curResult = results[key] || {};
           const mergedResult = results[key] = mergeResults([curResult, result]);
 
-          const state = resultToState(mergedResult, ref.path, lock);
-          if (!ignoreValidationStates && !(onlyDirtyRefs && !ref.isDirty)) {
-            if (isRefInScope && refScope.length >= scope.length) {
-              this.setRefState(state);
+          const state = resultToState(mergedResult, curRef.path, valLock);
+          if (isRefInScope && !ignoreValidationStates && !(onlyDirtyRefs && !curRef.isDirty)) {
+            this.setRefState(state);
 
-              if (state.type === StateTypes.ERROR && firstErrorRef === undefined) {
-                firstErrorRef = ref;
-              }
+            if (state.type === StateTypes.ERROR) {
+              state.errLock = this.errorLock;
             }
           } else {
-            const curState = this.getRefState(ref);
+            const curState = this.getRefState(curRef);
 
             this.setRefState({
               ...curState,
@@ -392,7 +374,7 @@ export default class Model {
       removeAdditional,
     };
 
-    this.clearAttributeStates(options.scope || []);
+    this.clearAttributeStates(ref.path);
 
     return validateRuleFn(this.ref(), this.rule)
       .then((result) => {
@@ -400,25 +382,19 @@ export default class Model {
           console.warn(UNDEFINED_RESULT_WARNING);
         }
 
-        this.validationProcessFinished();
-
-        return {
-          firstErrorRef,
-          valid: !!result.valid,
-        };
-      })
-      .catch((error) => {
-        this.validationProcessFinished();
-
-        return Promise.reject(error);
+        return !!result.valid;
       });
   }
 
-  prepare(options: IValidationOptions = {}): Promise<IModelValidationResult> {
+  validate(options: IValidationOptions = {}): Promise<boolean> {
+    return this.ref().validate(options);
+  }
+
+  prepare(options: IValidationOptions = {}): Promise<boolean> {
     options.ignoreValidationStates = true;
     this.isPrepared = true;
 
-    return this.validate(options);
+    return this.validateRef(this.ref(), options);
   }
 
   private compile = (schema: ISchema): IRuleCompiled => {

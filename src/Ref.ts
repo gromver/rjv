@@ -1,7 +1,6 @@
 import Model, { Path } from './Model';
 import IState, { StateTypes } from './interfaces/IState';
 import IRuleValidationResult from './interfaces/IRuleValidationResult';
-import IModelValidationResult from './interfaces/IModelValidationResult';
 import IValidationMessage from './interfaces/IValidationMessage';
 import IValidationOptions from './interfaces/IValidationOptions';
 
@@ -40,12 +39,11 @@ export default class Ref {
    * Validation
    */
 
-  validate(options: IValidationOptions = {}): Promise<IModelValidationResult> {
-    options.scope = this.path;
+  validate(options: IValidationOptions = {}): Promise<boolean> {
     this.validated = true;
     this.touched = true;
 
-    return this.model.validate(options);
+    return this.model.validateRef(this, options);
   }
 
   /**
@@ -64,6 +62,24 @@ export default class Ref {
    */
   get state(): IState {
     return this.model.getRefState(this);
+  }
+
+  /**
+   * Get the error that occurred first
+   * @returns {IState | void}
+   */
+  get firstError(): IState | void {
+    return this.model.getRefErrors(this).sort((a, b) => {
+      if ((a as any).errLock > (b as any)!.errLock) {
+        return 1;
+      }
+
+      if ((a as any).errLock < (b as any).errLock) {
+        return -1;
+      }
+
+      return 0;
+    })[0];
   }
 
   /**
