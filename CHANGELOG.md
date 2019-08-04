@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.5.0"></a>
+# [2.5.0](https://github.com/gromver/rjv/compare/v2.3.1...v2.5.0) (2019-08-04)
+
+
+### Features
+
+* **Model:** make clearAttributeStates public ([de6e82e](https://github.com/gromver/rjv/commit/de6e82e))
+
+
+
 <a name="2.4.0"></a>
 # [2.4.0](https://github.com/gromver/rjv/compare/v2.2.0...v2.4.0) (2019-06-10)
 
