@@ -84,8 +84,8 @@ describe('presence keyword', () => {
 
     const ref = model.ref();
     const fooRef = ref.relativeRef(['foo']);
-// model.observable.subscribe((s) => console.log('ev', s))
-    await model.validate();
+
+    await ref.validate();
     expect(fooRef.state.type).toBe(StateTypes.ERROR);
   });
 
@@ -107,7 +107,7 @@ describe('presence keyword', () => {
     const ref = model.ref();
     const fooRef = ref.relativeRef(['foo']);
 
-    await model.validate();
+    await ref.validate();
     expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
     expect(fooRef.value).toBe('abc');
   });

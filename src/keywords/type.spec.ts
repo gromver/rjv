@@ -16,10 +16,8 @@ describe('type keyword', () => {
       'abc',
     );
     const ref = model.ref();
-    const result = await model.validate();
-    expect(result).toMatchObject({
-      valid: true,
-    });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set({});
@@ -51,10 +49,8 @@ describe('type keyword', () => {
       1,
     );
     const ref = model.ref();
-    const result = await model.validate();
-    expect(result).toMatchObject({
-      valid: true,
-    });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(1.5);
@@ -82,10 +78,8 @@ describe('type keyword', () => {
       1,
     );
     const ref = model.ref();
-    const result = await model.validate();
-    expect(result).toMatchObject({
-      valid: true,
-    });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(1.5);
@@ -113,10 +107,8 @@ describe('type keyword', () => {
       false,
     );
     const ref = model.ref();
-    const result = await model.validate();
-    expect(result).toMatchObject({
-      valid: true,
-    });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(true);
@@ -148,10 +140,8 @@ describe('type keyword', () => {
       [],
     );
     const ref = model.ref();
-    const result = await model.validate();
-    expect(result).toMatchObject({
-      valid: true,
-    });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(1);
@@ -179,10 +169,8 @@ describe('type keyword', () => {
       {},
     );
     const ref = model.ref();
-    const result = await model.validate();
-    expect(result).toMatchObject({
-      valid: true,
-    });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set(1);
@@ -210,10 +198,8 @@ describe('type keyword', () => {
       [],
     );
     const ref = model.ref();
-    const result = await ref.validate();
-    expect(result).toMatchObject({
-      valid: true,
-    });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
 
     ref.set({});
@@ -250,23 +236,23 @@ describe('type keyword', () => {
       '123',
     );
     const ref = model.ref();
-    let result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    let isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(123);
 
     ref.set(true);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(1);
 
     ref.set(false);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(0);
 
     ref.set('a123');
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: false });
+    isValid = await ref.validate();
+    expect(isValid).toBe(false);
     expect(ref.value).toBe('a123');
   });
 
@@ -279,28 +265,28 @@ describe('type keyword', () => {
       '123',
     );
     const ref = model.ref();
-    let result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    let isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(123);
 
     ref.set(true);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(1);
 
     ref.set(false);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(0);
 
     ref.set('a123');
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: false });
+    isValid = await ref.validate();
+    expect(isValid).toBe(false);
     expect(ref.value).toBe('a123');
 
     ref.set('123.45');
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: false });
+    isValid = await ref.validate();
+    expect(isValid).toBe(false);
     expect(ref.value).toBe('123.45');
   });
 
@@ -313,18 +299,18 @@ describe('type keyword', () => {
       '123',
     );
     const ref = model.ref();
-    let result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    let isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(123);
 
     ref.set('123.45');
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(123.45);
 
     ref.set('a123');
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: false });
+    isValid = await ref.validate();
+    expect(isValid).toBe(false);
     expect(ref.value).toBe('a123');
   });
 
@@ -337,29 +323,29 @@ describe('type keyword', () => {
       123,
     );
     const ref = model.ref();
-    let result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    let isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe('123');
 
     ref.set(123.45);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe('123.45');
 
     ref.set(true);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe('true');
 
     ref.set(false);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe('false');
 
     const arr = [];
     ref.set(arr);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: false });
+    isValid = await ref.validate();
+    expect(isValid).toBe(false);
     expect(ref.value).toBe(arr);
   });
 
@@ -372,33 +358,33 @@ describe('type keyword', () => {
       null,
     );
     const ref = model.ref();
-    let result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    let isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(false);
 
     ref.set('false');
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(false);
 
     ref.set(0);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(false);
 
     ref.set('true');
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(true);
 
     ref.set(1);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(true);
 
     ref.set('');
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: false });
+    isValid = await ref.validate();
+    expect(isValid).toBe(false);
     expect(ref.value).toBe('');
   });
 
@@ -411,23 +397,23 @@ describe('type keyword', () => {
       0,
     );
     const ref = model.ref();
-    let result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    let isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(null);
 
     ref.set('');
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(null);
 
     ref.set(false);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(null);
 
     ref.set(123);
-    result = await ref.validate();
-    expect(result).toMatchObject({ valid: false });
+    isValid = await ref.validate();
+    expect(isValid).toBe(false);
     expect(ref.value).toBe(123);
   });
 
@@ -442,8 +428,8 @@ describe('type keyword', () => {
       },
     );
     const ref = model.ref();
-    const result = await ref.validate();
-    expect(result).toMatchObject({ valid: true });
+    const isValid = await ref.validate();
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(123);
   });
 
@@ -455,10 +441,10 @@ describe('type keyword', () => {
       '123',
     );
     const ref = model.ref();
-    const result = await ref.validate({
+    const isValid = await ref.validate({
       coerceTypes: true,
     });
-    expect(result).toMatchObject({ valid: true });
+    expect(isValid).toBe(true);
     expect(ref.value).toBe(123);
   });
 });

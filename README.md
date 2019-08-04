@@ -1,4 +1,4 @@
-# rjv
+# RxJV
 
 Reactive JSON Schema Validator
 
@@ -12,7 +12,7 @@ npm install rjv --save
 TBD
 
 ## License
-**rjv** is released under the MIT license.
+**RxJV** is released under the MIT license.
 See the [LICENSE file] for license text and copyright information.
 
 [LICENSE file]: https://github.com/gromver/rjv/blob/master/LICENSE

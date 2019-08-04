@@ -250,7 +250,7 @@ describe('Ref tests', () => {
     const ref = model.ref();
     expect(ref.isValidated).toBe(false);
 
-    await model.validate();
+    await model.validateRef(ref);
     expect(ref.isValidated).toBe(false);
 
     await ref.validate();
@@ -323,7 +323,7 @@ describe('Ref tests', () => {
     const fooRef = model.ref(['foo']);
     expect(fooRef.isShouldNotBeBlank).toBe(false);
 
-    await model.validate();
+    await model.ref().validate();
     expect(fooRef.isShouldNotBeBlank).toBe(true);
   });
 
@@ -375,5 +375,40 @@ describe('Ref tests', () => {
     expect(withTouchFn('abc')).toBe(3);
     expect(ref.isTouched).toBe(true);
     expect(ref.isUntouched).toBe(false);
+  });
+
+  it('Ref::firstError', async () => {
+    const model = new Model(
+      {
+        properties: {
+          a: {
+            properties: {
+              aa: { type: 'number' },
+            },
+          },
+          b: {
+            properties: {
+              bb: { type: 'number' },
+            },
+          },
+        },
+      },
+      {
+        a: { aa: '' },
+        b: { bb: '' },
+      },
+    );
+
+    const ref = model.ref();
+    await ref.validate();
+
+    expect(ref.firstError).toMatchObject({ path: ['a', 'aa'] });
+    expect(ref.relativeRef(['a']).firstError).toMatchObject({ path: ['a', 'aa'], errLock: 1 });
+    expect(ref.relativeRef(['b']).firstError).toMatchObject({ path: ['b', 'bb'], errLock: 3 });
+
+    await ref.validate();
+    expect(ref.firstError).toMatchObject({ path: ['a', 'aa'] });
+    expect(ref.relativeRef(['a']).firstError).toMatchObject({ path: ['a', 'aa'], errLock: 6 });
+    expect(ref.relativeRef(['b']).firstError).toMatchObject({ path: ['b', 'bb'], errLock: 8 });
   });
 });
