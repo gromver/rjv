@@ -141,6 +141,81 @@ describe('Model test', () => {
     expect(refC.state.type).toBe(StateTypes.SUCCESS);
   });
 
+  it('clearStateOnSet=true test', async () => {
+    const model = new Model(
+      {
+        type: 'string',
+      },
+      'foo',
+      {
+        clearStateOnSet: true,
+      },
+    );
+
+    const ref = model.ref();
+    await model.validate();
+
+    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    ref.value = 'bar';
+    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+  });
+
+  it('clearStateOnSet=false test', async () => {
+    const model = new Model(
+      {
+        type: 'string',
+      },
+      'foo',
+      {
+        clearStateOnSet: false,
+      },
+    );
+
+    const ref = model.ref();
+    await model.validate();
+
+    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    ref.value = 'bar';
+    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+  });
+
+  it('Test Model::clearAttributeStates()', async () => {
+    const model = new Model(
+      {
+        properties: {
+          foo: { type: 'string' },
+          bar: {
+            properties: {
+              baz: { type: 'string' },
+            },
+          },
+        },
+      },
+      {
+        foo: 'abc',
+        bar: {
+          baz: 'abc',
+        },
+      },
+      {
+        clearStateOnSet: false,
+      },
+    );
+
+    await model.validate();
+
+    let keys = Object.keys(model.states);
+    expect(keys).toMatchObject(['[]', '["foo"]', '["bar"]', '["bar","baz"]']);
+
+    model.clearAttributeStates(['bar']);
+    keys = Object.keys(model.states);
+    expect(keys).toMatchObject(['[]', '["foo"]', '["bar"]']);
+
+    model.clearAttributeStates([]);
+    keys = Object.keys(model.states);
+    expect(keys).toMatchObject(['[]']);
+  });
+
   it('Test default keyword', async () => {
     const schema = {
       properties: {
