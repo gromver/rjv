@@ -69,8 +69,8 @@ const SCHEMA_ANNOTATIONS = [
   'examples',
   'filter',
   'error',
-  'warning',
   'errors',
+  'warning',
   'warnings',
 ];
 
@@ -504,17 +504,14 @@ export default class Model {
     addKeyword(keyword, this.keywords);
   }
 
-  private clearAttributeStates(path: Path) {
-    if (!path.length) {
-      this.states = {};
-    } else {
-      const prefix = JSON.stringify(path).slice(0, -1);
+  clearAttributeStates(path: Path) {
+    const pathKey = JSON.stringify(path);
+    const prefix = pathKey.slice(0, -1);
 
-      Object.keys(this.states).forEach((statePath) => {
-        if (statePath.startsWith(prefix)) {
-          delete this.states[statePath];
-        }
-      });
-    }
+    Object.keys(this.states).forEach((statePath) => {
+      if (statePath.startsWith(prefix) && statePath !== pathKey) {
+        delete this.states[statePath];
+      }
+    });
   }
 }
