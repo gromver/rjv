@@ -527,4 +527,29 @@ describe('Model test', () => {
     expect(bRef.state.type).toBe(StateTypes.SUCCESS);
     expect(cRef.state.type).toBe(StateTypes.SUCCESS);
   });
+
+  it('Test errLock property', async () => {
+    const model = new Model(
+      {
+        properties: {
+          prop: { type: 'string', minLength: 2 },
+        },
+      },
+      {
+        prop: 123,
+      },
+    );
+
+    await model.prepare();
+
+    const ref = model.ref();
+    const propRef = model.ref(['prop']);
+
+    await propRef.validate();
+    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.errLock).toBeUndefined();
+
+    expect(propRef.state.type).toBe(StateTypes.ERROR);
+    expect(propRef.state.errLock).toBe(1);
+  });
 });
