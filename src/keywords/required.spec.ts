@@ -28,8 +28,9 @@ describe('required keyword', () => {
 
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.ERROR);
-    expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
-    expect(barRef.state.type).toBe(StateTypes.PRISTINE);
+    // expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
+    expect(fooRef.state.type).toBe(StateTypes.ERROR);
+    expect(barRef.state.type).toBe(StateTypes.SUCCESS);
     expect(carRef.state.type).toBe(StateTypes.PRISTINE);
     expect(fooRef.isRequired).toBe(true);
     expect(barRef.isRequired).toBe(true);
@@ -38,11 +39,11 @@ describe('required keyword', () => {
     fooRef.set(undefined);
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
-    expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
+    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
 
     fooRef.set(null);
     await ref.validate();
     expect(ref.state.type).toBe(StateTypes.SUCCESS);
-    expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
+    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
   });
 });
