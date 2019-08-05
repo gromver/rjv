@@ -343,6 +343,10 @@ export default class Model {
 
       return rule.validate(curRef, validateRuleFn)
         .then((result: IRuleValidationResult) => {
+          if (result.valid === false) {
+            result.errLock = this.errorLock;
+          }
+
           const key = curRef.key;
           const curResult = results[key] || {};
           const mergedResult = results[key] = mergeResults([curResult, result]);
@@ -350,10 +354,6 @@ export default class Model {
           const state = resultToState(mergedResult, curRef.path, valLock);
           if (isRefInScope && !ignoreValidationStates && !(onlyDirtyRefs && !curRef.isDirty)) {
             this.setRefState(state);
-
-            if (state.type === StateTypes.ERROR) {
-              state.errLock = this.errorLock;
-            }
           } else {
             const curState = this.getRefState(curRef);
 

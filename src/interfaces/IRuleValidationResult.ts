@@ -7,4 +7,5 @@ export default interface IRuleValidationResult extends IStateMetadata {
   required?: boolean;
   readOnly?: boolean;
   writeOnly?: boolean;
+  [additionalMetadata: string]: any;
 }
