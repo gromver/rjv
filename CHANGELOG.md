@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.6.0"></a>
+# [2.6.0](https://github.com/gromver/rjv/compare/v2.5.2...v2.6.0) (2019-10-29)
+
+
+### Features
+
+* **presence:** now affects all types ([163e0da](https://github.com/gromver/rjv/commit/163e0da))
+
+
+
 <a name="2.5.2"></a>
 ## [2.5.2](https://github.com/gromver/rjv/compare/v2.5.1...v2.5.2) (2019-08-05)
 
