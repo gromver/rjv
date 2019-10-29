@@ -28,15 +28,10 @@ const keyword: IKeyword = {
 
     return {
       async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (presence && ref.checkDataType('string')) {
-          let value = ref.value as string;
+        if (presence) {
+          const value = ref.value;
 
-          if (trim) {
-            value = value.trim();
-            ref.set(value, false);
-          }
-
-          if (!value.length) {
+          if (value === undefined) {
             return ref.createErrorResult(
               {
                 keyword: keyword.name,
@@ -47,6 +42,28 @@ const keyword: IKeyword = {
                 presence,
               },
             );
+          }
+
+          if (ref.checkDataType('string')) {
+            let stringValue: string = value;
+
+            if (trim) {
+              stringValue = (value as string).trim();
+              ref.set(stringValue, false);
+            }
+
+            if (!stringValue.length) {
+              return ref.createErrorResult(
+                {
+                  keyword: keyword.name,
+                  description: 'Should not be blank',
+                  bindings: { path: ref.path },
+                },
+                {
+                  presence,
+                },
+              );
+            }
           }
 
           return ref.createSuccessResult(undefined, {
