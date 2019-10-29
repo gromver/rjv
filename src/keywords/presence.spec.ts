@@ -36,9 +36,9 @@ describe('presence keyword', () => {
     expect(carRef.isShouldNotBeBlank).toBe(false);
 
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
-    expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
-    expect(barRef.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(fooRef.state.type).toBe(StateTypes.ERROR);
+    expect(barRef.state.type).toBe(StateTypes.SUCCESS);
     expect(carRef.state.type).toBe(StateTypes.PRISTINE);
     expect(fooRef.isShouldNotBeBlank).toBe(true);
     expect(barRef.isShouldNotBeBlank).toBe(true);
@@ -54,7 +54,7 @@ describe('presence keyword', () => {
 
     fooRef.set(null);
     await ref.validate();
-    expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
+    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
 
     barRef.set('   ');
     await ref.validate();
