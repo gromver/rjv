@@ -13,26 +13,11 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "required" keyword should be an array.');
     }
 
-    const propRequiredSuccessRule: IRule = {
+    const propRequiredRule: IRule = {
       validate(ref: Ref): Promise<IRuleValidationResult> {
-        return Promise.resolve(ref.createSuccessResult(undefined, {
+        return Promise.resolve(ref.createUndefinedResult({
           required: true,
         }));
-      },
-    };
-
-    const propRequiredErrorRule: IRule = {
-      validate(ref: Ref): Promise<IRuleValidationResult> {
-        return Promise.resolve(ref.createErrorResult(
-          {
-            keyword: `${keyword.name}Property`,
-            description: 'Should not be blank',
-            bindings: { property: ref.path[ref.path.length - 1] },
-          },
-          {
-            required: true,
-          },
-        ));
       },
     };
 
@@ -46,12 +31,10 @@ const keyword: IKeyword = {
           for (const propName of required) {
             const propRef = ref.relativeRef([propName]);
 
+            await validateRuleFn(propRef, propRequiredRule);
+
             if (!Object.prototype.hasOwnProperty.call(value, propName)) {
               invalidProperties.push(propName);
-
-              await validateRuleFn(propRef, propRequiredErrorRule);
-            } else {
-              await validateRuleFn(propRef, propRequiredSuccessRule);
             }
           }
 
