@@ -56,6 +56,18 @@ describe('presence keyword', () => {
     await ref.validate();
     expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
 
+    fooRef.set(0);
+    await ref.validate();
+    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
+
+    fooRef.set([]);
+    await ref.validate();
+    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
+
+    fooRef.set({});
+    await ref.validate();
+    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
+
     barRef.set('   ');
     await ref.validate();
     expect(barRef.state.type).toBe(StateTypes.ERROR);
