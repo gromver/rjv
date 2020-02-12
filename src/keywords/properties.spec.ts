@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('properties keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           car: { properties: { a: { type: 'boolean' } } },
@@ -26,19 +26,20 @@ describe('properties keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.relativeRef(['foo']).set('test');
+    ref.ref('foo').setValue('test');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
   it('Test additionalProperties=undefined', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           foo: { type: 'number' },
@@ -53,11 +54,12 @@ describe('properties keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
   });
 
   it('Test additionalProperties=true', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           foo: { type: 'number' },
@@ -73,11 +75,12 @@ describe('properties keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
   });
 
   it('Test additionalProperties=false', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           foo: { type: 'number' },
@@ -86,23 +89,20 @@ describe('properties keyword', () => {
       },
       {
         foo: 1,
+        bar: 1,
       },
     );
 
     const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
-
-    ref.relativeRef(['bar']).set('bar');
-    await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect((ref.state as any).message.bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
 
   it('Test additionalProperties=schema', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           foo: { type: 'number' },
@@ -117,23 +117,23 @@ describe('properties keyword', () => {
     );
 
     const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.relativeRef(['bar']).set('bar');
+    ref.unsafeRef('bar').setValue('bar');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.relativeRef(['bar']).set(1);
+    ref.ref('bar').setValue(1);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect((ref.state as any).message.bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
 
   it('Async test with additionalProperties=sync schema', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         resolveSchema: () => Promise.resolve({
           properties: {
@@ -151,22 +151,23 @@ describe('properties keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.relativeRef(['bar']).set('bar');
+    ref.unsafeRef('bar').setValue('bar');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.relativeRef(['bar']).set(1);
+    ref.ref('bar').setValue(1);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect((ref.state as any).message.bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
 
   it('Async test with additionalProperties=async schema', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         resolveSchema: () => Promise.resolve({
           properties: {
@@ -186,22 +187,23 @@ describe('properties keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.relativeRef(['bar']).set('bar');
+    ref.unsafeRef('bar').setValue('bar');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.relativeRef(['bar']).set(1);
+    ref.ref('bar').setValue(1);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect((ref.state as any).message.bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
 
   it('Test removeAdditional keyword', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         additionalProperties: false,
         removeAdditional: true,
@@ -230,11 +232,16 @@ describe('properties keyword', () => {
     const ref = model.ref();
     const isValid = await ref.validate();
     expect(isValid).toBe(true);
-    expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
+    expect(ref.getValue()).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
   });
 
   it('Test removeAdditional model\'s option', async () => {
     const model = new Model(
+      {
+        validation: { removeAdditional: true },
+      },
+    );
+    await model.init(
       {
         additionalProperties: false,
         properties: {
@@ -256,19 +263,17 @@ describe('properties keyword', () => {
           additional2: 2,
         },
       },
-      {
-        removeAdditional: true,
-      },
     );
 
     const ref = model.ref();
     const isValid = await ref.validate();
     expect(isValid).toBe(true);
-    expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
+    expect(ref.getValue()).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
   });
 
   it('Test removeAdditional validation\'s option', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         additionalProperties: false,
         properties: {
@@ -297,6 +302,6 @@ describe('properties keyword', () => {
       removeAdditional: true,
     });
     expect(isValid).toBe(true);
-    expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
+    expect(ref.getValue()).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
   });
 });

@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('minItems keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         minItems: 2,
       },
@@ -18,40 +18,51 @@ describe('minItems keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set([1]);
+    ref.setValue([1]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          minItems: '1',
-        },
-        '',
-      );
-    }).toThrow('The schema of the "minItems" keyword should be a number.');
+  it('Should expose error 1', async () => {
+    const model = new Model();
 
-    expect(() => {
-      new Model(
-        {
-          minItems: 0,
-        },
-        '',
-      );
-    }).toThrow('The "minItems" keyword can\'t be less then 1.');
+    await expect(model.init(
+      {
+        // @ts-ignore
+        minItems: '1',
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "minItems" keyword should be a number.',
+      });
+  });
+
+  it('Should expose error 2', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        minItems: 0,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The "minItems" keyword can\'t be less then 1.',
+      });
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         minItems: 2,
       },
@@ -62,16 +73,16 @@ describe('minItems keyword', () => {
     await ref.validate();
     expect(ref.state.minItems).toBe(undefined);
 
-    ref.set([1, 2]);
+    ref.setValue([1, 2]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
     expect(ref.state).toMatchObject({
       minItems: 2,
     });
 
-    ref.set([1]);
+    ref.setValue([1]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect(ref.state).toMatchObject({
       minItems: 2,
     });

@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('multipleOf keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         multipleOf: 2,
       },
@@ -18,35 +18,45 @@ describe('multipleOf keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set(4.1);
+    ref.setValue(4.1);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          multipleOf: '1',
-        },
-        '',
-      );
-    }).toThrow('The schema of the "multipleOf" keyword should be a number.');
+  it('Should expose error 1', async () => {
+    const model = new Model();
 
-    expect(() => {
-      new Model(
-        {
-          multipleOf: 0,
-        },
-        '',
-      );
-    }).toThrow('The "multipleOf" keyword can\'t be zero.');
+    await expect(model.init(
+      {
+        // @ts-ignore
+        multipleOf: '1',
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "multipleOf" keyword should be a number.',
+      });
+  });
+
+  it('Should expose error 2', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        multipleOf: 0,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The "multipleOf" keyword can\'t be zero.',
+      });
   });
 });

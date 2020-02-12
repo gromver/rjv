@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+} from '../types';
 import utils from '../utils';
 
 type PropertiesSchema = { [propertyName: string]: ISchema };
@@ -42,18 +41,42 @@ const keyword: IKeyword = {
 
     const removeAdditional = !!parentSchema.removeAdditional;
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
+    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
       : Promise<IRuleValidationResult> => {
       const invalidProperties: string[] = [];
       let hasValidProps = false;
       let hasInvalidProps = false;
 
+      // function getValidatePropertiesJobs() {
+      //   return Object.keys(properties).map((propName) => {
+      //     const propRule = properties[propName];
+      //     const propRef = ref.unsafeRef(propName);
+      //     return validateRuleFn(propRef, propRule, options);
+      //   });
+      // }
+      //
+      // function getValidateAdditionalPropertiesJobs() {
+      //   const value = ref.getValue();
+      //   const valueProps = Object.keys(value);
+      //
+      //   return valueProps.map(async (propName) => {
+      //     if (additionalRule) {
+      //       const propRef = ref.unsafeRef(propName);
+      //
+      //       const result = await validateRuleFn(propRef, additionalRule, options);
+      //     }
+      //     const propRule = properties[propName];
+      //     const propRef = ref.unsafeRef(propName);
+      //     return validateRuleFn(propRef, propRule, options);
+      //   });
+      // }
+
       if (ref.checkDataType('object')) {
         for (const propName in properties) {
           const propRule = properties[propName];
-          const propRef = ref.relativeRef([propName]);
+          const propRef = ref.unsafeRef(propName);
 
-          const result = await validateRuleFn(propRef, propRule);
+          const result = await validateRuleFn(propRef, propRule, options);
 
           if (result.valid === true) {
             hasValidProps = true;
@@ -62,23 +85,24 @@ const keyword: IKeyword = {
             invalidProperties.push(propName);
           }
         }
+        // const jobs = getValidatePropertiesJobs();
 
         // check additional props
         if (!allowAdditional) {
-          const value = ref.value;
+          const value = ref.getValue();
           const valueProps = Object.keys(value);
 
           for (const propName of valueProps) {
             if (!Object.prototype.hasOwnProperty.call(properties, propName)) {
               if (additionalRule) {
-                const propRef = ref.relativeRef([propName]);
+                const propRef = ref.unsafeRef(propName);
 
-                const result = await validateRuleFn(propRef, additionalRule);
+                const result = await validateRuleFn(propRef, additionalRule, options);
 
                 if (result.valid === true) {
                   hasValidProps = true;
                 } else if (result.valid === false) {
-                  if (removeAdditional || validateRuleFn.options.removeAdditional) {
+                  if (removeAdditional || options.removeAdditional) {
                     // remove prop
                     delete value[propName];
                   } else {
@@ -87,7 +111,7 @@ const keyword: IKeyword = {
                   }
                 }
               } else {
-                if (removeAdditional || validateRuleFn.options.removeAdditional) {
+                if (removeAdditional || options.removeAdditional) {
                   // remove prop
                   delete value[propName];
                 } else {
@@ -123,8 +147,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     properties?: PropertiesSchema;
     additionalProperties?: boolean | ISchema;
     removeAdditional?: boolean;

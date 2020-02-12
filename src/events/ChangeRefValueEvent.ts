@@ -1,12 +1,7 @@
-import { Path } from '../Model';
+import { Path } from '../types';
 
 export default class ChangeRefValueEvent {
   type: string = 'changeRefValue';
-  path: Path;
-  value: any;
 
-  constructor(path: Path, value: any) {
-    this.path = path;
-    this.value = value;
-  }
+  constructor(public path: Path, public value: any) {}
 }

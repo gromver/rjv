@@ -5,38 +5,38 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 const ENUM = [1, { foo: 'bar' }, [1, 2, 3]];
 
-const model = new Model(
-  {
-    enum: ENUM,
-  },
-  1,
-);
-
 describe('enum keyword', () => {
   it('Some integration tests', async () => {
+    const model = new Model();
+    await model.init(
+      {
+        enum: ENUM,
+      },
+      1,
+    );
+
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
     expect(ref.state.enum).toBe(ENUM);
 
-    ref.set(2);
+    ref.setValue(2);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set({ foo: 'bar' });
+    ref.setValue({ foo: 'bar' });
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set([1, 2, 3]);
+    ref.setValue([1, 2, 3]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set([1, 2]);
+    ref.setValue([1, 2]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
   });
 });

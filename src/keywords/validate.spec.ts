@@ -5,16 +5,16 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('validate keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         validate: (ref) => {
           return Promise.resolve().then(() => {
             if (ref.checkDataType('number')) {
-              const value = ref.get();
+              const value = ref.getValue();
 
               if (value > 5) {
                 return ref.createSuccessResult();
@@ -34,34 +34,36 @@ describe('validate keyword', () => {
     );
 
     const ref = model.ref();
+    expect(ref.state.valid).toBe(true);
 
-    await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
-
-    ref.set(5);
+    ref.setValue(5);
     await ref.validate();
     expect(ref.state).toMatchObject({
-      type: StateTypes.ERROR,
+      valid: false,
       message: {
         keyword: 'customFn',
         description: 'Value should be greater than 5.',
       },
     });
 
-    ref.set('string');
+    ref.setValue('string');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          validate: {},
-        },
-        '',
-      );
-    }).toThrow('The schema of the "validate" keyword should be an async validation function.');
+  it('Should expose error', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        // @ts-ignore
+        validate: {},
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "validate" keyword should be an async validation function.',
+      });
   });
 });

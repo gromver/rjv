@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('maxLength keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         maxLength: 3,
       },
@@ -18,40 +18,51 @@ describe('maxLength keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set('abcd');
+    ref.setValue('abcd');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          maxLength: '1',
-        },
-        '',
-      );
-    }).toThrow('The schema of the "maxLength" keyword should be a number.');
+  it('Should expose error 1', async () => {
+    const model = new Model();
 
-    expect(() => {
-      new Model(
-        {
-          maxLength: -1,
-        },
-        '',
-      );
-    }).toThrow('The "maxLength" keyword can\'t be less then 0.');
+    await expect(model.init(
+      {
+        // @ts-ignore
+        maxLength: '1',
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "maxLength" keyword should be a number.',
+      });
+  });
+
+  it('Should expose error 2', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        maxLength: -1,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The "maxLength" keyword can\'t be less then 0.',
+      });
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         maxLength: 3,
       },
@@ -62,16 +73,16 @@ describe('maxLength keyword', () => {
     await ref.validate();
     expect(ref.state.maxLength).toBe(undefined);
 
-    ref.set('abc');
+    ref.setValue('abc');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
     expect(ref.state).toMatchObject({
       maxLength: 3,
     });
 
-    ref.set('abcd');
+    ref.setValue('abcd');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect(ref.state).toMatchObject({
       maxLength: 3,
     });

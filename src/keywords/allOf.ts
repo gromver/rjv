@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+} from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -22,12 +21,12 @@ const keyword: IKeyword = {
       rules.push(compile(item, parentSchema));  // all rules have validate() fn
     });
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
+    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
       : Promise<IRuleValidationResult> => {
       const results: IRuleValidationResult[] = [];
 
       for (const rule of rules) {
-        const res = await (rule as any).validate(ref, validateRuleFn);
+        const res = await (rule as any).validate(ref, validateRuleFn, options);
         results.push(res);
       }
 
@@ -51,8 +50,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     allOf?: ISchema[];
   }
 }

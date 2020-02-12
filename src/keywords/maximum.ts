@@ -1,9 +1,7 @@
 import Ref from '../Ref';
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule from '../interfaces/IRule';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
-import IStateMetadata from '../interfaces/IStateMetadata';
+import {
+  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+} from '../types';
 
 const keyword: IKeyword = {
   name: 'maximum',
@@ -19,9 +17,9 @@ const keyword: IKeyword = {
     return {
       async validate(ref: Ref): Promise<IRuleValidationResult> {
         if (ref.checkDataType('number')) {
-          const value = ref.get();
+          const value = ref.getValue();
 
-          const metadata: IStateMetadata = {
+          const metadata: IRuleValidationResult = {
             maximum: limit,
             exclusiveMaximum: exclusive,
           };
@@ -50,15 +48,13 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     maximum?: number;
     exclusiveMaximum?: boolean;
   }
-}
 
-declare module '../interfaces/IStateMetadata' {
-  export default interface IStateMetadata {
+  export interface IRuleValidationResult {
     maximum?: number;
     exclusiveMaximum?: boolean;
   }

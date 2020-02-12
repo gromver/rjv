@@ -1,5 +1,4 @@
-import IKeyword from './interfaces/IKeyword';
-import IKeywordMap from './interfaces/IKeywordMap';
+import { IKeyword, IKeywordMap } from './types';
 import * as importedKeywords from './keywords';
 
 const defaultKeywords: IKeywordMap = { };

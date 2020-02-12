@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('required keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         required: ['foo', 'bar'],
       },
@@ -19,30 +19,25 @@ describe('required keyword', () => {
     );
 
     const ref = model.ref();
-    const fooRef = ref.relativeRef(['foo']);
-    const barRef = ref.relativeRef(['bar']);
-    const carRef = ref.relativeRef(['car']);
-    expect(fooRef.isRequired).toBe(false);
-    expect(barRef.isRequired).toBe(false);
-    expect(carRef.isRequired).toBe(false);
-
-    await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
-    expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
-    expect(barRef.state.type).toBe(StateTypes.PRISTINE);
-    expect(carRef.state.type).toBe(StateTypes.PRISTINE);
+    const fooRef = ref.ref('foo');
+    const barRef = ref.ref('bar');
+    const carRef = ref.unsafeRef('car');
+    expect(ref.state.valid).toBe(false);
+    expect(fooRef.state.valid).toBeUndefined();
+    expect(barRef.state.valid).toBeUndefined();
+    expect(carRef.state.valid).toBeUndefined();
     expect(fooRef.isRequired).toBe(true);
     expect(barRef.isRequired).toBe(true);
     expect(carRef.isRequired).toBe(false);
 
-    fooRef.set(undefined);
+    fooRef.setValue(undefined);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
-    expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBe(true);
+    expect(fooRef.state.valid).toBeUndefined();
 
-    fooRef.set(null);
+    fooRef.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
-    expect(fooRef.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBe(true);
+    expect(fooRef.state.valid).toBeUndefined();
   });
 });

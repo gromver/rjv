@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+} from '../types';
 
 const _ = {
   isEqual: require('lodash/isEqual'),
@@ -21,16 +20,23 @@ const keyword: IKeyword = {
 
     return {
       async validate(ref: Ref): Promise<IRuleValidationResult> {
-        const value = ref.get();
+        const value = ref.getValue();
         const allowedValue = resolve(ref);
 
+        const metadata: IRuleValidationResult = {
+          const: allowedValue,
+        };
+
         return _.isEqual(value, allowedValue)
-          ? ref.createSuccessResult()
-          : ref.createErrorResult({
-            keyword: keyword.name,
-            description: 'Should be equal to constant',
-            bindings: { allowedValue },
-          });
+          ? ref.createSuccessResult(undefined, metadata)
+          : ref.createErrorResult(
+            {
+              keyword: keyword.name,
+              description: 'Should be equal to constant',
+              bindings: { allowedValue },
+            },
+            metadata,
+          );
       },
     };
   },
@@ -38,8 +44,12 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     const?: any | ((ref: Ref) => any);
+  }
+
+  export interface IRuleValidationResult {
+    const?: any;
   }
 }
