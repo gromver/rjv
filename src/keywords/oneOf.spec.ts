@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('oneOf keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         oneOf: [
           {
@@ -31,23 +31,24 @@ describe('oneOf keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set('abc');
+    ref.setValue('abc');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set(4);
+    ref.setValue(4);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set('abcd');
+    ref.setValue('abcd');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
   });
 
   it('Properties integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         oneOf: [
           {
@@ -80,42 +81,52 @@ describe('oneOf keyword', () => {
     );
 
     const ref = model.ref();
-    const aRef = ref.relativeRef(['a']);
+    const aRef = ref.ref('a');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    aRef.set('abc');
+    aRef.setValue('abc');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    aRef.set(4);
+    aRef.setValue(4);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    aRef.set('ab');
+    aRef.setValue('ab');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          oneOf: 1,
-        },
-        '',
-      );
-    }).toThrow('The schema of the "oneOf" keyword should be an array of schemas.');
+  it('Should expose error 1', async () => {
+    const model = new Model();
 
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          oneOf: [1],
-        },
-        '',
-      );
-    }).toThrow('Items of "oneOf" keyword should be a schema object.');
+    await expect(model.init(
+      {
+        // @ts-ignore
+        oneOf: 1,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "oneOf" keyword should be an array of schemas.',
+      });
+  });
+
+  it('Should expose error 2', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        // @ts-ignore
+        oneOf: [1],
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'Items of "oneOf" keyword should be a schema object.',
+      });
   });
 });

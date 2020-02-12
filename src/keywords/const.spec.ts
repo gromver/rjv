@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('const keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         const: 'test',
       },
@@ -17,20 +17,21 @@ describe('const keyword', () => {
     );
 
     const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
+    expect(ref.state.const).toBe('test');
 
-    ref.set('foo');
+    ref.setValue('foo');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
   });
 
   it('Some integration tests with custom func', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         const: () => 'test',
       },
@@ -39,14 +40,14 @@ describe('const keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set('foo');
+    ref.setValue('foo');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
   });
 });

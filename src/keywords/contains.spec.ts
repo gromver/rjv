@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('contains keyword', () => {
   it('sync test', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         contains: {
           type: 'number',
@@ -20,23 +20,24 @@ describe('contains keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set([null, 'test']);
+    ref.setValue([null, 'test']);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set([]);
+    ref.setValue([]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
   it('async test', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         contains: {
           resolveSchema: () => Promise.resolve({ type: 'number' }),
@@ -47,23 +48,24 @@ describe('contains keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set([null, 'test']);
+    ref.setValue([null, 'test']);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set([]);
+    ref.setValue([]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
   it('schema test', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         not: {
           type: 'array',
@@ -77,30 +79,34 @@ describe('contains keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set([null, 'test']);
+    ref.setValue([null, 'test']);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set([]);
+    ref.setValue([]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          contains: 1,
-        },
-        '',
-      );
-    }).toThrow('The schema of the "contains" keyword should be a schema object.');
+  it('Should expose error', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        // @ts-ignore
+        contains: 1,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "contains" keyword should be a schema object.',
+      });
   });
 });

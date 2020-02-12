@@ -5,40 +5,40 @@ declare const expect;
 declare const require;
 
 import Model from './Model';
-import Ref from './Ref';
-import { StateTypes } from './interfaces/IState';
 import ChangeRefValueEvent from './events/ChangeRefValueEvent';
 
 describe('Ref tests', () => {
-  it('Ref\'s getters and setters', () => {
+  it('Ref\'s getters and setters', async () => {
     const initialData = {
       foo: 'bar',
     };
 
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {},
       initialData,
     );
     const ref = model.ref();
 
-    expect(ref.getInitialValue()).toBe(ref.initialValue);
-    expect(ref.initialValue).toMatchObject(initialData);
-    expect(ref.initialValue).not.toBe(initialData);
+    expect(ref.getInitialValue()).toBe(ref.getInitialValue());
+    expect(ref.getInitialValue()).toMatchObject(initialData);
+    expect(ref.getInitialValue()).not.toBe(initialData);
 
-    expect(ref.get()).toMatchObject(initialData);
-    expect(ref.get()).not.toBe(initialData);
-    expect(ref.get()).not.toBe(ref.initialValue);
-    expect(ref.get()).toBe(ref.value);
+    expect(ref.getValue()).toMatchObject(initialData);
+    expect(ref.getValue()).not.toBe(initialData);
+    expect(ref.getValue()).not.toBe(ref.getInitialValue());
+    expect(ref.getValue()).toBe(ref.getValue());
 
-    ref.set(1);
-    expect(ref.get()).toBe(1);
+    ref.setValue(1);
+    expect(ref.getValue()).toBe(1);
 
-    ref.value = 2;
-    expect(ref.value).toBe(2);
+    ref.setValue(2);
+    expect(ref.getValue()).toBe(2);
   });
 
-  it('Ref::set(value) should dispatch ChangeRefValueEvent', () => {
-    const model = new Model(
+  it('Ref::set(value) should dispatch ChangeRefValueEvent', async () => {
+    const model = new Model();
+    await model.init(
       { type: 'string' },
       'foo',
     );
@@ -46,14 +46,15 @@ describe('Ref tests', () => {
     const fn = jest.fn();
     model.observable.subscribe(fn);
 
-    ref.set('bar');
+    ref.setValue('bar');
 
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toBeCalledWith(expect.any(ChangeRefValueEvent));
   });
 
-  it('Ref::set(value, false) should NOT dispatch ChangeRefValueEvent', () => {
-    const model = new Model(
+  it('Ref::value should dispatch ChangeRefValueEvent', async () => {
+    const model = new Model();
+    await model.init(
       { type: 'string' },
       'foo',
     );
@@ -61,53 +62,15 @@ describe('Ref tests', () => {
     const fn = jest.fn();
     model.observable.subscribe(fn);
 
-    ref.set('bar', false);
-
-    expect(fn).toHaveBeenCalledTimes(0);
-  });
-
-  it('Ref::value should dispatch ChangeRefValueEvent', () => {
-    const model = new Model(
-      { type: 'string' },
-      'foo',
-    );
-    const ref = model.ref();
-    const fn = jest.fn();
-    model.observable.subscribe(fn);
-
-    ref.value = 'bar';
+    ref.setValue('bar');
 
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toBeCalledWith(expect.any(ChangeRefValueEvent));
-  });
-
-  it('Ref::parent()', () => {
-    const initialData = {
-      foo: {
-        bar: 'abc',
-      },
-    };
-
-    const model = new Model(
-      {},
-      initialData,
-    );
-    const barRef = model.ref(['foo', 'bar']);
-    const barParent: Ref = barRef.parent as Ref;
-    const fooParent: Ref = barParent.parent as Ref;
-
-    expect(barParent.path).toMatchObject(['foo']);
-    expect(barParent.value).toMatchObject(initialData.foo);
-
-    expect(fooParent.path).toMatchObject([]);
-    expect(fooParent.value).toMatchObject(initialData);
-
-    expect(fooParent).toBe(model.ref());
-    expect(fooParent.parent).toBe(undefined);
   });
 
   it('Ref::state', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         type: 'number',
         readOnly: true,
@@ -117,17 +80,18 @@ describe('Ref tests', () => {
     );
     const ref = model.ref();
     expect(ref.state).toMatchObject({
-      type: StateTypes.PRISTINE,
-      path: [],
+      valid: false,
       required: false,
-      readOnly: false,
-      writeOnly: false,
+      readOnly: true,
+      writeOnly: true,
+      message: {
+        keyword: 'type',
+      },
     });
 
     await ref.validate();
     expect(ref.state).toMatchObject({
-      type: StateTypes.ERROR,
-      path: [],
+      valid: false,
       required: false,
       readOnly: true,
       writeOnly: true,
@@ -138,7 +102,8 @@ describe('Ref tests', () => {
   });
 
   it('Ref::errors', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           foo: {
@@ -158,18 +123,24 @@ describe('Ref tests', () => {
     );
 
     const ref = model.ref();
-    expect(ref.errors).toHaveLength(0);
+    expect(ref.errors).toHaveLength(3);
 
     await ref.validate();
     expect(ref.errors).toHaveLength(3);
 
-    expect(ref.relativeRef(['foo']).errors).toHaveLength(2);
-    expect(ref.relativeRef(['foo', 'bar']).errors).toHaveLength(1);
+    expect(ref.ref('foo').errors).toHaveLength(1);
+    expect(ref.ref('foo/bar').errors).toHaveLength(0);
   });
 
-  it('Ref::isChanged', () => {
-    const model = new Model(
-      {},
+  it('Ref::isChanged', async () => {
+    const model = new Model();
+    await model.init(
+      {
+        properties: {
+          foo: {},
+          bar: {},
+        },
+      },
       {
         foo: 'val',
         bar: 'val',
@@ -177,23 +148,24 @@ describe('Ref tests', () => {
     );
 
     const ref = model.ref();
-    const fooRef = model.ref(['foo']);
-    const barRef = model.ref(['bar']);
+    const fooRef = model.ref('foo');
+    const barRef = model.ref('bar');
     expect(ref.isChanged).toBe(false);
 
-    fooRef.value = 'abc';
+    fooRef.setValue('abc');
     expect(ref.isChanged).toBe(true);
     expect(fooRef.isChanged).toBe(true);
     expect(barRef.isChanged).toBe(false);
 
-    fooRef.value = 'val';
+    fooRef.setValue('val');
     expect(ref.isChanged).toBe(false);
     expect(fooRef.isChanged).toBe(false);
     expect(barRef.isChanged).toBe(false);
   });
 
-  it('Ref::isDirty', () => {
-    const model = new Model(
+  it('Ref::isDirty', async () => {
+    const model = new Model();
+    await model.init(
       {},
       1,
     );
@@ -201,12 +173,16 @@ describe('Ref tests', () => {
     const ref = model.ref();
     expect(ref.isDirty).toBe(false);
 
-    ref.value = 1;
+    ref.setValue(1);
+    expect(ref.isDirty).toBe(false);
+
+    ref.markAsDirty();
     expect(ref.isDirty).toBe(true);
   });
 
   it('Ref::isRequired', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         required: ['foo'],
       },
@@ -214,15 +190,13 @@ describe('Ref tests', () => {
     );
 
     const ref = model.ref();
-    const fooRef = model.ref(['foo']);
-    expect(fooRef.isRequired).toBe(false);
-
-    await ref.validate();
+    const fooRef = model.ref('foo');
     expect(fooRef.isRequired).toBe(true);
   });
 
   it('Ref::isMutable, Ref::isReadOnly, Ref::isWriteOnly', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         readOnly: true,
         writeOnly: true,
@@ -231,18 +205,14 @@ describe('Ref tests', () => {
     );
 
     const ref = model.ref();
-    expect(ref.isMutable).toBe(true);
-    expect(ref.isReadOnly).toBe(false);
-    expect(ref.isWriteOnly).toBe(false);
-
-    await ref.validate();
     expect(ref.isMutable).toBe(false);
     expect(ref.isReadOnly).toBe(true);
     expect(ref.isWriteOnly).toBe(true);
   });
 
   it('Ref::isValidated', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {},
       1,
     );
@@ -258,7 +228,8 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isValid, Ref::isInvalid', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         type: 'number',
       },
@@ -273,14 +244,15 @@ describe('Ref tests', () => {
     expect(ref.isValid).toBe(true);
     expect(ref.isInvalid).toBe(false);
 
-    ref.value = '';
+    ref.setValue('');
     await ref.validate();
     expect(ref.isValid).toBe(false);
     expect(ref.isInvalid).toBe(true);
   });
 
   it('Ref::isValidating, Ref::isPristine', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         resolveSchema: () => Promise.resolve({
           type: 'number',
@@ -309,7 +281,8 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isShouldNotBeBlank', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           foo: {
@@ -320,15 +293,13 @@ describe('Ref tests', () => {
       {},
     );
 
-    const fooRef = model.ref(['foo']);
-    expect(fooRef.isShouldNotBeBlank).toBe(false);
-
-    await model.ref().validate();
+    const fooRef = model.ref('foo');
     expect(fooRef.isShouldNotBeBlank).toBe(true);
   });
 
   it('Ref::isTouched, Ref::isUntouched', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {},
       {},
     );
@@ -337,13 +308,14 @@ describe('Ref tests', () => {
     expect(ref.isTouched).toBe(false);
     expect(ref.isUntouched).toBe(true);
 
-    await ref.validate();
+    ref.markAsTouched();
     expect(ref.isTouched).toBe(true);
     expect(ref.isUntouched).toBe(false);
   });
 
-  it('Ref::touch()', () => {
-    const model = new Model(
+  it('Ref::touch()', async () => {
+    const model = new Model();
+    await model.init(
       {},
       {},
     );
@@ -352,13 +324,14 @@ describe('Ref tests', () => {
     expect(ref.isTouched).toBe(false);
     expect(ref.isUntouched).toBe(true);
 
-    ref.touch();
+    ref.markAsTouched();
     expect(ref.isTouched).toBe(true);
     expect(ref.isUntouched).toBe(false);
   });
 
-  it('Ref::withTouch()', () => {
-    const model = new Model(
+  it('Ref::withTouch()', async () => {
+    const model = new Model();
+    await model.init(
       {},
       {},
     );
@@ -378,7 +351,8 @@ describe('Ref tests', () => {
   });
 
   it('Ref::firstError', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           a: {
@@ -400,15 +374,13 @@ describe('Ref tests', () => {
     );
 
     const ref = model.ref();
-    await ref.validate();
-
-    expect(ref.firstError).toMatchObject({ path: ['a', 'aa'] });
-    expect(ref.relativeRef(['a']).firstError).toMatchObject({ path: ['a', 'aa'], errLock: 1 });
-    expect(ref.relativeRef(['b']).firstError).toMatchObject({ path: ['b', 'bb'], errLock: 3 });
+    expect(ref.firstError).toMatchObject({ path: '/a/aa' });
+    expect((ref.ref('a').firstError as any).state).toMatchObject({ errLock: 1 });
+    expect((ref.ref('b').firstError as any).state).toMatchObject({ errLock: 3 });
 
     await ref.validate();
-    expect(ref.firstError).toMatchObject({ path: ['a', 'aa'] });
-    expect(ref.relativeRef(['a']).firstError).toMatchObject({ path: ['a', 'aa'], errLock: 6 });
-    expect(ref.relativeRef(['b']).firstError).toMatchObject({ path: ['b', 'bb'], errLock: 8 });
+    expect(ref.firstError).toMatchObject({ path: '/a/aa' });
+    expect((ref.ref('a').firstError as any).state).toMatchObject({ errLock: 6 });
+    expect((ref.ref('b').firstError as any).state).toMatchObject({ errLock: 8 });
   });
 });

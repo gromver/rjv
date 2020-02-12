@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('maxProperties keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         maxProperties: 2,
       },
@@ -18,40 +18,51 @@ describe('maxProperties keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set({ a: 1, b: 2, c: 3 });
+    ref.setValue({ a: 1, b: 2, c: 3 });
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          maxProperties: '1',
-        },
-        '',
-      );
-    }).toThrow('The schema of the "maxProperties" keyword should be a number.');
+  it('Should expose error 1', async () => {
+    const model = new Model();
 
-    expect(() => {
-      new Model(
-        {
-          maxProperties: -1,
-        },
-        '',
-      );
-    }).toThrow('The "maxProperties" keyword can\'t be less then 0.');
+    await expect(model.init(
+      {
+        // @ts-ignore
+        maxProperties: '1',
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "maxProperties" keyword should be a number.',
+      });
+  });
+
+  it('Should expose error 2', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        maxProperties: -1,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The "maxProperties" keyword can\'t be less then 0.',
+      });
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         maxProperties: 1,
       },
@@ -62,16 +73,16 @@ describe('maxProperties keyword', () => {
     await ref.validate();
     expect(ref.state.maxProperties).toBe(undefined);
 
-    ref.set({});
+    ref.setValue({});
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
     expect(ref.state).toMatchObject({
       maxProperties: 1,
     });
 
-    ref.set({ a: 1, b: 2 });
+    ref.setValue({ a: 1, b: 2 });
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect(ref.state).toMatchObject({
       maxProperties: 1,
     });

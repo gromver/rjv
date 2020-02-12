@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+} from '../types';
 
 const keyword: IKeyword = {
   name: 'resolveSchema',
@@ -14,13 +13,13 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn)
+      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
         : Promise<IRuleValidationResult> {
         const resolvedSchema = await schema(ref);
         const rule = compile(resolvedSchema, parentSchema);
 
         if (rule.validate) {
-          return rule.validate(ref, validateRuleFn);
+          return rule.validate(ref, validateRuleFn, options);
         }
 
         return Promise.resolve(ref.createUndefinedResult());
@@ -31,8 +30,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     resolveSchema?: (ref: Ref) => Promise<ISchema>;
   }
 }

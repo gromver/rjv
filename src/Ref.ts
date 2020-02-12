@@ -1,11 +1,17 @@
-import Model, { Path } from './Model';
-import IState, { StateTypes } from './interfaces/IState';
-import IRuleValidationResult from './interfaces/IRuleValidationResult';
-import IValidationMessage from './interfaces/IValidationMessage';
-import IValidationOptions from './interfaces/IValidationOptions';
+import Model from './Model';
+import { IValidationOptionsPartial } from './Validator';
+import {
+  Path, Route, IRuleValidationResult, IModelValidationResult, IValidationMessage,
+} from './types';
+import utils from './utils';
 
 const _ = {
   isEqual: require('lodash/isEqual'),
+  extend: require('lodash/extend'),
+};
+
+const DEFAULT_VALIDATION_OPTIONS = {
+  forceValidated: true,
 };
 
 export type DataType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean';
@@ -14,67 +20,52 @@ export default class Ref {
   private validated = false;
   private dirty = false;
   private touched = false;
+  public state: IModelValidationResult;
 
-  public readonly key: string;
+  public readonly route: Route;
   public readonly path: Path;
   public readonly model: Model;
 
   constructor(model: Model, path: Path) {
     this.model = model;
     this.path = path;
-    this.key = JSON.stringify(path);
+    this.route = utils.pathToArray(path);
+    this.state = { valLock: 0 };
   }
 
-  absoluteRef(path: Path = []) {
-    return this.model.ref(path);
+  ref(path: Path): Ref {
+    return this.model.ref(utils.resolvePath(path, this.path), false);
   }
 
-  relativeRef(path: Path = []) {
-    const pathNormalized = this.normalizePath(path);
-
-    return this.model.ref(pathNormalized);
+  unsafeRef(path: Path): Ref {
+    return this.model.unsafeRef(utils.resolvePath(path, this.path), false);
   }
 
   /**
    * Validation
    */
 
-  validate(options: IValidationOptions = {}): Promise<boolean> {
-    this.validated = true;
-    this.touched = true;
+  validate(options: IValidationOptionsPartial = {}): Promise<boolean> {
+    const normalizedOptions = _.extend({}, DEFAULT_VALIDATION_OPTIONS, options);
 
-    return this.model.validateRef(this, options);
+    return this.model.validateRef(this, normalizedOptions);
   }
 
   /**
    * Getters and setters
    */
 
-  get parent(): Ref | void {
-    if (this.path.length) {
-      return this.model.ref(this.path.slice(0, -1));
-    }
-  }
-
-  /**
-   * Get the ref's validation state
-   * @returns {IState}
-   */
-  get state(): IState {
-    return this.model.getRefState(this);
-  }
-
   /**
    * Get the error that occurred first
-   * @returns {IState | void}
+   * @returns {Ref | void}
    */
-  get firstError(): IState | void {
+  get firstError(): Ref | void {
     return this.model.getRefErrors(this).sort((a, b) => {
-      if ((a as any).errLock > (b as any)!.errLock) {
+      if ((a.state as any).errLock > (b.state as any).errLock) {
         return 1;
       }
 
-      if ((a as any).errLock < (b as any).errLock) {
+      if ((a.state as any).errLock < (b.state as any).errLock) {
         return -1;
       }
 
@@ -85,37 +76,23 @@ export default class Ref {
   /**
    * Set value as method
    * @param value
-   * @param dispatch
    */
-  set(value: any, dispatch = true) {
-    this.dirty = true;
-
-    this.model.setRefValue(this, value, dispatch);
+  setValue(value: any) {
+    this.model.setRefValue(this, value);
   }
+
+  // setValueAndTouch(value: any) {
+  //   this.dirty = true;
+  //   this.touched = true;
+  //
+  //   this.model.setRefValue(this, value/* , dispatch */);
+  // }
 
   /**
    * Get value as method
    * @returns value
    */
-  get(): any {
-    return this.model.getRefValue(this);
-  }
-
-  /**
-   * Set value as setter
-   * @param value
-   */
-  set value(value: any) {
-    this.dirty = true;
-
-    this.model.setRefValue(this, value, true);
-  }
-
-  /**
-   * Get value as getter
-   * @returns value
-   */
-  get value(): any {
+  getValue(): any {
     return this.model.getRefValue(this);
   }
 
@@ -127,10 +104,86 @@ export default class Ref {
   }
 
   /**
-   * Mark ref as touched
+   * Set value as setter
+   * @deprecated
+   * @param value
    */
-  touch(): boolean {
-    return this.touched = true;
+  set value(value: any) {
+    this.model.setRefValue(this, value);
+  }
+
+  /**
+   * Get value as getter
+   * @deprecated
+   * @returns value
+   */
+  get value(): any {
+    return this.model.getRefValue(this);
+  }
+
+  /**
+   * Get initial value as getter
+   * @deprecated
+   * @returns value
+   */
+  get initialValue(): any {
+    return this.model.getRefInitialValue(this);
+  }
+
+  /**
+   * Mark ref as dirty
+   * @return this
+   */
+  markAsDirty(): this {
+    this.dirty = true;
+
+    return this;
+  }
+
+  /**
+   * Mark ref as touched
+   * @return this
+   */
+  markAsTouched(): this {
+    this.touched = true;
+
+    return this;
+  }
+
+  /**
+   * Mark ref as validated
+   * @return this
+   */
+  markAsValidated(): this {
+    this.validated = true;
+
+    return this;
+  }
+
+  /**
+   * Mark ref as pristine
+   * @return this
+   */
+  markAsPristine(): this {
+    this.dirty = false;
+    this.touched = false;
+    this.validated = false;
+    delete this.state.valid;
+    delete this.state.message;
+
+    return this;
+  }
+
+  /**
+   * Mark ref as changed
+   * after changing the value, the validation state of the ref should become undefined
+   * @return this
+   */
+  markAsChanged(): this {
+    delete this.state.valid;
+    delete this.state.message;
+
+    return this;
   }
 
   /**
@@ -144,20 +197,13 @@ export default class Ref {
     });
   }
 
-  /**
-   * Get initial value as getter
-   */
-  get initialValue(): any {
-    return this.model.getRefInitialValue(this);
-  }
-
-  get errors(): IState[] {
+  get errors(): Ref[] {
     return this.model.getRefErrors(this);
   }
 
   get isChanged(): boolean {
     return !_.isEqual(
-      this.get(),
+      this.getValue(),
       this.getInitialValue(),
     );
   }
@@ -167,19 +213,19 @@ export default class Ref {
   }
 
   get isRequired(): boolean {
-    return this.model.getRefState(this).required;
+    return !!this.state.required;
   }
 
   get isMutable() {
-    return !this.model.getRefState(this).readOnly;
+    return !this.state.readOnly;
   }
 
   get isReadOnly(): boolean {
-    return this.model.getRefState(this).readOnly;
+    return !!this.state.readOnly;
   }
 
   get isWriteOnly(): boolean {
-    return this.model.getRefState(this).writeOnly;
+    return !!this.state.writeOnly;
   }
 
   get isValidated(): boolean {
@@ -187,31 +233,23 @@ export default class Ref {
   }
 
   get isValid(): boolean {
-    const state = this.model.getRefState(this);
-
-    return state.type === StateTypes.SUCCESS;
+    return this.validated && this.state.valid === true;
   }
 
   get isInvalid(): boolean {
-    const state = this.model.getRefState(this);
-
-    return state.type === StateTypes.ERROR;
+    return this.validated && this.state.valid === false;
   }
 
   get isValidating(): boolean {
-    const state = this.model.getRefState(this);
-
-    return state.type === StateTypes.VALIDATING;
+    return this.validated && this.state.validating === true;
   }
 
   get isPristine(): boolean {
-    const state = this.model.getRefState(this);
-
-    return state.type === StateTypes.PRISTINE;
+    return !this.validated || this.state.valid === undefined;
   }
 
   get isShouldNotBeBlank(): boolean {
-    return this.model.getRefState(this).presence || false;
+    return !!this.state.presence;
   }
 
   get isTouched(): boolean {
@@ -223,7 +261,7 @@ export default class Ref {
   }
 
   checkDataType(dataType: DataType): boolean {
-    const value = this.get();
+    const value = this.getValue();
 
     switch (dataType) {
       case 'null':
@@ -259,9 +297,5 @@ export default class Ref {
       message,
       valid: false,
     };
-  }
-
-  private normalizePath(path: Path): Path {
-    return [...this.path, ...path];
   }
 }

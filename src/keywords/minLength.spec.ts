@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('minLength keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         minLength: 3,
       },
@@ -18,40 +18,51 @@ describe('minLength keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set('ab');
+    ref.setValue('ab');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          minLength: '1',
-        },
-        '',
-      );
-    }).toThrow('The schema of the "minLength" keyword should be a number.');
+  it('Should expose error 1', async () => {
+    const model = new Model();
 
-    expect(() => {
-      new Model(
-        {
-          minLength: 0,
-        },
-        '',
-      );
-    }).toThrow('The "minLength" keyword can\'t be less then 1.');
+    await expect(model.init(
+      {
+        // @ts-ignore
+        minLength: '1',
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "minLength" keyword should be a number.',
+      });
+  });
+
+  it('Should expose error 2', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        minLength: 0,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The "minLength" keyword can\'t be less then 1.',
+      });
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         minLength: 3,
       },
@@ -62,16 +73,16 @@ describe('minLength keyword', () => {
     await ref.validate();
     expect(ref.state.minLength).toBe(undefined);
 
-    ref.set('abc');
+    ref.setValue('abc');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
     expect(ref.state).toMatchObject({
       minLength: 3,
     });
 
-    ref.set('ab');
+    ref.setValue('ab');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect(ref.state).toMatchObject({
       minLength: 3,
     });

@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+} from '../types';
 
 const keyword: IKeyword = {
   name: 'multipleOf',
@@ -20,7 +19,7 @@ const keyword: IKeyword = {
     return {
       async validate(ref: Ref): Promise<IRuleValidationResult> {
         if (ref.checkDataType('number')) {
-          const value = ref.get();
+          const value = ref.getValue();
 
           if ((value / multiplier) % 1 !== 0) {
             return ref.createErrorResult({
@@ -41,8 +40,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     multipleOf?: number;
   }
 }

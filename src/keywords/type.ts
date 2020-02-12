@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateRuleFn } from '../interfaces/IRule';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
 import Ref, { DataType } from '../Ref';
+import {
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+} from '../types';
 
 /**
  * Like typeof but supports 'array' type
@@ -35,9 +34,9 @@ const keyword: IKeyword = {
     const coerceTypes = !!parentSchema.coerceTypes;
 
     return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn)
+      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
         : Promise<IRuleValidationResult> {
-        const curValue = ref.get();
+        const curValue = ref.getValue();
         const curType = getValueType(curValue);
 
         if (curValue === undefined) {
@@ -47,11 +46,11 @@ const keyword: IKeyword = {
         const valid = types.some((type) => {
           if (!ref.checkDataType(type)) {
             // try to coerce type
-            if (coerceTypes || validateRuleFn.options.coerceTypes) {
+            if (coerceTypes || options.coerceTypes) {
               switch (type) {
                 case 'string':
                   if (curType === 'number' || curType === 'boolean') {
-                    ref.set(`${curValue}`, false);
+                    ref.setValue(`${curValue}`);
                   }
                   break;
 
@@ -61,7 +60,7 @@ const keyword: IKeyword = {
                     // tslint:disable-next-line:triple-equals
                     || (curType === 'string' && curValue && curValue == +curValue)
                   ) {
-                    ref.set(+curValue, false);
+                    ref.setValue(+curValue);
                   }
                   break;
 
@@ -73,21 +72,21 @@ const keyword: IKeyword = {
                       curType === 'string' && curValue && curValue == +curValue && !(curValue % 1)
                     )
                   ) {
-                    ref.set(+curValue, false);
+                    ref.setValue(+curValue);
                   }
                   break;
 
                 case 'boolean':
                   if (curValue === 'false' || curValue === 0 || curValue === null) {
-                    ref.set(false, false);
+                    ref.setValue(false);
                   } else if (curValue === 'true' || curValue === 1) {
-                    ref.set(true, false);
+                    ref.setValue(true);
                   }
                   break;
 
                 case 'null':
                   if (curValue === '' || curValue === 0 || curValue === false) {
-                    ref.set(null, false);
+                    ref.setValue(null);
                   }
                   break;
               }
@@ -118,8 +117,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     type?: string | string[];
     coerceTypes?: boolean;
   }
