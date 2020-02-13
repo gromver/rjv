@@ -137,7 +137,7 @@ export default class Model {
 
     ref.state = state;
 
-    this.dispatch(new ChangeRefStateEvent(state.path, state));
+    this.dispatch(new ChangeRefStateEvent(ref.path, state));
   }
 
   /**
