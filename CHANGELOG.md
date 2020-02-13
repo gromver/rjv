@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.0.0"></a>
+# [3.0.0](https://github.com/gromver/rjv/compare/v2.6.0...v3.0.0) (2020-02-13)
+
+
+### Bug Fixes
+
+* index.ts ([42b746c](https://github.com/gromver/rjv/commit/42b746c))
+
+
+### Features
+
+* refactor to the version 3 ([af3b716](https://github.com/gromver/rjv/commit/af3b716))
+
+
+
 <a name="2.6.0"></a>
 # [2.6.0](https://github.com/gromver/rjv/compare/v2.5.2...v2.6.0) (2019-10-29)
 
