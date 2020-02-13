@@ -119,7 +119,7 @@ describe('properties keyword', () => {
     const ref = model.ref();
     expect(ref.state.valid).toBe(true);
 
-    ref.unsafeRef('bar').setValue('bar');
+    ref.ref('bar').setValue('bar');
     await ref.validate();
     expect(ref.state.valid).toBe(true);
 
@@ -153,7 +153,7 @@ describe('properties keyword', () => {
     await ref.validate();
     expect(ref.state.valid).toBe(true);
 
-    ref.unsafeRef('bar').setValue('bar');
+    ref.ref('bar').setValue('bar');
     await ref.validate();
     expect(ref.state.valid).toBe(true);
 
@@ -189,7 +189,7 @@ describe('properties keyword', () => {
     await ref.validate();
     expect(ref.state.valid).toBe(true);
 
-    ref.unsafeRef('bar').setValue('bar');
+    ref.ref('bar').setValue('bar');
     await ref.validate();
     expect(ref.state.valid).toBe(true);
 

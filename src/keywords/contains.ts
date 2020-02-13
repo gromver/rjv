@@ -22,7 +22,7 @@ const keyword: IKeyword = {
         for (const index in value) {
           if (rule.validate) {
             const res = await validateRuleFn(
-              ref.unsafeRef(`${index}`), rule as IRule, options,
+              ref.ref(`${index}`), rule as IRule, options,
             ) as IRuleValidationResult;
 
             if (res.valid) {

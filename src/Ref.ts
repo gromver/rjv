@@ -37,8 +37,8 @@ export default class Ref {
     return this.model.ref(utils.resolvePath(path, this.path), false);
   }
 
-  unsafeRef(path: Path): Ref {
-    return this.model.unsafeRef(utils.resolvePath(path, this.path), false);
+  safeRef(path: Path): Ref | undefined {
+    return this.model.safeRef(utils.resolvePath(path, this.path), false);
   }
 
   /**
