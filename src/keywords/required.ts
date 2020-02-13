@@ -28,7 +28,7 @@ const keyword: IKeyword = {
           const invalidProperties: string[] = [];
 
           for (const propName of required) {
-            const propRef = ref.unsafeRef(propName);
+            const propRef = ref.ref(propName);
 
             await validateRuleFn(propRef, propRequiredRule, options);
 

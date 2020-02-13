@@ -51,7 +51,7 @@ const keyword: IKeyword = {
 
             if (itemRule.validate) {
               const res = await validateRuleFn(
-                ref.unsafeRef(index), itemRule, options,
+                ref.ref(index), itemRule, options,
               ) as IRuleValidationResult;
 
               results.push(res);
@@ -65,7 +65,7 @@ const keyword: IKeyword = {
             } else if (additionalRule) {
               for (let i = value.length - 1; i < value.length; i += 1) {
                 const res = await validateRuleFn(
-                  ref.unsafeRef(`${i}`), additionalRule, options,
+                  ref.ref(`${i}`), additionalRule, options,
                 ) as IRuleValidationResult;
 
                 results.push(res);
@@ -76,7 +76,7 @@ const keyword: IKeyword = {
           for (const index in value) {
             if (rule.validate) {
               const res = await validateRuleFn(
-                ref.unsafeRef(`${index}`), rule as IRule, options,
+                ref.ref(`${index}`), rule as IRule, options,
               ) as IRuleValidationResult;
 
               results.push(res);

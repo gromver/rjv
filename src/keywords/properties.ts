@@ -50,7 +50,7 @@ const keyword: IKeyword = {
       // function getValidatePropertiesJobs() {
       //   return Object.keys(properties).map((propName) => {
       //     const propRule = properties[propName];
-      //     const propRef = ref.unsafeRef(propName);
+      //     const propRef = ref.ref(propName);
       //     return validateRuleFn(propRef, propRule, options);
       //   });
       // }
@@ -61,12 +61,12 @@ const keyword: IKeyword = {
       //
       //   return valueProps.map(async (propName) => {
       //     if (additionalRule) {
-      //       const propRef = ref.unsafeRef(propName);
+      //       const propRef = ref.ref(propName);
       //
       //       const result = await validateRuleFn(propRef, additionalRule, options);
       //     }
       //     const propRule = properties[propName];
-      //     const propRef = ref.unsafeRef(propName);
+      //     const propRef = ref.ref(propName);
       //     return validateRuleFn(propRef, propRule, options);
       //   });
       // }
@@ -74,7 +74,7 @@ const keyword: IKeyword = {
       if (ref.checkDataType('object')) {
         for (const propName in properties) {
           const propRule = properties[propName];
-          const propRef = ref.unsafeRef(propName);
+          const propRef = ref.ref(propName);
 
           const result = await validateRuleFn(propRef, propRule, options);
 
@@ -95,7 +95,7 @@ const keyword: IKeyword = {
           for (const propName of valueProps) {
             if (!Object.prototype.hasOwnProperty.call(properties, propName)) {
               if (additionalRule) {
-                const propRef = ref.unsafeRef(propName);
+                const propRef = ref.ref(propName);
 
                 const result = await validateRuleFn(propRef, additionalRule, options);
 

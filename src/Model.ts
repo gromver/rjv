@@ -106,10 +106,10 @@ export default class Model {
       resolvedPath = resolvedPath ? utils.resolvePath(path, '/') : '/';
     }
 
-    return this.refs[resolvedPath];
+    return this.refs[resolvedPath] || (this.refs[resolvedPath] = new Ref(this, resolvedPath));
   }
 
-  unsafeRef(path = '/', resolve= true): Ref {
+  safeRef(path = '/', resolve= true): Ref | undefined {
     this.checkInitiated();
 
     let resolvedPath = path;
@@ -118,7 +118,7 @@ export default class Model {
       resolvedPath = resolvedPath ? utils.resolvePath(path, '/') : '/';
     }
 
-    return this.refs[resolvedPath] || (this.refs[resolvedPath] = new Ref(this, resolvedPath));
+    return this.refs[resolvedPath];
   }
 
   /**
@@ -324,7 +324,7 @@ export default class Model {
   validate(options?: IModelValidationOptions): Promise<boolean> {
     this.checkInitiated();
 
-    return this.unsafeRef().validate(options);
+    return this.ref().validate(options);
   }
 
   private checkInitiated() {

@@ -21,7 +21,7 @@ describe('required keyword', () => {
     const ref = model.ref();
     const fooRef = ref.ref('foo');
     const barRef = ref.ref('bar');
-    const carRef = ref.unsafeRef('car');
+    const carRef = ref.ref('car');
     expect(ref.state.valid).toBe(false);
     expect(fooRef.state.valid).toBeUndefined();
     expect(barRef.state.valid).toBeUndefined();

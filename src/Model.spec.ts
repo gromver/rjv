@@ -499,13 +499,13 @@ describe('Model test', () => {
       },
     );
 
-    expect(model.ref('a')).toBeInstanceOf(Ref);
-    expect(model.ref('b')).toBeUndefined();
+    expect(model.safeRef('a')).toBeInstanceOf(Ref);
+    expect(model.safeRef('b')).toBeUndefined();
 
     model.ref('case').setValue(2);
     await model.validate();
-    expect(model.ref('a')).toBeUndefined();
-    expect(model.ref('b')).toBeInstanceOf(Ref);
+    expect(model.safeRef('a')).toBeUndefined();
+    expect(model.safeRef('b')).toBeInstanceOf(Ref);
   });
 
   it('Test dependencies keyword', async () => {
@@ -541,16 +541,16 @@ describe('Model test', () => {
       },
     );
 
-    expect(model.ref('a')).toBeInstanceOf(Ref);
-    expect(model.ref('a').isValidated).toBe(false);
-    expect(model.ref('b')).toBeUndefined();
+    expect(model.safeRef('a')).toBeInstanceOf(Ref);
+    expect((model.safeRef('a') as Ref).isValidated).toBe(false);
+    expect(model.safeRef('b')).toBeUndefined();
 
-    const caseRef = model.ref('case');
+    const caseRef = model.safeRef('case') as Ref;
     caseRef.setValue(2);
     await caseRef.validate();
-    expect(model.ref('a')).toBeUndefined();
-    expect(model.ref('b')).toBeInstanceOf(Ref);
-    expect(model.ref('b').isValidated).toBe(false);
+    expect(model.safeRef('a')).toBeUndefined();
+    expect(model.safeRef('b')).toBeInstanceOf(Ref);
+    expect((model.safeRef('b') as Ref).isValidated).toBe(false);
   });
 
   it('Test dependsOn keyword', async () => {
@@ -585,19 +585,19 @@ describe('Model test', () => {
       },
     );
 
-    expect(model.ref('a')).toBeInstanceOf(Ref);
-    expect(model.ref('a').state.valid).toBe(true);
-    expect(model.ref('a').isValidated).toBe(false);
-    expect(model.ref('b')).toBeInstanceOf(Ref);
-    expect(model.ref('b').state.valid).toBeUndefined();
-    expect(model.ref('b').isValidated).toBe(false);
+    expect(model.safeRef('a')).toBeInstanceOf(Ref);
+    expect((model.safeRef('a') as Ref).state.valid).toBe(true);
+    expect((model.safeRef('a') as Ref).isValidated).toBe(false);
+    expect(model.safeRef('b')).toBeInstanceOf(Ref);
+    expect((model.safeRef('b') as Ref).state.valid).toBeUndefined();
+    expect((model.safeRef('b') as Ref).isValidated).toBe(false);
 
-    const caseRef = model.ref('case');
+    const caseRef = model.ref('case') as Ref;
     caseRef.setValue(2);
     await caseRef.validate();
-    expect(model.ref('a').state.valid).toBeUndefined();
-    expect(model.ref('a').isValidated).toBe(false);
-    expect(model.ref('b').state.valid).toBe(true);
-    expect(model.ref('b').isValidated).toBe(false);
+    expect((model.safeRef('a') as Ref).state.valid).toBeUndefined();
+    expect((model.safeRef('a') as Ref).isValidated).toBe(false);
+    expect((model.safeRef('b') as Ref).state.valid).toBe(true);
+    expect((model.safeRef('b') as Ref).isValidated).toBe(false);
   });
 });
