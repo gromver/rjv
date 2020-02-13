@@ -142,7 +142,7 @@ describe('Model test', () => {
     expect(model.ref().getValue()).toBe('foo');
   });
 
-  it('Should throw an error', async () => {
+  it('Should expose an error', async () => {
     const model = new Model();
 
     await expect(model.init(
@@ -599,5 +599,24 @@ describe('Model test', () => {
     expect((model.safeRef('a') as Ref).isValidated).toBe(false);
     expect((model.safeRef('b') as Ref).state.valid).toBe(true);
     expect((model.safeRef('b') as Ref).isValidated).toBe(false);
+  });
+
+  it('Test model::setRefState', async () => {
+    const model = new Model();
+    const fn = jest.fn();
+    model.observable.subscribe(fn);
+
+    await model.init(
+      {
+        type: 'string',
+      },
+      1,
+    );
+
+    const ref = model.ref();
+    await ref.validate();
+    expect(ref.isValid).toBe(false);
+    expect(fn.mock.calls[0][0]).toMatchObject({ path: '/' });
+    expect(fn.mock.calls[1][0]).toMatchObject({ path: '/' });
   });
 });
