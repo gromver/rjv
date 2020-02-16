@@ -81,13 +81,6 @@ export default class Ref {
     this.model.setRefValue(this, value);
   }
 
-  // setValueAndTouch(value: any) {
-  //   this.dirty = true;
-  //   this.touched = true;
-  //
-  //   this.model.setRefValue(this, value/* , dispatch */);
-  // }
-
   /**
    * Get value as method
    * @returns value

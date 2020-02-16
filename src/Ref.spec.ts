@@ -383,4 +383,29 @@ describe('Ref tests', () => {
     expect((ref.ref('a').firstError as any).state).toMatchObject({ errLock: 6 });
     expect((ref.ref('b').firstError as any).state).toMatchObject({ errLock: 8 });
   });
+
+  it('Ref::validate', async () => {
+    const model = new Model();
+    await model.init(
+      {
+        properties: {
+          a: {
+            properties: {
+              aa: { type: 'number' },
+            },
+          },
+          b: { type: 'number' },
+        },
+      },
+      {
+        a: { aa: '' },
+        b: '',
+      },
+    );
+
+    const aaRef = model.ref('a/aa');
+    await expect(aaRef.validate()).resolves.toBe(false);
+    aaRef.setValue(1);
+    await expect(aaRef.validate()).resolves.toBe(true);
+  });
 });
