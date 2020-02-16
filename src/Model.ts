@@ -118,6 +118,10 @@ export default class Model {
       resolvedPath = resolvedPath ? utils.resolvePath(path, '/') : '/';
     }
 
+    if (this.options.debug) {
+      console.warn('Attention, you are trying to get a ref to a property that does not have a corresponding rule in the JSON schema');
+    }
+
     return this.refs[resolvedPath];
   }
 
@@ -317,7 +321,7 @@ export default class Model {
           this.refs = refs;
         }
 
-        return !!result.valid;
+        return !!ref.state.valid;
       });
   }
 
