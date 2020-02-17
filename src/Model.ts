@@ -238,7 +238,9 @@ export default class Model {
     const targetScope = ref.route.length ? ref.path : '';
 
     if (ref.state.dependencies) {
-      scopes = [...scopes, ...ref.state.dependencies];
+      const resolvedDependencies = ref.state.dependencies
+        .map((depPath) => utils.resolvePath(depPath, ref.path));
+      scopes = [...scopes, ...resolvedDependencies];
     }
 
     // validate attribute function
@@ -246,7 +248,11 @@ export default class Model {
       : Promise<IRuleValidationResult> => {
       const curScope = curRef.path;
 
-      if (curRef.state.dependsOn && curRef.state.dependsOn.find((item) => item === ref.path)) {
+      if (
+        curRef.state.dependsOn
+        && curRef.state.dependsOn
+          .find((depPath) => utils.resolvePath(depPath, curRef.path) === ref.path)
+      ) {
         scopes.push(curRef.path);
       }
 
