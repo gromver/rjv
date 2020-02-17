@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.0.5"></a>
+## [3.0.5](https://github.com/gromver/rjv/compare/v3.0.5-alpha...v3.0.5) (2020-02-17)
+
+
+### Bug Fixes
+
+* fix model::validateRef(), support relative dependencies ([23d4b14](https://github.com/gromver/rjv/commit/23d4b14))
+
+
+
 <a name="2.6.0"></a>
 # [2.6.0](https://github.com/gromver/rjv/compare/v2.5.2...v2.6.0) (2019-10-29)
 
