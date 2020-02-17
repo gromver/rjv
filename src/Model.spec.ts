@@ -469,7 +469,7 @@ describe('Model test', () => {
     expect(propRef.state.errLock).toBe(3);
   });
 
-  it('Test ref\'s tree rebuilding after validation', async () => {
+  it('Test ref\'s tree rebuilding after validation 1', async () => {
     const model = new Model();
     await model.init(
       {
@@ -504,6 +504,46 @@ describe('Model test', () => {
 
     model.ref('case').setValue(2);
     await model.validate();
+    expect(model.safeRef('a')).toBeUndefined();
+    expect(model.safeRef('b')).toBeInstanceOf(Ref);
+  });
+
+  it('Test ref\'s tree rebuilding after validation 2', async () => {
+    const model = new Model();
+    await model.init(
+      {
+        properties: {
+          case: { enum: [1, 2], dependencies: ['../a', '../b'] },
+        },
+        if: {
+          properties: {
+            case: { const: 1 },
+          },
+        },
+        then: {
+          properties: {
+            a: { type: 'string', presence: true },
+          },
+        },
+        else: {
+          properties: {
+            b: { type: 'string', presence: true },
+          },
+        },
+      },
+      {
+        case: 1,
+        a: 'a',
+        b: 'b',
+      },
+    );
+
+    expect(model.safeRef('a')).toBeInstanceOf(Ref);
+    expect(model.safeRef('b')).toBeUndefined();
+
+    const caseRef = model.ref('case');
+    caseRef.setValue(2);
+    await caseRef.validate();
     expect(model.safeRef('a')).toBeUndefined();
     expect(model.safeRef('b')).toBeInstanceOf(Ref);
   });
@@ -560,7 +600,7 @@ describe('Model test', () => {
         properties: {
           case: { enum: [1, 2] },
           a: { dependsOn: ['/case'] },
-          b: { dependsOn: ['/case'] },
+          b: { dependsOn: ['../case'] },
         },
         if: {
           properties: {
