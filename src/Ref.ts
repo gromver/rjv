@@ -270,6 +270,14 @@ export default class Ref {
     }
   }
 
+  /**
+   * Helper - resolves given path relative to the path of the ref
+   * @param path
+   */
+  resolvePath(path: Path): Path {
+    return utils.resolvePath(path, this.path);
+  }
+
   createUndefinedResult(metadata: IRuleValidationResult = {}): IRuleValidationResult {
     return metadata;
   }
