@@ -26,7 +26,7 @@ const keyword: IKeyword = {
       const results: IRuleValidationResult[] = [];
 
       for (const rule of rules) {
-        const res = await (rule as any).validate(ref, validateRuleFn, options);
+        const res = await validateRuleFn(ref, rule, options);
         results.push(res);
       }
 
