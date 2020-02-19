@@ -120,7 +120,7 @@ export default class Validator {
 
         if (value === undefined) {
           if (defaultValue !== undefined) {
-            ref.setValue(defaultValue);
+            ref.setValue(_.cloneDeep(defaultValue));
           }
         } else {
           if (filterFn) {
