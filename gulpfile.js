@@ -20,6 +20,7 @@ function postProcess() {
     .src(
       [
         path.resolve(__dirname, 'dist/**/*.js'),
+        path.resolve(__dirname, 'dist/**/*.d.ts'),
         path.resolve(__dirname, 'bundles/*.js'),
       ],
       { base: '.' }
