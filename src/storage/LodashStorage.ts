@@ -1,11 +1,11 @@
-import { Route } from './types';
+import { Route, IStorage } from '../types';
 
 const _ = {
   get: require('lodash/get'),
   set: require('lodash/set'),
 };
 
-export default class Storage {
+export default class LodashStorage implements IStorage {
   constructor(private data?: any) {}
 
   get(route: Route): any {

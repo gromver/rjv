@@ -4,10 +4,10 @@ import Ref from './Ref';
 import Event from './events/Event';
 import ChangeRefStateEvent from './events/ChangeRefStateEvent';
 import ChangeRefValueEvent from './events/ChangeRefValueEvent';
-import LodashStorage from './Storage';
+import LodashStorage from './storage/LodashStorage';
 import Validator, { IValidationOptionsPartial } from './Validator';
 import {
-  ISchema, IRule, ValidateRuleFn, IKeyword, IRuleValidationResult, IModelValidationResult,
+  ISchema, IStorage, IRule, ValidateRuleFn, IKeyword, IRuleValidationResult, IModelValidationResult,
 } from './types';
 import utils from './utils';
 
@@ -59,8 +59,8 @@ export default class Model {
   private valLock = 0;
   private errLock = 0;
   private validator: Validator;
-  private dataStorage: LodashStorage;
-  private initialDataStorage: LodashStorage;
+  private dataStorage: IStorage;
+  private initialDataStorage: IStorage;
 
   public readonly observable: Subject<Event>;
   public readonly options: IModelOptions;
