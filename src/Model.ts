@@ -72,6 +72,12 @@ export default class Model {
     this.observable = new Subject();
   }
 
+  /**
+   * The entry point to work with the model. Initializes model and launches pre validating process
+   * which validates initial value creating refs and initial states
+   * @param schema - validation JSON schema
+   * @param initialValue - initial value
+   */
   async init(schema: ISchema, initialValue: any) {
     try {
       this.dataStorage = new LodashStorage(_.cloneDeep(initialValue));
@@ -97,6 +103,11 @@ export default class Model {
     this.observable.next(event);
   }
 
+  /**
+   * Get reference by path, if ref does not exist, creates a new one
+   * @param path - a relative or absolute path to the property
+   * @param resolve - resolve given path to the root path
+   */
   ref(path = '/', resolve= true): Ref {
     this.checkInitiated();
 
@@ -109,6 +120,13 @@ export default class Model {
     return this.refs[resolvedPath] || (this.refs[resolvedPath] = new Ref(this, resolvedPath));
   }
 
+  /**
+   * Get reference by path, if ref does not exist, returns undefined
+   * Note: refs are automatically created according to the schema
+   * during initialization or validation
+   * @param path - a relative or absolute path to the property
+   * @param resolve - resolve given path to the root path
+   */
   safeRef(path = '/', resolve= true): Ref | undefined {
     this.checkInitiated();
 
@@ -155,9 +173,11 @@ export default class Model {
     return ref.state;
   }
 
+  /**
+   * Get refs belonging to the given host ref
+   * @param hostRef
+   */
   private getRefs(hostRef: Ref): RefMap {
-    this.checkInitiated();
-
     const { route, path } = hostRef;
 
     if (route.length) {
@@ -209,6 +229,10 @@ export default class Model {
     return this.initialDataStorage.get(ref.route);
   }
 
+  /**
+   * Returns an array of error refs related to the given ref if exists
+   * @param ref
+   */
   getRefErrors(ref: Ref): Ref[] {
     this.checkInitiated();
 
@@ -216,18 +240,29 @@ export default class Model {
       .filter((ref) => ref.state.valid === false);
   }
 
+  /**
+   * Returns incremented validation lock, used to track validation queue
+   */
   get validationLock(): number {
     this.checkInitiated();
 
     return this.valLock += 1;
   }
 
+  /**
+   * Returns incremented error lock, used to track the order of incoming errors
+   */
   get errorLock(): number {
     this.checkInitiated();
 
     return this.errLock += 1;
   }
 
+  /**
+   * Validates given ref, by default all validated refs will be marked as validated
+   * @param ref - ref to be validated
+   * @param options - validation options
+   */
   validateRef(ref: Ref, options: IModelValidationOptions = {}): Promise<boolean> {
     this.checkInitiated();
 
@@ -331,12 +366,19 @@ export default class Model {
       });
   }
 
+  /**
+   * Validates root ref, by default all validated refs will be marked as validated
+   * @param options - validation options
+   */
   validate(options?: IModelValidationOptions): Promise<boolean> {
     this.checkInitiated();
 
     return this.ref().validate(options);
   }
 
+  /**
+   * Checks if the model has been validated, otherwise throws an error
+   */
   private checkInitiated() {
     if (!this.isInitiated) {
       throw new Error('You should initialize your model to work with it.');
