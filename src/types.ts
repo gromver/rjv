@@ -84,3 +84,9 @@ export interface IKeyword {
 export interface IKeywordMap {
   [keyword: string]: IKeyword;
 }
+
+// storage
+export interface IStorage {
+  get(path: Route): any;
+  set(path: Route, value: any): void;
+}
