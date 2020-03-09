@@ -69,6 +69,10 @@ export default class Validator {
     this.rule = this.compile(schema);
   }
 
+  /**
+   * Compiles the schema
+   * @param schema
+   */
   private compile = (schema: ISchema): IRuleCompiled => {
     const annotationResult: IRuleValidationResult = {
       title: schema.title,
@@ -174,12 +178,22 @@ export default class Validator {
     };
   }
 
+  /**
+   * Validates ref and returns a validation result object
+   * @param ref
+   * @param validateRuleFn
+   * @param options
+   */
   validate(ref: Ref, validateRuleFn: ValidateRuleFn, options = {}): Promise<IRuleValidationResult> {
     const validationOptions = _.extend({}, this.options, options);
 
     return validateRuleFn(ref, this.rule, validationOptions);
   }
 
+  /**
+   * Adds new keyword
+   * @param keyword
+   */
   addKeyword(keyword: IKeyword) {
     addKeyword(keyword, this.keywords);
   }

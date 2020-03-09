@@ -1,5 +1,4 @@
-import Model from './Model';
-import { IValidationOptionsPartial } from './Validator';
+import Model, { IModelValidationOptions } from './Model';
 import {
   Path, Route, IRuleValidationResult, IModelValidationResult, IValidationMessage,
 } from './types';
@@ -10,7 +9,7 @@ const _ = {
   extend: require('lodash/extend'),
 };
 
-const DEFAULT_VALIDATION_OPTIONS = {
+const DEFAULT_VALIDATION_OPTIONS: IModelValidationOptions = {
   forceValidated: true,
 };
 
@@ -33,10 +32,18 @@ export default class Ref {
     this.state = { valLock: 0 };
   }
 
+  /**
+   * Get reference by path, if ref does not exist, creates a new one
+   * @param path - a relative or absolute path to the property
+   */
   ref(path: Path): Ref {
     return this.model.ref(utils.resolvePath(path, this.path), false);
   }
 
+  /**
+   * Get reference by path, if ref does not exist, returns undefined
+   * @param path
+   */
   safeRef(path: Path): Ref | undefined {
     return this.model.safeRef(utils.resolvePath(path, this.path), false);
   }
@@ -45,10 +52,23 @@ export default class Ref {
    * Validation
    */
 
-  validate(options: IValidationOptionsPartial = {}): Promise<boolean> {
+  /**
+   * Validate props of the ref, superior props aren't affected
+   * @param options
+   */
+  validate(options: IModelValidationOptions = {}): Promise<boolean> {
     const normalizedOptions = _.extend({}, DEFAULT_VALIDATION_OPTIONS, options);
 
     return this.model.validateRef(this, normalizedOptions);
+  }
+
+  /**
+   * Shortcut method for populating initial state of the ref.
+   * Useful if ref's value has an array or an object types.
+   * Should be called when new props or items added to the ref's value.
+   */
+  refresh(): Promise<boolean> {
+    return this.validate({ forceValidated: false });
   }
 
   /**
@@ -98,7 +118,6 @@ export default class Ref {
 
   /**
    * Set value as setter
-   * @deprecated
    * @param value
    */
   set value(value: any) {
@@ -107,7 +126,6 @@ export default class Ref {
 
   /**
    * Get value as getter
-   * @deprecated
    * @returns value
    */
   get value(): any {
@@ -116,7 +134,6 @@ export default class Ref {
 
   /**
    * Get initial value as getter
-   * @deprecated
    * @returns value
    */
   get initialValue(): any {
@@ -190,10 +207,16 @@ export default class Ref {
     });
   }
 
+  /**
+   * Returns error refs related to this ref if exists
+   */
   get errors(): Ref[] {
     return this.model.getRefErrors(this);
   }
 
+  /**
+   * Is ref's value changed?
+   */
   get isChanged(): boolean {
     return !_.isEqual(
       this.getValue(),
@@ -201,58 +224,101 @@ export default class Ref {
     );
   }
 
+  /**
+   * Is ref dirty?
+   */
   get isDirty(): boolean {
     return this.dirty;
   }
 
+  /**
+   * Is ref's value required?
+   */
   get isRequired(): boolean {
     return !!this.state.required;
   }
 
+  /**
+   * Is ref mutable?
+   */
   get isMutable() {
     return !this.state.readOnly;
   }
 
+  /**
+   * Is ref marked as read only?
+   */
   get isReadOnly(): boolean {
     return !!this.state.readOnly;
   }
 
+  /**
+   * Is ref marked as write only?
+   */
   get isWriteOnly(): boolean {
     return !!this.state.writeOnly;
   }
 
+  /**
+   * Is ref validated?
+   */
   get isValidated(): boolean {
     return this.validated;
   }
 
+  /**
+   * Is ref valid?
+   */
   get isValid(): boolean {
     return this.validated && this.state.valid === true;
   }
 
+  /**
+   * Is ref invalid?
+   */
   get isInvalid(): boolean {
     return this.validated && this.state.valid === false;
   }
 
+  /**
+   * Is ref being validated at the moment?
+   */
   get isValidating(): boolean {
     return this.validated && this.state.validating === true;
   }
 
+  /**
+   * Is ref pristine?
+   */
   get isPristine(): boolean {
     return !this.validated || this.state.valid === undefined;
   }
 
+  /**
+   * Is ref should not be blank?
+   */
   get isShouldNotBeBlank(): boolean {
     return !!this.state.presence;
   }
 
+  /**
+   * Is ref touched?
+   */
   get isTouched(): boolean {
     return this.touched;
   }
 
+  /**
+   * Is ref untouched?
+   */
   get isUntouched(): boolean {
     return !this.touched;
   }
 
+  /**
+   * Checks if the ref's value has desired type
+   * @param dataType
+   */
   checkDataType(dataType: DataType): boolean {
     const value = this.getValue();
 
@@ -278,10 +344,19 @@ export default class Ref {
     return utils.resolvePath(path, this.path);
   }
 
+  /**
+   * Helper - creates undefined validation result
+   * @param metadata
+   */
   createUndefinedResult(metadata: IRuleValidationResult = {}): IRuleValidationResult {
     return metadata;
   }
 
+  /**
+   * Helper - creates success validation result
+   * @param message
+   * @param metadata
+   */
   createSuccessResult(message?: IValidationMessage, metadata: IRuleValidationResult = {})
     : IRuleValidationResult {
     return {
@@ -291,6 +366,11 @@ export default class Ref {
     };
   }
 
+  /**
+   * Helper - creates error validation result
+   * @param message
+   * @param metadata
+   */
   createErrorResult(message: IValidationMessage, metadata: IRuleValidationResult = {})
     : IRuleValidationResult {
     return {
