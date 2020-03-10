@@ -47,30 +47,6 @@ const keyword: IKeyword = {
       let hasValidProps = false;
       let hasInvalidProps = false;
 
-      // function getValidatePropertiesJobs() {
-      //   return Object.keys(properties).map((propName) => {
-      //     const propRule = properties[propName];
-      //     const propRef = ref.ref(propName);
-      //     return validateRuleFn(propRef, propRule, options);
-      //   });
-      // }
-      //
-      // function getValidateAdditionalPropertiesJobs() {
-      //   const value = ref.getValue();
-      //   const valueProps = Object.keys(value);
-      //
-      //   return valueProps.map(async (propName) => {
-      //     if (additionalRule) {
-      //       const propRef = ref.ref(propName);
-      //
-      //       const result = await validateRuleFn(propRef, additionalRule, options);
-      //     }
-      //     const propRule = properties[propName];
-      //     const propRef = ref.ref(propName);
-      //     return validateRuleFn(propRef, propRule, options);
-      //   });
-      // }
-
       if (ref.checkDataType('object')) {
         for (const propName in properties) {
           const propRule = properties[propName];
@@ -85,7 +61,6 @@ const keyword: IKeyword = {
             invalidProperties.push(propName);
           }
         }
-        // const jobs = getValidatePropertiesJobs();
 
         // check additional props
         if (!allowAdditional) {
