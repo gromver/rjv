@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+} from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -36,11 +35,11 @@ const keyword: IKeyword = {
       additionalRule = compile(parentSchema.additionalItems, parentSchema);
     }
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
+    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
       : Promise<IRuleValidationResult> => {
       const results: IRuleValidationResult[] = [];
       const invalidIndexes: number[] = [];
-      const value = ref.get() as [];
+      const value = ref.getValue() as [];
       let hasValidProps = false;
       let hasInvalidProps = false;
       let hasItemsOverflow = false;
@@ -52,7 +51,7 @@ const keyword: IKeyword = {
 
             if (itemRule.validate) {
               const res = await validateRuleFn(
-                ref.relativeRef([index]), itemRule,
+                ref.ref(index), itemRule, options,
               ) as IRuleValidationResult;
 
               results.push(res);
@@ -66,7 +65,7 @@ const keyword: IKeyword = {
             } else if (additionalRule) {
               for (let i = value.length - 1; i < value.length; i += 1) {
                 const res = await validateRuleFn(
-                  ref.relativeRef([i]), additionalRule,
+                  ref.ref(`${i}`), additionalRule, options,
                 ) as IRuleValidationResult;
 
                 results.push(res);
@@ -77,7 +76,7 @@ const keyword: IKeyword = {
           for (const index in value) {
             if (rule.validate) {
               const res = await validateRuleFn(
-                ref.relativeRef([index]), rule as IRule,
+                ref.ref(`${index}`), rule as IRule, options,
               ) as IRuleValidationResult;
 
               results.push(res);
@@ -128,8 +127,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     items?: ISchema | ISchema[];
     additionalItems?: boolean | ISchema;
   }

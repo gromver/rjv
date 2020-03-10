@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('maxItems keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         maxItems: 2,
       },
@@ -18,40 +18,51 @@ describe('maxItems keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set([1, 2, 3]);
+    ref.setValue([1, 2, 3]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          maxItems: '1',
-        },
-        '',
-      );
-    }).toThrow('The schema of the "maxItems" keyword should be a number.');
+  it('Should expose error 1', async () => {
+    const model = new Model();
 
-    expect(() => {
-      new Model(
-        {
-          maxItems: -1,
-        },
-        '',
-      );
-    }).toThrow('The "maxItems" keyword can\'t be less then 0.');
+    await expect(model.init(
+      {
+        // @ts-ignore
+        maxItems: '1',
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "maxItems" keyword should be a number.',
+      });
+  });
+
+  it('Should expose error 2', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        maxItems: -1,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The "maxItems" keyword can\'t be less then 0.',
+      });
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         maxItems: 2,
       },
@@ -62,16 +73,16 @@ describe('maxItems keyword', () => {
     await ref.validate();
     expect(ref.state.maxItems).toBe(undefined);
 
-    ref.set([]);
+    ref.setValue([]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
     expect(ref.state).toMatchObject({
       maxItems: 2,
     });
 
-    ref.set([1, 2, 3]);
+    ref.setValue([1, 2, 3]);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect(ref.state).toMatchObject({
       maxItems: 2,
     });

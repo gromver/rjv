@@ -1,9 +1,7 @@
 import Ref from '../Ref';
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule from '../interfaces/IRule';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
-import IStateMetadata from '../interfaces/IStateMetadata';
+import {
+  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+} from '../types';
 
 const keyword: IKeyword = {
   name: 'pattern',
@@ -17,9 +15,9 @@ const keyword: IKeyword = {
     return {
       async validate(ref: Ref): Promise<IRuleValidationResult> {
         if (ref.checkDataType('string')) {
-          const value = ref.get();
+          const value = ref.getValue();
 
-          const metadata: IStateMetadata = {
+          const metadata: IRuleValidationResult = {
             pattern: schema,
           };
 
@@ -45,14 +43,12 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     pattern?: string;
   }
-}
 
-declare module '../interfaces/IStateMetadata' {
-  export default interface IStateMetadata {
+  export interface IRuleValidationResult {
     pattern?: string;
   }
 }

@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('if keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         if: {
           type: 'number',
@@ -27,27 +27,28 @@ describe('if keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set(4.5);
+    ref.setValue(4.5);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(6);
+    ref.setValue(6);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set('abc');
+    ref.setValue('abc');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
   });
 
   it('Properties integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         if: {
           properties: {
@@ -61,48 +62,57 @@ describe('if keyword', () => {
     );
 
     const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set({ power: 1000, confidence: true });
+    ref.setValue({ power: 1000, confidence: true });
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set({});
+    ref.setValue({});
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
 
-    ref.set({ power: 10000 });
+    ref.setValue({ power: 10000 });
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set({ power: 10000, confidence: true });
+    ref.setValue({ power: 10000, confidence: true });
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set({ power: 1000 });
+    ref.setValue({ power: 1000 });
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          if: 1,
-        },
-        '',
-      );
-    }).toThrow('The value of the "if" keyword should be a schema object.');
+  it('Should expose error 1', async () => {
+    const model = new Model();
 
-    expect(() => {
-      new Model(
-        {
-          if: {},
-        },
-        '',
-      );
-    }).toThrow('For the "if" keyword You must specify at least the keyword "then" or "else".');
+    await expect(model.init(
+      {
+        // @ts-ignore
+        if: 1,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The value of the "if" keyword should be a schema object.',
+      });
+  });
+
+  it('Should expose error 2', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        if: {},
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'For the "if" keyword You must specify at least the keyword "then" or "else".',
+      });
   });
 });

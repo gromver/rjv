@@ -1,18 +1,16 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+} from '../types';
 import utils from '../utils';
 
 const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
   return rule.validate
-    ? rule.validate(ref, validateFn)
+    ? rule.validate(ref, validateFn, {
+      coerceTypes: false,
+      removeAdditional: false,
+    })
     : Promise.resolve({});
-};
-validateFn.options = {
-  coerceTypes: false,
-  removeAdditional: false,
 };
 
 const keyword: IKeyword = {
@@ -25,9 +23,12 @@ const keyword: IKeyword = {
     const rule: IRule = compile(schema, parentSchema);  // all rules have validate() fn
 
     return {
-      validate(ref: Ref): Promise<IRuleValidationResult> {
+      validate(ref: Ref, validateRuleFn: ValidateRuleFn, options): Promise<IRuleValidationResult> {
         return ((rule as any)
-          .validate(ref, validateFn) as Promise<IRuleValidationResult>)
+          .validate(ref, validateFn, {
+            coerceTypes: false,
+            removeAdditional: false,
+          }) as Promise<IRuleValidationResult>)
           .then((result) => {
             if (result.valid === false) {
               return ref.createSuccessResult();
@@ -45,8 +46,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     not?: ISchema;
   }
 }

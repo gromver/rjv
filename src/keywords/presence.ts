@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+} from '../types';
 import utils from '../utils';
 
 interface IPresenceSchema {
@@ -29,7 +28,7 @@ const keyword: IKeyword = {
     return {
       async validate(ref: Ref): Promise<IRuleValidationResult> {
         if (presence) {
-          const value = ref.value;
+          const value = ref.getValue();
 
           if (value === undefined) {
             return ref.createErrorResult(
@@ -49,7 +48,7 @@ const keyword: IKeyword = {
 
             if (trim) {
               stringValue = (value as string).trim();
-              ref.set(stringValue, false);
+              ref.setValue(stringValue);
             }
 
             if (!stringValue.length) {
@@ -81,14 +80,12 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     presence?: boolean | IPresenceSchema;
   }
-}
 
-declare module '../interfaces/IStateMetadata' {
-  export default interface IStateMetadata {
+  export interface IRuleValidationResult {
     presence?: boolean;
   }
 }
