@@ -4,15 +4,12 @@ import Ref from './Ref';
 import Event from './events/Event';
 import ChangeRefStateEvent from './events/ChangeRefStateEvent';
 import ChangeRefValueEvent from './events/ChangeRefValueEvent';
-import ISchema from './interfaces/ISchema';
-import IState, { StateTypes } from './interfaces/IState';
-import IRule, { IRuleCompiled, ValidateRuleFn } from './interfaces/IRule';
-import IKeyword from './interfaces/IKeyword';
-import defaultKeywords, { addKeyword } from './defaultKeywords';
-import IKeywordMap from './interfaces/IKeywordMap';
-import IRuleValidationResult from './interfaces/IRuleValidationResult';
-import IModelValidationResult from './interfaces/IModelValidationResult';
-import IValidationOptions from './interfaces/IValidationOptions';
+import LodashStorage from './storage/LodashStorage';
+import Validator, { IValidationOptionsPartial } from './Validator';
+import {
+  ISchema, IStorage, IRule, ValidateRuleFn, IKeyword, IRuleValidationResult, IModelValidationResult,
+} from './types';
+import utils from './utils';
 
 const _ = {
   extend: require('lodash/extend'),
@@ -22,150 +19,80 @@ const _ = {
   set: require('lodash/set'),
 };
 
-export type Path = (string|number)[];
-
-export type AttributeStatesMap = { [key: string]: IState };
-
-export interface IModelOptionsPartial extends IValidationOptions {
-  clearStateOnSet?: boolean;
+export interface IModelOptionsPartial {
+  // default validate options
+  validation?: IValidationOptionsPartial;
+  // validator settings
   keywords?: IKeyword[];
-  errors?: { [keywordName: string]: any };
-  warnings?: { [keywordName: string]: any };
+  // mode
+  forceValidatedOnInit?: boolean; // при инициализации помечаем все рефы как "валидировано"
   debug?: boolean;
 }
 
 export interface IModelOptions extends IModelOptionsPartial {
   // validation's process default opts
-  coerceTypes: boolean;
-  removeAdditional: boolean;
-  ignoreValidationStates: boolean;
-  onlyDirtyRefs: boolean;
-  // model's default opts
-  clearStateOnSet: boolean;
-  keywords: IKeyword[];
-  errors: { [keywordName: string]: any };
-  warnings: { [keywordName: string]: any };
+  validation: IValidationOptionsPartial;
+  forceValidatedOnInit?: boolean; // при инициализации помечаем все рефы как "валидировано"
   debug: boolean;
 }
 
+export interface IModelValidationOptions extends IValidationOptionsPartial {
+  forceValidated?: boolean;
+}
+
 const DEFAULT_OPTIONS: IModelOptions = {
-  coerceTypes: false,
-  removeAdditional: false,
-  ignoreValidationStates: false,
-  onlyDirtyRefs: false,
-  clearStateOnSet: true,
-  keywords: [],
-  errors: {},
-  warnings: {},
+  validation: {},
+  forceValidatedOnInit: false,
   debug: false,
 };
-
-const SCHEMA_ANNOTATIONS = [
-  'title',
-  'description',
-  'default',
-  'readOnly',
-  'writeOnly',
-  'examples',
-  'filter',
-  'error',
-  'errors',
-  'warning',
-  'warnings',
-];
 
 const UNDEFINED_RESULT_WARNING = 'The model received an undefined validation result. ' +
   'This is probably due to the lack of schema rules applicable to the model\'s value.';
 
-function mergeResults(results: IRuleValidationResult[]): IRuleValidationResult {
-  const result: IRuleValidationResult = {
-    required: false,
-    readOnly: false,
-    writeOnly: false,
-  };
-
-  results.forEach((item) => {
-    const { required, readOnly, writeOnly, valid, message, ...metadata } = item;
-
-    required && (result.required = true);
-    readOnly && (result.readOnly = true);
-    writeOnly && (result.writeOnly = true);
-
-    if (
-      (valid === true && result.valid === undefined)
-      ||
-      (valid === false && result.valid !== false)
-    ) {
-      result.valid = valid;
-      result.message = message;
-    } else if (valid === true && result.valid === true && result.message === undefined) {
-      result.message = message;
-    }
-
-    _.extend(result, metadata);
-  });
-
-  return result;
-}
-
-function resultToState(result: IRuleValidationResult, path: Path, valLock: number): IState {
-  let type: StateTypes = StateTypes.PRISTINE;
-  const { required, readOnly, writeOnly, valid, message, ...metadata } = result;
-
-  if (valid === true) {
-    type = StateTypes.SUCCESS;
-  } else if (valid === false) {
-    type = StateTypes.ERROR;
-  }
-
-  return {
-    ...metadata,
-    path,
-    valLock,
-    type,
-    message,
-    required: typeof required === 'boolean' ? required : false,
-    readOnly: typeof readOnly === 'boolean' ? readOnly : false,
-    writeOnly: typeof writeOnly === 'boolean' ? writeOnly : false,
-  };
-}
+export type RefMap = {
+  [path: string]: Ref;
+};
 
 export default class Model {
-  private readonly keywords: IKeywordMap;
-  private readonly rule: IRuleCompiled;
-  private isPrepared = false;
+  private refs: RefMap;
+  private isInitiated = false;
   private valLock = 0;
   private errLock = 0;
+  private validator: Validator;
+  private dataStorage: IStorage;
+  private initialDataStorage: IStorage;
 
-  public value: any;
-  public states: AttributeStatesMap;
-  public readonly initialValue: any;
   public readonly observable: Subject<Event>;
   public readonly options: IModelOptions;
   public readonly schema: ISchema;
 
-  public ref: (path?: Path) => Ref;
-
-  constructor(schema: ISchema, initialValue: any, options?: IModelOptionsPartial) {
-    this.initialValue = _.cloneDeep(initialValue);
-    this.value = _.cloneDeep(initialValue);
-    this.states = {};
-    this.observable = new Subject();
-    this.schema = schema;
-    this.keywords = { ...defaultKeywords };
+  constructor(options?: IModelOptionsPartial) {
+    this.refs = {};
     this.options = _.extend({}, DEFAULT_OPTIONS, options);
-    this.ref = _.memoize(
-      (path: Path = []): Ref => {
-        return new Ref(this, path);
-      },
-      (path) => path ? JSON.stringify(path) : '[]',
-    );
+    this.observable = new Subject();
+  }
 
-    this.options.keywords.forEach((keyword) => {
-      this.addKeyword(keyword);
-    });
+  /**
+   * The entry point to work with the model. Initializes model and launches pre validating process
+   * which validates initial value creating refs and initial states
+   * @param schema - validation JSON schema
+   * @param initialValue - initial value
+   */
+  async init(schema: ISchema, initialValue: any) {
+    try {
+      this.dataStorage = new LodashStorage(_.cloneDeep(initialValue));
+      this.initialDataStorage = new LodashStorage(_.cloneDeep(initialValue));
+      this.validator = new Validator(schema, this.options.validation);
+      this.isInitiated = true;
 
-    this.rule = this.compile(schema);
+      await this.validate({ forceValidated: this.options.forceValidatedOnInit });
+    } catch (e) {
+      if (this.options.debug) {
+        console.error(e);
+      }
+
+      return Promise.reject(e);
+    }
   }
 
   /**
@@ -176,93 +103,110 @@ export default class Model {
     this.observable.next(event);
   }
 
-  private dispatchChangeValue(ref: Ref) {
-    const { key, path } = ref;
+  /**
+   * Get reference by path, if ref does not exist, creates a new one
+   * @param path - a relative or absolute path to the property
+   * @param resolve - resolve given path to the root path
+   */
+  ref(path = '/', resolve= true): Ref {
+    this.checkInitiated();
 
-    if (this.options.clearStateOnSet) {
-      const { type, message, ...inheritedState } = this.getRefState(ref);
+    let resolvedPath = path;
 
-      this.states[key] = {
-        ...inheritedState,
-        type: StateTypes.PRISTINE,
-      };
+    if (resolve) {
+      resolvedPath = resolvedPath ? utils.resolvePath(path, '/') : '/';
     }
 
-    this.dispatch(new ChangeRefValueEvent(path, ref.get()));
+    return this.refs[resolvedPath] || (this.refs[resolvedPath] = new Ref(this, resolvedPath));
+  }
+
+  /**
+   * Get reference by path, if ref does not exist, returns undefined
+   * Note: refs are automatically created according to the schema
+   * during initialization or validation
+   * @param path - a relative or absolute path to the property
+   * @param resolve - resolve given path to the root path
+   */
+  safeRef(path = '/', resolve= true): Ref | undefined {
+    this.checkInitiated();
+
+    let resolvedPath = path;
+
+    if (resolve) {
+      resolvedPath = resolvedPath ? utils.resolvePath(path, '/') : '/';
+    }
+
+    if (this.options.debug) {
+      console.warn('Attention, you are trying to get a ref to a property that does not have a corresponding rule in the JSON schema');
+    }
+
+    return this.refs[resolvedPath];
   }
 
   /**
    * Set the attribute state
-   * @param {IState} state
+   * @param {Ref} ref
+   * @param {IModelValidationResult} state
    */
-  private setRefState(state: IState) {
-    const ref = this.ref(state.path);
-    const { key } = ref;
-    const curState = this.getRefState(ref);
+  private setRefState(ref: Ref, state: IModelValidationResult) {
+    this.checkInitiated();
+
+    const curState = ref.state;
 
     if (curState.valLock > state.valLock) {
       return;
     }
-    this.states[key] = state;
 
-    this.dispatch(new ChangeRefStateEvent(state.path, state));
+    ref.state = state;
+
+    this.dispatch(new ChangeRefStateEvent(ref.path, state));
   }
 
   /**
    * Get the validation state along the supplied path
    * @param {Ref} ref
-   * @returns {IState}
+   * @returns {IModelValidationResult}
    */
-  getRefState(ref: Ref): IState {
-    const { path, key } = ref;
+  getRefState(ref: Ref): IModelValidationResult {
+    this.checkInitiated();
 
-    if (!this.states[key]) {
-      this.states[key] = {
-        path,
-        type: StateTypes.PRISTINE,
-        required: false,
-        readOnly: false,
-        writeOnly: false,
-        valLock: 0,
-      };
-    }
-
-    return this.states[key];
+    return ref.state;
   }
 
-  private getRefStates(ref: Ref): AttributeStatesMap {
-    const { path } = ref;
+  /**
+   * Get refs belonging to the given host ref
+   * @param hostRef
+   */
+  private getRefs(hostRef: Ref): RefMap {
+    const { route, path } = hostRef;
 
-    if (path.length) {
-      const pattern = JSON.stringify(path).slice(0, -1);
-      const states = {};
+    if (route.length) {
+      const prefix = `${path}/`;
+      const refs = {};
 
-      Object.entries(this.states).forEach(([k, v]) => {
-        if (k.indexOf(pattern) === 0) {
-          states[k] = v;
+      Object.entries(this.refs).forEach(([k, v]) => {
+        if (k.startsWith(prefix)) {
+          refs[k] = v;
         }
       });
 
-      return states;
+      return refs;
     }
 
-    return this.states;
+    return this.refs;
   }
 
   /**
    * Set value
    * @param ref
    * @param value
-   * @param dispatch
    */
-  setRefValue(ref: Ref, value: any, dispatch) {
-    if (ref.path.length) {
-      _.set(this.value, ref.path, value);
-    } else {
-      this.value = value;
-    }
+  setRefValue(ref: Ref, value: any) {
+    this.checkInitiated();
 
-    dispatch && this.dispatchChangeValue(ref);
+    this.dataStorage.set(ref.route, value);
+
+    this.dispatch(new ChangeRefValueEvent(ref.path, ref.getValue()));
   }
 
   /**
@@ -271,252 +215,173 @@ export default class Model {
    * @returns value
    */
   getRefValue(ref: Ref): any {
-    return ref.path.length ? _.get(this.value, ref.path) : this.value;
+    this.checkInitiated();
+
+    return this.dataStorage.get(ref.route);
   }
 
   /**
    * Get initial value
    */
   getRefInitialValue(ref: Ref): any {
-    return ref.path.length
-      ? _.get(this.initialValue, ref.path)
-      : this.initialValue;
+    this.checkInitiated();
+
+    return this.initialDataStorage.get(ref.route);
   }
 
-  getRefErrors(ref: Ref): IState[] {
-    return Object.values(this.getRefStates(ref))
-      .filter((state) => state.type === StateTypes.ERROR);
+  /**
+   * Returns an array of error refs related to the given ref if exists
+   * @param ref
+   */
+  getRefErrors(ref: Ref): Ref[] {
+    this.checkInitiated();
+
+    return Object.values(this.getRefs(ref))
+      .filter((ref) => ref.state.valid === false);
   }
 
+  /**
+   * Returns incremented validation lock, used to track validation queue
+   */
   get validationLock(): number {
+    this.checkInitiated();
+
     return this.valLock += 1;
   }
 
+  /**
+   * Returns incremented error lock, used to track the order of incoming errors
+   */
   get errorLock(): number {
+    this.checkInitiated();
+
     return this.errLock += 1;
   }
 
-  validateRef(ref: Ref, options: IValidationOptions = {}): Promise<boolean> {
-    const valLock = this.validationLock;
+  /**
+   * Validates given ref, by default all validated refs will be marked as validated
+   * @param ref - ref to be validated
+   * @param options - validation options
+   */
+  validateRef(ref: Ref, options: IModelValidationOptions = {}): Promise<boolean> {
+    this.checkInitiated();
 
-    if (this.options.debug && !this.isPrepared) {
-      console.warn('You are trying to validate an unprepared model. ' +
-        'In most cases, it is recommended to prepare the model before validation.');
+    const valLock = this.validationLock;
+    const results: { [path: string]: IRuleValidationResult } = {};
+    const refs: RefMap = {};
+    let scopes = ref.route.length ? [ref.path] : [];
+    const targetScope = ref.route.length ? ref.path : '';
+
+    if (ref.state.dependencies) {
+      const resolvedDependencies = ref.state.dependencies
+        .map((depPath) => utils.resolvePath(depPath, ref.path));
+      scopes = [...scopes, ...resolvedDependencies];
     }
 
-    const scope = ref.path.join('.') || '';
-    const ignoreValidationStates = options.ignoreValidationStates !== undefined
-      ? options.ignoreValidationStates
-      : this.options.ignoreValidationStates;
-    const onlyDirtyRefs = options.onlyDirtyRefs !== undefined
-      ? options.onlyDirtyRefs
-      : this.options.onlyDirtyRefs;
-    const coerceTypes = options.coerceTypes !== undefined
-      ? options.coerceTypes
-      : this.options.coerceTypes;
-    const removeAdditional = options.removeAdditional !== undefined
-      ? options.removeAdditional
-      : this.options.removeAdditional;
-    const results: { [path: string]: IRuleValidationResult } = {};
-
     // validate attribute function
-    const validateRuleFn: ValidateRuleFn = (curRef: Ref, rule: IRule)
+    const validateRuleFn: ValidateRuleFn = (curRef: Ref, rule: IRule, validationOptions)
       : Promise<IRuleValidationResult> => {
-      if (!rule.validate) {
+      const curScope = curRef.path;
+
+      if (
+        curRef.state.dependsOn
+        && curRef.state.dependsOn
+          .find((depPath) => utils.resolvePath(depPath, curRef.path) === ref.path)
+      ) {
+        scopes.push(curRef.path);
+      }
+
+      const isRefInTargetScope = !targetScope
+        || curScope === targetScope || curScope.startsWith(`${targetScope}/`);
+
+      const isRefInScope = !scopes.length
+        || !!scopes.find((scope) => curScope === scope || curScope.startsWith(`${scope}/`));
+
+      const isRefInParentScope = !isRefInScope
+        && !!scopes.find((scope) => scope.startsWith(curScope));
+
+      if (!rule.validate && !isRefInScope && !isRefInParentScope) {
         return Promise.resolve(curRef.createUndefinedResult());
       }
 
-      const curScope = curRef.path.join('.');
+      if (isRefInScope) {
+        refs[curRef.path] = curRef;
 
-      const isRefInScope = !scope || curScope.startsWith(scope);
-
-      if (isRefInScope && !ignoreValidationStates && !(onlyDirtyRefs && !curRef.isDirty)) {
         // validating state
-        const curState = this.getRefState(curRef);
+        const curState = curRef.state;
 
-        this.setRefState({
+        if (options.forceValidated && isRefInTargetScope) {
+          curRef.markAsValidated();
+        }
+
+        this.setRefState(curRef, {
           ...curState,
           valLock,
-          type: StateTypes.VALIDATING,
+          validating: true,
         });
       }
 
-      return rule.validate(curRef, validateRuleFn)
+      return (rule as any).validate(curRef, validateRuleFn, validationOptions)
         .then((result: IRuleValidationResult) => {
-          const isApplyState = isRefInScope
-            && !ignoreValidationStates
-            && !(onlyDirtyRefs && !curRef.isDirty);
+          if (isRefInScope) {
+            if (result.valid === false) {
+              result.errLock = this.errorLock;
+            }
 
-          if (result.valid === false && isApplyState) {
-            result.errLock = this.errorLock;
-          }
+            const path = curRef.path;
+            const curResult = results[path] || { valLock };
+            const mergedResult = results[path] = utils.mergeResults([curResult, result]);
+            mergedResult.valLock = valLock;
+            mergedResult.validating = false;
 
-          const key = curRef.key;
-          const curResult = results[key] || {};
-          const mergedResult = results[key] = mergeResults([curResult, result]);
-
-          const state = resultToState(mergedResult, curRef.path, valLock);
-
-          if (isApplyState) {
-            this.setRefState(state);
-          } else {
-            const curState = this.getRefState(curRef);
-
-            this.setRefState({
-              ...curState,
-              ...state,
-              type: curState.type,
-              message: curState.message,
-            });
+            this.setRefState(curRef, mergedResult as IModelValidationResult);
           }
 
           return result;
         });
     };
 
-    validateRuleFn.options = {
-      coerceTypes,
-      removeAdditional,
-    };
-
-    this.clearAttributeStates(ref.path);
-
-    return validateRuleFn(this.ref(), this.rule)
+    return this.validator.validate(this.ref(), validateRuleFn, options)
       .then((result) => {
         if (this.options.debug && result.valid === undefined) {
           console.warn(UNDEFINED_RESULT_WARNING);
         }
 
-        return !!result.valid;
+        // merge map
+        if (scopes.length) {
+          scopes.forEach((scope) => {
+            Object.keys(this.refs).forEach((refPath) => {
+              if (refPath === scope || refPath.startsWith(`${scope}/`)) {
+                delete this.refs[refPath];
+              }
+            });
+          });
+
+          _.extend(this.refs, refs);
+        } else {
+          this.refs = refs;
+        }
+
+        return !!ref.state.valid;
       });
   }
 
-  validate(options: IValidationOptions = {}): Promise<boolean> {
+  /**
+   * Validates root ref, by default all validated refs will be marked as validated
+   * @param options - validation options
+   */
+  validate(options?: IModelValidationOptions): Promise<boolean> {
+    this.checkInitiated();
+
     return this.ref().validate(options);
   }
 
-  prepare(options: IValidationOptions = {}): Promise<boolean> {
-    options.ignoreValidationStates = true;
-    this.isPrepared = true;
-
-    return this.validateRef(this.ref(), options);
-  }
-
-  private compile = (schema: ISchema): IRuleCompiled => {
-    const annotationResult: IRuleValidationResult = {
-      title: schema.title,
-      description: schema.description,
-      readOnly: schema.readOnly,
-      writeOnly: schema.writeOnly,
-    };
-
-    const defaultValue = schema.default;
-    const filterFn = schema.filter;
-    const errorDesc = schema.error;
-    const warningDesc = schema.warning;
-    const schemaErrors = schema.errors || {};
-    const schemaWarnings = schema.warnings || {};
-    const modelErrors = this.options.errors;
-    const modelWarnings = this.options.warnings;
-
-    if (filterFn !== undefined && typeof filterFn !== 'function') {
-      throw new Error('The schema of the "filter" keyword should be a function.');
+  /**
+   * Checks if the model has been validated, otherwise throws an error
+   */
+  private checkInitiated() {
+    if (!this.isInitiated) {
+      throw new Error('You should initialize your model to work with it.');
     }
-
-    function addSchemaMessageDescriptions(result: IRuleValidationResult) {
-      const { message } = result;
-
-      if (message) {
-        if (result.valid === true) {
-          message.description = warningDesc
-            || schemaWarnings[message.keyword]
-            || modelWarnings[message.keyword]
-            || message.description;
-        } else if (result.valid === false) {
-          message.description = errorDesc
-            || schemaErrors[message.keyword]
-            || modelErrors[message.keyword]
-            || message.description;
-        }
-      }
-
-      return result;
-    }
-
-    // get rules
-    const rules: IRuleCompiled[] = [{
-      keyword: 'annotations',
-      validate: async (ref: Ref) => {
-        const value = ref.get();
-
-        if (value === undefined) {
-          if (defaultValue !== undefined) {
-            this.setRefValue(ref, defaultValue, false);
-          }
-        } else {
-          if (filterFn) {
-            const filteredValue = filterFn(value);
-
-            if (filteredValue !== value) {
-              this.setRefValue(ref, filteredValue, false);
-            }
-          }
-        }
-
-        return annotationResult;
-      },
-    }];
-
-    Object.entries(schema).forEach(([keywordName, keywordSchema]) => {
-      if (SCHEMA_ANNOTATIONS.indexOf(keywordName) !== -1) {
-        return;
-      }
-
-      const keyword: IKeyword = this.keywords[keywordName];
-
-      if (!keyword) {
-        throw new Error(`Keyword "${keywordName}" does't exists.`);
-      }
-
-      const rule = keyword.compile(this.compile, keywordSchema, schema) as IRuleCompiled;
-      rule.keyword = keyword.name;
-
-      rules.push(rule);
-    });
-
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
-      : Promise<IRuleValidationResult> => {
-      const results: IRuleValidationResult[] = [];
-
-      for (const rule of rules) {
-        if (rule.validate) {
-          const res = await rule.validate(ref, validateRuleFn);
-
-          results.push(res);
-        }
-      }
-
-      return addSchemaMessageDescriptions(mergeResults(results));
-    };
-
-    return {
-      validate,
-      keyword: 'schema',
-    };
-  }
-
-  addKeyword(keyword: IKeyword) {
-    addKeyword(keyword, this.keywords);
-  }
-
-  clearAttributeStates(path: Path) {
-    const pathKey = JSON.stringify(path);
-    const prefix = pathKey.slice(0, -1);
-
-    Object.keys(this.states).forEach((statePath) => {
-      if (statePath.startsWith(prefix) && statePath !== pathKey) {
-        delete this.states[statePath];
-      }
-    });
   }
 }

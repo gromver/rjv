@@ -1,18 +1,16 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+} from '../types';
 import utils from '../utils';
 
 const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
   return rule.validate
-    ? rule.validate(ref, validateFn)
+    ? rule.validate(ref, validateFn, {
+      coerceTypes: false,
+      removeAdditional: false,
+    })
     : Promise.resolve({});
-};
-validateFn.options = {
-  coerceTypes: false,
-  removeAdditional: false,
 };
 
 const keyword: IKeyword = {
@@ -33,11 +31,14 @@ const keyword: IKeyword = {
     });
 
     return {
-      validate(ref: Ref, validateRuleFn: ValidateRuleFn): Promise<IRuleValidationResult> {
+      validate(ref: Ref, validateRuleFn: ValidateRuleFn, options): Promise<IRuleValidationResult> {
         const jobs: Promise<IRuleValidationResult>[] = rules
           .map(
             (rule) => (rule as any)
-              .validate(ref, validateFn) as Promise<IRuleValidationResult>,
+              .validate(ref, validateFn, {
+                coerceTypes: false,
+                removeAdditional: false,
+              }) as Promise<IRuleValidationResult>,
           );
 
         return Promise.all(jobs).then((results) => {
@@ -50,7 +51,7 @@ const keyword: IKeyword = {
           });
 
           if (validRules.length === 1) {
-            return validateRuleFn(ref, validRules[0]);
+            return validateRuleFn(ref, validRules[0], options);
           }
 
           return ref.createErrorResult({
@@ -65,8 +66,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     oneOf?: ISchema[];
   }
 }

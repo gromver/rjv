@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('presence keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           foo: {
@@ -20,6 +20,7 @@ describe('presence keyword', () => {
               trim: true,
             },
           },
+          car: {},
         },
       },
       {
@@ -28,59 +29,60 @@ describe('presence keyword', () => {
     );
 
     const ref = model.ref();
-    const fooRef = ref.relativeRef(['foo']);
-    const barRef = ref.relativeRef(['bar']);
-    const carRef = ref.relativeRef(['car']);
-    expect(fooRef.isShouldNotBeBlank).toBe(false);
-    expect(barRef.isShouldNotBeBlank).toBe(false);
-    expect(carRef.isShouldNotBeBlank).toBe(false);
-
-    await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
-    expect(fooRef.state.type).toBe(StateTypes.ERROR);
-    expect(barRef.state.type).toBe(StateTypes.SUCCESS);
-    expect(carRef.state.type).toBe(StateTypes.PRISTINE);
+    const fooRef = ref.ref('foo');
+    const barRef = ref.ref('bar');
+    const carRef = ref.ref('car');
     expect(fooRef.isShouldNotBeBlank).toBe(true);
     expect(barRef.isShouldNotBeBlank).toBe(true);
     expect(carRef.isShouldNotBeBlank).toBe(false);
 
-    fooRef.set('');
     await ref.validate();
-    expect(fooRef.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
+    expect(fooRef.state.valid).toBe(false);
+    expect(barRef.state.valid).toBe(true);
+    expect(carRef.state.valid).toBeUndefined();
+    expect(fooRef.isShouldNotBeBlank).toBe(true);
+    expect(barRef.isShouldNotBeBlank).toBe(true);
+    expect(carRef.isShouldNotBeBlank).toBe(false);
 
-    fooRef.set('abc');
+    fooRef.setValue('');
     await ref.validate();
-    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
+    expect(fooRef.state.valid).toBe(false);
 
-    fooRef.set(null);
+    fooRef.setValue('abc');
     await ref.validate();
-    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
+    expect(fooRef.state.valid).toBe(true);
 
-    fooRef.set(0);
+    fooRef.setValue(null);
     await ref.validate();
-    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
+    expect(fooRef.state.valid).toBe(true);
 
-    fooRef.set([]);
+    fooRef.setValue(0);
     await ref.validate();
-    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
+    expect(fooRef.state.valid).toBe(true);
 
-    fooRef.set({});
+    fooRef.setValue([]);
     await ref.validate();
-    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
+    expect(fooRef.state.valid).toBe(true);
 
-    barRef.set('   ');
+    fooRef.setValue({});
     await ref.validate();
-    expect(barRef.state.type).toBe(StateTypes.ERROR);
-    expect(barRef.value).toBe('');
+    expect(fooRef.state.valid).toBe(true);
 
-    barRef.set(' foo ');
+    barRef.setValue('   ');
     await ref.validate();
-    expect(barRef.state.type).toBe(StateTypes.SUCCESS);
-    expect(barRef.value).toBe('foo');
+    expect(barRef.state.valid).toBe(false);
+    expect(barRef.getValue()).toBe('');
+
+    barRef.setValue(' foo ');
+    await ref.validate();
+    expect(barRef.state.valid).toBe(true);
+    expect(barRef.getValue()).toBe('foo');
   });
 
   it('Test default and presence keywords case 1', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           foo: {
@@ -95,14 +97,15 @@ describe('presence keyword', () => {
     );
 
     const ref = model.ref();
-    const fooRef = ref.relativeRef(['foo']);
+    const fooRef = ref.ref('foo');
 
     await ref.validate();
-    expect(fooRef.state.type).toBe(StateTypes.ERROR);
+    expect(fooRef.state.valid).toBe(false);
   });
 
   it('Test default and presence keywords case 2', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         properties: {
           foo: {
@@ -117,26 +120,30 @@ describe('presence keyword', () => {
     );
 
     const ref = model.ref();
-    const fooRef = ref.relativeRef(['foo']);
+    const fooRef = ref.ref('foo');
 
     await ref.validate();
-    expect(fooRef.state.type).toBe(StateTypes.SUCCESS);
-    expect(fooRef.value).toBe('abc');
+    expect(fooRef.state.valid).toBe(true);
+    expect(fooRef.getValue()).toBe('abc');
   });
 
-  it('Should throw an error', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          properties: {
-            foo: {
-              presence: null,
-            },
+  it('Should expose error', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        // @ts-ignore
+        properties: {
+          foo: {
+            presence: null,
           },
         },
-        '',
-      );
-    }).toThrow('The schema of the "presence" keyword should be a boolean value or an object.');
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "presence" keyword should be a boolean value or an object.',
+      });
   });
 });

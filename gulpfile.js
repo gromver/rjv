@@ -7,6 +7,7 @@ const gzip = require('gulp-gzip')
 const merge2 = require('merge2')
 
 const rollup = require('rollup')
+const rollupBuiltins = require('rollup-plugin-node-builtins')
 const rollupResolve = require('rollup-plugin-node-resolve')
 const commonjs = require('rollup-plugin-commonjs')
 const uglify = require('rollup-plugin-uglify')
@@ -19,6 +20,7 @@ function postProcess() {
     .src(
       [
         path.resolve(__dirname, 'dist/**/*.js'),
+        path.resolve(__dirname, 'dist/**/*.d.ts'),
         path.resolve(__dirname, 'bundles/*.js'),
       ],
       { base: '.' }
@@ -72,6 +74,7 @@ const buildModule = gulp.series(
         rollupResolve({
           browser: true,
         }),
+        rollupBuiltins(),
         commonjs(),
         json(),
         uglify.uglify({

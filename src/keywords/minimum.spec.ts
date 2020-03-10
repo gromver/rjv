@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('minimum keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         minimum: 5,
       },
@@ -18,23 +18,24 @@ describe('minimum keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set(4);
+    ref.setValue(4);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'minimum',
       description: 'Should be greater than or equal 5',
     });
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.PRISTINE);
+    expect(ref.state.valid).toBeUndefined();
   });
 
   it('Some integration tests with exclusive mode', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         minimum: 5,
         exclusiveMinimum: true,
@@ -44,31 +45,36 @@ describe('minimum keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set(5);
+    ref.setValue(5);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'minimum_exclusive',
       description: 'Should be greater than 5',
     });
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          minimum: '1',
-        },
-        '',
-      );
-    }).toThrow('The schema of the "minimum" keyword should be a number.');
+  it('Should expose error', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        // @ts-ignore
+        minimum: '1',
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The schema of the "minimum" keyword should be a number.',
+      });
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         minimum: 5,
         exclusiveMinimum: true,
@@ -81,17 +87,17 @@ describe('minimum keyword', () => {
     expect(ref.state.minimum).toBe(undefined);
     expect(ref.state.exclusiveMinimum).toBe(undefined);
 
-    ref.set(6);
+    ref.setValue(6);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
     expect(ref.state).toMatchObject({
       minimum: 5,
       exclusiveMinimum: true,
     });
 
-    ref.set(4);
+    ref.setValue(4);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
     expect(ref.state).toMatchObject({
       minimum: 5,
       exclusiveMinimum: true,

@@ -5,11 +5,11 @@ declare const expect;
 declare const require;
 
 import Model from '../Model';
-import { StateTypes } from '../interfaces/IState';
 
 describe('not keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const model = new Model();
+    await model.init(
       {
         not: {
           type: 'number',
@@ -21,30 +21,34 @@ describe('not keyword', () => {
 
     const ref = model.ref();
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set(4);
+    ref.setValue(4);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.ERROR);
+    expect(ref.state.valid).toBe(false);
 
-    ref.set('abc');
+    ref.setValue('abc');
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
 
-    ref.set(null);
+    ref.setValue(null);
     await ref.validate();
-    expect(ref.state.type).toBe(StateTypes.SUCCESS);
+    expect(ref.state.valid).toBe(true);
   });
 
-  it('Should throw errors', async () => {
-    expect(() => {
-      new Model(
-        {
-          // @ts-ignore
-          not: 1,
-        },
-        '',
-      );
-    }).toThrow('The value of the "not" keyword should be a schema object.');
+  it('Should expose error', async () => {
+    const model = new Model();
+
+    await expect(model.init(
+      {
+        // @ts-ignore
+        not: 1,
+      },
+      '',
+    ))
+      .rejects
+      .toMatchObject({
+        message: 'The value of the "not" keyword should be a schema object.',
+      });
   });
 });

@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+} from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -14,16 +13,16 @@ const keyword: IKeyword = {
 
     const rule: IRule = compile(schema, parentSchema);
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn)
+    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
       : Promise<IRuleValidationResult> => {
-      const value = ref.get() as [];
+      const value = ref.getValue() as [];
       let hasValidItem = false;
 
       if (ref.checkDataType('array')) {
         for (const index in value) {
           if (rule.validate) {
             const res = await validateRuleFn(
-              ref.relativeRef([index]), rule as IRule,
+              ref.ref(`${index}`), rule as IRule, options,
             ) as IRuleValidationResult;
 
             if (res.valid) {
@@ -53,8 +52,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     contains?: ISchema;
   }
 }

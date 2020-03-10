@@ -1,8 +1,7 @@
-import ISchema from '../interfaces/ISchema';
-import IKeyword, { CompileFn } from '../interfaces/IKeyword';
-import IRule, { ValidateRuleFn } from '../interfaces/IRule';
 import Ref from '../Ref';
-import IRuleValidationResult from '../interfaces/IRuleValidationResult';
+import {
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+} from '../types';
 
 const keyword: IKeyword = {
   name: 'required',
@@ -22,16 +21,16 @@ const keyword: IKeyword = {
     };
 
     return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn)
+      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
         : Promise<IRuleValidationResult> {
         if (ref.checkDataType('object')) {
-          const value = ref.get();
+          const value = ref.getValue();
           const invalidProperties: string[] = [];
 
           for (const propName of required) {
-            const propRef = ref.relativeRef([propName]);
+            const propRef = ref.ref(propName);
 
-            await validateRuleFn(propRef, propRequiredRule);
+            await validateRuleFn(propRef, propRequiredRule, options);
 
             if (!Object.prototype.hasOwnProperty.call(value, propName)) {
               invalidProperties.push(propName);
@@ -57,8 +56,8 @@ const keyword: IKeyword = {
 
 export default keyword;
 
-declare module '../interfaces/ISchema' {
-  export default interface ISchema {
+declare module '../types' {
+  export interface ISchema {
     required?: string[];
   }
 }
