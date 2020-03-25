@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.1.0"></a>
+# [3.1.0](https://github.com/gromver/rjv/compare/v3.0.5-alpha...v3.1.0) (2020-03-25)
+
+
+### Bug Fixes
+
+* default keyword - clone value before setting ([3bde716](https://github.com/gromver/rjv/commit/3bde716))
+* fix allOf validation ([619b095](https://github.com/gromver/rjv/commit/619b095))
+* fix model::validateRef(), support relative dependencies ([23d4b14](https://github.com/gromver/rjv/commit/23d4b14))
+* set lib version in the .d.ts files ([e3956c8](https://github.com/gromver/rjv/commit/e3956c8))
+
+
+### Features
+
+* add "applySchemas" keyword ([5f7ebe1](https://github.com/gromver/rjv/commit/5f7ebe1))
+* add Ref::refresh method ([c169fa9](https://github.com/gromver/rjv/commit/c169fa9))
+* add Ref::resolvePath() helper ([f46a99d](https://github.com/gromver/rjv/commit/f46a99d))
+* rename Storage => LodashStorage ([d665612](https://github.com/gromver/rjv/commit/d665612))
+
+
+
 <a name="3.0.5"></a>
 ## [3.0.5](https://github.com/gromver/rjv/compare/v3.0.5-alpha...v3.0.5) (2020-02-17)
 
