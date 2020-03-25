@@ -31,3 +31,4 @@ export { default as contains } from './contains';
 // new keywords
 export { default as resolveSchema } from './resolveSchema';
 export { default as validate } from './validate';
+export { default as applySchemas } from './applySchemas';
