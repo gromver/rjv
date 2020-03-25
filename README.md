@@ -10,14 +10,6 @@ npm install rjv --save
 ## Usage
 
 TBD
-<Field
-    model={model}
-    path={['foo', 'bar']}
-    schema={{ presence: true }}
-    render={() => {}}
-    errors={{ presence: 'blabla' }}
-    depends={['foo', 'car']}
-/>
 
 ## License
 **RxJV** is released under the MIT license.
