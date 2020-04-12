@@ -215,6 +215,13 @@ export default class Ref {
   }
 
   /**
+   * Returns current validation message if exists
+   */
+  get message(): IValidationMessage | undefined {
+    return this.state.message;
+  }
+
+  /**
    * Is ref's value changed?
    */
   get isChanged(): boolean {
