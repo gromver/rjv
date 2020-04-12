@@ -163,6 +163,25 @@ describe('Ref tests', () => {
     expect(barRef.isChanged).toBe(false);
   });
 
+  it('Ref::message', async () => {
+    const model = new Model();
+    await model.init(
+      { type: 'string' },
+      'foo',
+    );
+    const ref = model.ref();
+    expect(ref.message).toBeUndefined();
+
+    await ref.validate();
+    expect(ref.message).toBeUndefined();
+
+    ref.setValue(1);
+    await ref.validate();
+    expect(ref.message).toMatchObject({
+      keyword: 'type',
+    });
+  });
+
   it('Ref::isDirty', async () => {
     const model = new Model();
     await model.init(
