@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.2.0"></a>
+# [3.2.0](https://github.com/gromver/rjv/compare/v3.1.1...v3.2.0) (2020-04-12)
+
+
+### Features
+
+* **Model:** add attributes getter ([6ab693d](https://github.com/gromver/rjv/commit/6ab693d))
+* **Ref:** add message getter ([871ae58](https://github.com/gromver/rjv/commit/871ae58))
+
+
+
 <a name="3.1.1"></a>
 ## [3.1.1](https://github.com/gromver/rjv/compare/v3.1.0...v3.1.1) (2020-03-25)
 
