@@ -659,4 +659,15 @@ describe('Model test', () => {
     expect(fn.mock.calls[0][0]).toMatchObject({ path: '/' });
     expect(fn.mock.calls[1][0]).toMatchObject({ path: '/' });
   });
+
+  it('Should return a cloned version of model data', async () => {
+    const model = new Model();
+    const initialData = { foo: 'bar' };
+
+    await model.init({}, initialData);
+    expect(model.getAttributes()).toMatchObject(initialData);
+    expect(model.getAttributes()).not.toBe(initialData);
+    expect(model.attributes).toMatchObject(initialData);
+    expect(model.attributes).not.toBe(initialData);
+  });
 });
