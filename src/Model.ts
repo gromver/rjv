@@ -377,6 +377,20 @@ export default class Model {
   }
 
   /**
+   * Function - Returns a cloned data of the model
+   */
+  getAttributes(): any {
+    return _.cloneDeep(this.dataStorage.get([]));
+  }
+
+  /**
+   * Getter - Returns a cloned data of the model
+   */
+  get attributes(): any {
+    return this.getAttributes();
+  }
+
+  /**
    * Checks if the model has been validated, otherwise throws an error
    */
   private checkInitiated() {
