@@ -1,20 +1,18 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('multipleOf keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         multipleOf: 2,
       },
       4,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -29,34 +27,24 @@ describe('multipleOf keyword', () => {
     expect(ref.state.valid).toBeUndefined();
   });
 
-  it('Should expose error 1', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #1', async () => {
+    await expect(() => new Model(
       {
         // @ts-ignore
         multipleOf: '1',
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "multipleOf" keyword should be a number.',
-      });
+      .toThrow('The schema of the "multipleOf" keyword should be a number.');
   });
 
-  it('Should expose error 2', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #2', async () => {
+    await expect(() => new Model(
       {
         multipleOf: 0,
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The "multipleOf" keyword can\'t be zero.',
-      });
+      .toThrow('The "multipleOf" keyword can\'t be zero.');
   });
 });

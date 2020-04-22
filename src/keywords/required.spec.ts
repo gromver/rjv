@@ -1,15 +1,12 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('required keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         required: ['foo', 'bar'],
       },
@@ -17,6 +14,7 @@ describe('required keyword', () => {
         bar: null,
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const fooRef = ref.ref('foo');

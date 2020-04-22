@@ -2,7 +2,6 @@ declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from './Model';
 import ChangeRefValueEvent from './events/ChangeRefValueEvent';
@@ -13,11 +12,11 @@ describe('Ref tests', () => {
       foo: 'bar',
     };
 
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {},
       initialData,
     );
+    await model.prepare();
     const ref = model.ref();
 
     expect(ref.getInitialValue()).toBe(ref.getInitialValue());
@@ -37,11 +36,11 @@ describe('Ref tests', () => {
   });
 
   it('Ref::set(value) should dispatch ChangeRefValueEvent', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       { type: 'string' },
       'foo',
     );
+    await model.prepare();
     const ref = model.ref();
     const fn = jest.fn();
     model.observable.subscribe(fn);
@@ -53,11 +52,11 @@ describe('Ref tests', () => {
   });
 
   it('Ref::value should dispatch ChangeRefValueEvent', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       { type: 'string' },
       'foo',
     );
+    await model.prepare();
     const ref = model.ref();
     const fn = jest.fn();
     model.observable.subscribe(fn);
@@ -69,8 +68,7 @@ describe('Ref tests', () => {
   });
 
   it('Ref::state', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'number',
         readOnly: true,
@@ -78,6 +76,7 @@ describe('Ref tests', () => {
       },
       '',
     );
+    await model.prepare();
     const ref = model.ref();
     expect(ref.state).toMatchObject({
       valid: false,
@@ -102,8 +101,7 @@ describe('Ref tests', () => {
   });
 
   it('Ref::errors', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           foo: {
@@ -121,6 +119,7 @@ describe('Ref tests', () => {
         },
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.errors).toHaveLength(3);
@@ -133,8 +132,7 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isChanged', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           foo: {},
@@ -146,6 +144,7 @@ describe('Ref tests', () => {
         bar: 'val',
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const fooRef = model.ref('foo');
@@ -164,11 +163,11 @@ describe('Ref tests', () => {
   });
 
   it('Ref::message', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       { type: 'string' },
       'foo',
     );
+    await model.prepare();
     const ref = model.ref();
     expect(ref.message).toBeUndefined();
 
@@ -183,11 +182,11 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isDirty', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {},
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.isDirty).toBe(false);
@@ -200,13 +199,13 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isRequired', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         required: ['foo'],
       },
       {},
     );
+    await model.prepare();
 
     const ref = model.ref();
     const fooRef = model.ref('foo');
@@ -214,14 +213,14 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isMutable, Ref::isReadOnly, Ref::isWriteOnly', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         readOnly: true,
         writeOnly: true,
       },
       {},
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.isMutable).toBe(false);
@@ -230,11 +229,11 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isValidated', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {},
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.isValidated).toBe(false);
@@ -247,13 +246,13 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isValid, Ref::isInvalid', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'number',
       },
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.isValid).toBe(false);
@@ -270,8 +269,7 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isValidating, Ref::isPristine', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         resolveSchema: () => Promise.resolve({
           type: 'number',
@@ -279,6 +277,7 @@ describe('Ref tests', () => {
       },
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.isPristine).toBe(true);
@@ -300,8 +299,7 @@ describe('Ref tests', () => {
   });
 
   it('Ref::isShouldNotBeBlank', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           foo: {
@@ -311,17 +309,18 @@ describe('Ref tests', () => {
       },
       {},
     );
+    await model.prepare();
 
     const fooRef = model.ref('foo');
     expect(fooRef.isShouldNotBeBlank).toBe(true);
   });
 
   it('Ref::isTouched, Ref::isUntouched', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {},
       {},
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.isTouched).toBe(false);
@@ -333,11 +332,11 @@ describe('Ref tests', () => {
   });
 
   it('Ref::touch()', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {},
       {},
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.isTouched).toBe(false);
@@ -349,11 +348,11 @@ describe('Ref tests', () => {
   });
 
   it('Ref::withTouch()', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {},
       {},
     );
+    await model.prepare();
 
     const handler = (input: string): number => {
       return input.length;
@@ -370,8 +369,7 @@ describe('Ref tests', () => {
   });
 
   it('Ref::firstError', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           a: {
@@ -391,6 +389,7 @@ describe('Ref tests', () => {
         b: { bb: '' },
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.firstError).toMatchObject({ path: '/a/aa' });
@@ -404,8 +403,7 @@ describe('Ref tests', () => {
   });
 
   it('Ref::validate', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           a: {
@@ -421,6 +419,7 @@ describe('Ref tests', () => {
         b: '',
       },
     );
+    await model.prepare();
 
     const aaRef = model.ref('a/aa');
     await expect(aaRef.validate()).resolves.toBe(false);

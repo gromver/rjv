@@ -1,15 +1,12 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('not keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         not: {
           type: 'number',
@@ -18,6 +15,7 @@ describe('not keyword', () => {
       },
       6,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -37,18 +35,13 @@ describe('not keyword', () => {
   });
 
   it('Should expose error', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+    await expect(() => new Model(
       {
         // @ts-ignore
         not: 1,
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The value of the "not" keyword should be a schema object.',
-      });
+      .toThrow('The value of the "not" keyword should be a schema object.');
   });
 });

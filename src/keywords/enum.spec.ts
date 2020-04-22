@@ -1,8 +1,6 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
@@ -10,13 +8,13 @@ const ENUM = [1, { foo: 'bar' }, [1, 2, 3]];
 
 describe('enum keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         enum: ENUM,
       },
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();

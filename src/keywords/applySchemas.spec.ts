@@ -1,15 +1,12 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('applySchemas keyword', () => {
-  it('Some integration tests 1', async () => {
-    const model = new Model();
-    await model.init(
+  it('Some integration tests #1', async () => {
+    const model = new Model(
       {
         applySchemas: [
           {
@@ -24,6 +21,7 @@ describe('applySchemas keyword', () => {
       },
       3,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -46,9 +44,8 @@ describe('applySchemas keyword', () => {
     expect(ref.state.valid).toBe(false);
   });
 
-  it('Some integration tests 2', async () => {
-    const model = new Model();
-    await model.init(
+  it('Some integration tests #2', async () => {
+    const model = new Model(
       {
         applySchemas: [
           {
@@ -62,6 +59,7 @@ describe('applySchemas keyword', () => {
       },
       3,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -80,9 +78,8 @@ describe('applySchemas keyword', () => {
     expect(ref.state.valid).toBe(false);
   });
 
-  it('Some integration tests 3', async () => {
-    const model = new Model();
-    await model.init(
+  it('Some integration tests #3', async () => {
+    const model = new Model(
       {
         applySchemas: [
           {
@@ -97,6 +94,7 @@ describe('applySchemas keyword', () => {
       },
       3,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -120,8 +118,7 @@ describe('applySchemas keyword', () => {
   });
 
   it('Properties integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         applySchemas: [
           {
@@ -144,6 +141,7 @@ describe('applySchemas keyword', () => {
       },
       { a: 4 },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const aRef = ref.ref('a');
@@ -163,35 +161,25 @@ describe('applySchemas keyword', () => {
     expect(ref.state.valid).toBe(false);
   });
 
-  it('Should expose error 1', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #1', async () => {
+    await expect(() => new Model(
       {
         // @ts-ignore
         applySchemas: 1,
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "applySchemas" keyword should be an array of schemas.',
-      });
+      .toThrow('The schema of the "applySchemas" keyword should be an array of schemas.');
   });
 
-  it('Should expose error 2', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #2', async () => {
+    await expect(() => new Model(
       {
         // @ts-ignore
         applySchemas: [1],
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'Items of "applySchemas" keyword should be a schema object.',
-      });
+      .toThrow('Items of "applySchemas" keyword should be a schema object.');
   });
 });
