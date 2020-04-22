@@ -7,6 +7,10 @@ export { default as Model } from './Model';
 
 export { default as Ref } from './Ref';
 
+export { default as Storage } from './storage/LodashStorage';
+
+export { default as utils } from './utils';
+
 export {
   version,
   events,

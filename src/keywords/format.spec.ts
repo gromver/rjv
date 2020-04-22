@@ -1,20 +1,18 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('format keyword', () => {
   it('Email format test', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         format: 'email',
       },
       'test@mail.com',
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -35,45 +33,35 @@ describe('format keyword', () => {
 
   // todo: cover with tests all format types
 
-  it('Should expose error 1', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #1', async () => {
+    await expect(() => new Model(
       {
         // @ts-ignore
         format: 1,
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "format" keyword should be a string.',
-      });
+      .toThrow('The schema of the "format" keyword should be a string.');
   });
 
-  it('Should expose error 2', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #2', async () => {
+    await expect(() => new Model(
       {
         format: 'foo',
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'Unknown string format supplied.',
-      });
+      .toThrow('Unknown string format supplied.');
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         format: 'email',
       },
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();

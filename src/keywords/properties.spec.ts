@@ -1,15 +1,12 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('properties keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           car: { properties: { a: { type: 'boolean' } } },
@@ -23,6 +20,7 @@ describe('properties keyword', () => {
         bar: 'test',
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -38,8 +36,7 @@ describe('properties keyword', () => {
   });
 
   it('Test additionalProperties=undefined', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           foo: { type: 'number' },
@@ -51,6 +48,7 @@ describe('properties keyword', () => {
         car: 'car',
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -58,8 +56,7 @@ describe('properties keyword', () => {
   });
 
   it('Test additionalProperties=true', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           foo: { type: 'number' },
@@ -72,6 +69,7 @@ describe('properties keyword', () => {
         car: 'car',
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -79,8 +77,7 @@ describe('properties keyword', () => {
   });
 
   it('Test additionalProperties=false', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           foo: { type: 'number' },
@@ -92,6 +89,7 @@ describe('properties keyword', () => {
         bar: 1,
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.state.valid).toBe(false);
@@ -101,8 +99,7 @@ describe('properties keyword', () => {
   });
 
   it('Test additionalProperties=schema', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           foo: { type: 'number' },
@@ -115,6 +112,7 @@ describe('properties keyword', () => {
         foo: 1,
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.state.valid).toBe(true);
@@ -132,8 +130,7 @@ describe('properties keyword', () => {
   });
 
   it('Async test with additionalProperties=sync schema', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         resolveSchema: () => Promise.resolve({
           properties: {
@@ -148,6 +145,7 @@ describe('properties keyword', () => {
         foo: 1,
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -166,8 +164,7 @@ describe('properties keyword', () => {
   });
 
   it('Async test with additionalProperties=async schema', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         resolveSchema: () => Promise.resolve({
           properties: {
@@ -184,6 +181,7 @@ describe('properties keyword', () => {
         foo: 1,
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -202,8 +200,7 @@ describe('properties keyword', () => {
   });
 
   it('Test removeAdditional keyword', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         additionalProperties: false,
         removeAdditional: true,
@@ -228,6 +225,7 @@ describe('properties keyword', () => {
         },
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate();
@@ -238,11 +236,6 @@ describe('properties keyword', () => {
   it('Test removeAdditional model\'s option', async () => {
     const model = new Model(
       {
-        validation: { removeAdditional: true },
-      },
-    );
-    await model.init(
-      {
         additionalProperties: false,
         properties: {
           foo: { type: 'number' },
@@ -263,7 +256,11 @@ describe('properties keyword', () => {
           additional2: 2,
         },
       },
+      {
+        validation: { removeAdditional: true },
+      },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate();
@@ -272,8 +269,7 @@ describe('properties keyword', () => {
   });
 
   it('Test removeAdditional validation\'s option', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         additionalProperties: false,
         properties: {
@@ -296,6 +292,7 @@ describe('properties keyword', () => {
         },
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate({
