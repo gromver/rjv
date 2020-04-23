@@ -1,15 +1,12 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('presence keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           foo: {
@@ -27,6 +24,7 @@ describe('presence keyword', () => {
         bar: null,
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const fooRef = ref.ref('foo');
@@ -80,9 +78,8 @@ describe('presence keyword', () => {
     expect(barRef.getValue()).toBe('foo');
   });
 
-  it('Test default and presence keywords case 1', async () => {
-    const model = new Model();
-    await model.init(
+  it('Test default and presence keywords case #1', async () => {
+    const model = new Model(
       {
         properties: {
           foo: {
@@ -95,6 +92,7 @@ describe('presence keyword', () => {
       },
       {},
     );
+    await model.prepare();
 
     const ref = model.ref();
     const fooRef = ref.ref('foo');
@@ -103,9 +101,8 @@ describe('presence keyword', () => {
     expect(fooRef.state.valid).toBe(false);
   });
 
-  it('Test default and presence keywords case 2', async () => {
-    const model = new Model();
-    await model.init(
+  it('Test default and presence keywords case #2', async () => {
+    const model = new Model(
       {
         properties: {
           foo: {
@@ -118,6 +115,7 @@ describe('presence keyword', () => {
       },
       {},
     );
+    await model.prepare();
 
     const ref = model.ref();
     const fooRef = ref.ref('foo');
@@ -128,9 +126,7 @@ describe('presence keyword', () => {
   });
 
   it('Should expose error', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+    await expect(() => new Model(
       {
         // @ts-ignore
         properties: {
@@ -141,9 +137,6 @@ describe('presence keyword', () => {
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "presence" keyword should be a boolean value or an object.',
-      });
+      .toThrow('The schema of the "presence" keyword should be a boolean value or an object.');
   });
 });

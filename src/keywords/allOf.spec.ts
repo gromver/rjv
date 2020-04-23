@@ -1,15 +1,12 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('allOf keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         allOf: [
           {
@@ -24,6 +21,7 @@ describe('allOf keyword', () => {
       },
       3,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -43,8 +41,7 @@ describe('allOf keyword', () => {
   });
 
   it('Properties integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         allOf: [
           {
@@ -67,6 +64,7 @@ describe('allOf keyword', () => {
       },
       { a: 4 },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const aRef = ref.ref('a');
@@ -86,35 +84,25 @@ describe('allOf keyword', () => {
     expect(ref.state.valid).toBe(false);
   });
 
-  it('Should expose error 1', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #1', async () => {
+    await expect(() => new Model(
       {
         // @ts-ignore
         allOf: 1,
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "allOf" keyword should be an array of schemas.',
-      });
+      .toThrow('The schema of the "allOf" keyword should be an array of schemas.');
   });
 
-  it('Should expose error 2', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #2', async () => {
+    await expect(() => new Model(
       {
         // @ts-ignore
         allOf: [1],
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'Items of "allOf" keyword should be a schema object.',
-      });
+      .toThrow('Items of "allOf" keyword should be a schema object.');
   });
 });

@@ -2,7 +2,6 @@ declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from './Model';
 import Ref from './Ref';
@@ -10,13 +9,13 @@ import { IRule } from './types';
 
 describe('Model test', () => {
   it('Must correctly change the current attribute\'s state when the value changes', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'number',
       },
       'not a number',
     );
+    await model.prepare();
 
     const ref = model.ref();
 
@@ -36,14 +35,14 @@ describe('Model test', () => {
   });
 
   it('Should set default value.', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'number',
         default: 123,
       },
       undefined,
     );
+    await model.prepare();
 
     const ref = model.ref();
 
@@ -53,8 +52,7 @@ describe('Model test', () => {
   });
 
   it('Should return proper first error', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           car: { properties: { a: { type: 'number' } } },
@@ -68,6 +66,7 @@ describe('Model test', () => {
         bar: { b: false },
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -75,8 +74,7 @@ describe('Model test', () => {
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         title: 'title',
         description: 'description',
@@ -85,6 +83,7 @@ describe('Model test', () => {
       },
       '',
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -109,12 +108,12 @@ describe('Model test', () => {
       bar: 'bar',
     };
 
-    const m1 = new Model();
-    await m1.init(schema, {});
+    const m1 = new Model(schema, {});
+    await m1.prepare();
     expect(m1.ref().getValue()).toMatchObject(expectedObject);
 
-    const m2 = new Model();
-    await m2.init(schema, {});
+    const m2 = new Model(schema, {});
+    await m2.prepare();
     expect(m2.ref().getValue()).toMatchObject(expectedObject);
   });
 
@@ -125,8 +124,8 @@ describe('Model test', () => {
       },
     };
 
-    const model = new Model();
-    await model.init(schema, {});
+    const model = new Model(schema, {});
+    await model.prepare();
     const isValid = await model.ref().validate();
     expect(isValid).toBe(true);
     expect(model.ref().state.valid).toBe(true);
@@ -137,79 +136,76 @@ describe('Model test', () => {
       filter: (v) => v.trim(),
     };
 
-    const model = new Model();
-    await model.init(schema, ' foo  ');
+    const model = new Model(schema, ' foo  ');
+    await model.prepare();
     expect(model.ref().getValue()).toBe('foo');
   });
 
   it('Should expose an error', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+    await expect(() => new Model(
       {
         // @ts-ignore
         filter: '',
       },
       '',
     ))
-      .rejects
-      .toMatchObject({ message: 'The schema of the "filter" keyword should be a function.' });
+      .toThrow('The schema of the "filter" keyword should be a function.');
   });
 
   it('Test error keyword', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         minLength: 1,
         error: 'Value can\'t be blank.',
       },
       '',
     );
+    await model.prepare();
     await model.ref().validate();
     // @ts-ignore
     expect(model.ref().state.message.description).toBe('Value can\'t be blank.');
   });
 
-  it('Test warning keyword 1', async () => {
-    const model = new Model();
-    await model.init(
+  it('Test warning keyword #1', async () => {
+    const model = new Model(
       {
         minLength: 1,
         warning: 'Warning text',
       },
       'a',
     );
+    await model.prepare();
     await model.ref().validate();
     // @ts-ignore
     expect(model.ref().state.message).toBe(undefined);
   });
 
-  it('Test warning keyword 2', async () => {
+  it('Test warning keyword #2', async () => {
     const validator = async (ref: Ref) => ref.createSuccessResult({
       keyword: 'custom',
       description: 'Validator\'s warning message.',
     });
 
-    const m1 = new Model();
-    await m1.init(
+    const m1 = new Model(
       {
         validate: validator,
       },
       '',
     );
+    await m1.prepare();
 
     await m1.ref().validate();
     // @ts-ignore
     expect(m1.ref().state.message.description).toBe('Validator\'s warning message.');
 
-    const m2 = new Model();
-    await m2.init(
+    const m2 = new Model(
       {
         validate: validator,
         warning: 'Custom warning message.',
       },
       '',
     );
+    await m2.prepare();
 
     await m2.ref().validate();
     // @ts-ignore
@@ -218,6 +214,11 @@ describe('Model test', () => {
 
   it('Test keywords option', async () => {
     const model = new Model(
+      {
+        // @ts-ignore
+        newKeyword: true,
+      },
+      '',
       {
         validation: {
           keywords: [
@@ -236,13 +237,7 @@ describe('Model test', () => {
         },
       },
     );
-    await model.init(
-      {
-        // @ts-ignore
-        newKeyword: true,
-      },
-      '',
-    );
+    await model.prepare();
     const ref = model.ref();
     await ref.validate();
 
@@ -256,15 +251,6 @@ describe('Model test', () => {
   it('Test model\'s errors option', async () => {
     const model = new Model(
       {
-        validation: {
-          errors: {
-            presence: 'Custom error message',
-          },
-        },
-      },
-    );
-    await model.init(
-      {
         properties: {
           foo: {
             presence: true,
@@ -274,7 +260,15 @@ describe('Model test', () => {
       {
         foo: '',
       },
+      {
+        validation: {
+          errors: {
+            presence: 'Custom error message',
+          },
+        },
+      },
     );
+    await model.prepare();
     await model.ref().validate();
     const ref = model.ref('foo');
 
@@ -286,15 +280,6 @@ describe('Model test', () => {
   it('Test model\'s warnings option', async () => {
     const model = new Model(
       {
-        validation: {
-          warnings: {
-            customValidation: 'Custom warning message',
-          },
-        },
-      },
-    );
-    await model.init(
-      {
         // @ts-ignore
         validate: async (ref) => ref.createSuccessResult({
           keyword: 'customValidation',
@@ -302,7 +287,15 @@ describe('Model test', () => {
         }),
       },
       {},
+      {
+        validation: {
+          warnings: {
+            customValidation: 'Custom warning message',
+          },
+        },
+      },
     );
+    await model.prepare();
     await model.ref().validate();
     const ref = model.ref();
 
@@ -314,15 +307,6 @@ describe('Model test', () => {
 
   it('Test schema\'s errors keyword', async () => {
     const model = new Model(
-      {
-        validation: {
-          errors: {
-            presence: 'model\'s custom error message',
-          },
-        },
-      },
-    );
-    await model.init(
       {
         properties: {
           foo: {
@@ -336,7 +320,15 @@ describe('Model test', () => {
       {
         foo: '',
       },
+      {
+        validation: {
+          errors: {
+            presence: 'model\'s custom error message',
+          },
+        },
+      },
     );
+    await model.prepare();
     await model.ref().validate();
     const fooRef = model.ref('foo');
 
@@ -348,15 +340,6 @@ describe('Model test', () => {
   it('Test schema\'s warnings keyword', async () => {
     const model = new Model(
       {
-        validation: {
-          warnings: {
-            customValidation: 'model\'s custom warning message',
-          },
-        },
-      },
-    );
-    await model.init(
-      {
         // @ts-ignore
         validate: async (ref) => ref.createSuccessResult({
           keyword: 'customValidation',
@@ -367,7 +350,15 @@ describe('Model test', () => {
         },
       },
       {},
+      {
+        validation: {
+          warnings: {
+            customValidation: 'model\'s custom warning message',
+          },
+        },
+      },
     );
+    await model.prepare();
     const ref = model.ref();
     await ref.validate();
 
@@ -378,8 +369,7 @@ describe('Model test', () => {
   });
 
   it('Test async flow', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'string',
         title: 'test',
@@ -391,6 +381,7 @@ describe('Model test', () => {
       },
       'foo',
     );
+    await model.prepare();
 
     const fn = jest.fn();
     model.observable.subscribe(fn);
@@ -401,8 +392,7 @@ describe('Model test', () => {
   });
 
   it('Should properly validate nested refs', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           a: { type: 'string' },
@@ -416,6 +406,7 @@ describe('Model test', () => {
         c: 123,
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const bRef = model.ref('b');
@@ -440,8 +431,7 @@ describe('Model test', () => {
   });
 
   it('Test errLock property', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           prop: { type: 'string', minLength: 2 },
@@ -451,6 +441,7 @@ describe('Model test', () => {
         prop: 123,
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const propRef = model.ref('prop');
@@ -470,8 +461,7 @@ describe('Model test', () => {
   });
 
   it('Test ref\'s tree rebuilding after validation 1', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           case: { enum: [1, 2] },
@@ -498,6 +488,7 @@ describe('Model test', () => {
         b: 'b',
       },
     );
+    await model.prepare();
 
     expect(model.safeRef('a')).toBeInstanceOf(Ref);
     expect(model.safeRef('b')).toBeUndefined();
@@ -509,8 +500,7 @@ describe('Model test', () => {
   });
 
   it('Test ref\'s tree rebuilding after validation 2', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           case: { enum: [1, 2], dependencies: ['../a', '../b'] },
@@ -537,6 +527,7 @@ describe('Model test', () => {
         b: 'b',
       },
     );
+    await model.prepare();
 
     expect(model.safeRef('a')).toBeInstanceOf(Ref);
     expect(model.safeRef('b')).toBeUndefined();
@@ -549,8 +540,7 @@ describe('Model test', () => {
   });
 
   it('Test dependencies keyword', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           case: {
@@ -580,6 +570,7 @@ describe('Model test', () => {
         b: 'b',
       },
     );
+    await model.prepare();
 
     expect(model.safeRef('a')).toBeInstanceOf(Ref);
     expect((model.safeRef('a') as Ref).isValidated).toBe(false);
@@ -594,8 +585,7 @@ describe('Model test', () => {
   });
 
   it('Test dependsOn keyword', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           case: { enum: [1, 2] },
@@ -624,6 +614,7 @@ describe('Model test', () => {
         b: 'b',
       },
     );
+    await model.prepare();
 
     expect(model.safeRef('a')).toBeInstanceOf(Ref);
     expect((model.safeRef('a') as Ref).state.valid).toBe(true);
@@ -642,16 +633,16 @@ describe('Model test', () => {
   });
 
   it('Test model::setRefState', async () => {
-    const model = new Model();
-    const fn = jest.fn();
-    model.observable.subscribe(fn);
-
-    await model.init(
+    const model = new Model(
       {
         type: 'string',
       },
       1,
     );
+    const fn = jest.fn();
+    model.observable.subscribe(fn);
+
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -661,10 +652,10 @@ describe('Model test', () => {
   });
 
   it('Should return a cloned version of model data', async () => {
-    const model = new Model();
     const initialData = { foo: 'bar' };
+    const model = new Model({}, initialData);
 
-    await model.init({}, initialData);
+    await model.prepare();
     expect(model.getAttributes()).toMatchObject(initialData);
     expect(model.getAttributes()).not.toBe(initialData);
     expect(model.attributes).toMatchObject(initialData);

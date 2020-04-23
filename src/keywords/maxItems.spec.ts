@@ -1,20 +1,18 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('maxItems keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         maxItems: 2,
       },
       [1, 2],
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -29,45 +27,35 @@ describe('maxItems keyword', () => {
     expect(ref.state.valid).toBeUndefined();
   });
 
-  it('Should expose error 1', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #1', async () => {
+    await expect(() => new Model(
       {
         // @ts-ignore
         maxItems: '1',
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "maxItems" keyword should be a number.',
-      });
+      .toThrow('The schema of the "maxItems" keyword should be a number.');
   });
 
-  it('Should expose error 2', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #2', async () => {
+    await expect(() => new Model(
       {
         maxItems: -1,
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The "maxItems" keyword can\'t be less then 0.',
-      });
+      .toThrow('The "maxItems" keyword can\'t be less then 0.');
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         maxItems: 2,
       },
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();

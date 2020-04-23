@@ -1,4 +1,3 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;

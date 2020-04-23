@@ -1,16 +1,13 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 import Ref from '../Ref';
 
 describe('resolveSchema keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         properties: {
           expect: {
@@ -32,6 +29,7 @@ describe('resolveSchema keyword', () => {
         value: 1,
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const expectRef = model.ref('expect');
@@ -54,8 +52,7 @@ describe('resolveSchema keyword', () => {
   });
 
   it('Check state merging', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         resolveSchema: () => Promise.resolve({
           properties: {
@@ -74,6 +71,7 @@ describe('resolveSchema keyword', () => {
         foo: 'test',
       },
     );
+    await model.prepare();
 
     const ref = model.ref();
     const fooRef = model.ref('foo');
@@ -83,26 +81,20 @@ describe('resolveSchema keyword', () => {
   });
 
   it('Should expose error', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+    await expect(() => new Model(
       {
         // @ts-ignore
         resolveSchema: {},
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "resolveSchema" keyword should be a function returns a schema.',
-      });
+      .toThrow('The schema of the "resolveSchema" keyword should be a function returns a schema.');
   });
 
   it('Should get error description specified in resolveSchema', async () => {
     const CUSTOM_MESSAGE = 'Custom error message';
 
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         resolveSchema: async () => ({
           presence: true,
@@ -114,6 +106,7 @@ describe('resolveSchema keyword', () => {
       },
       'a',
     );
+    await model.prepare();
 
     await model.validate();
     const state = (model.ref().firstError as Ref).state;
