@@ -1,20 +1,18 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('type keyword', () => {
   it('Test string', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'string',
       },
       'abc',
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate();
@@ -45,13 +43,13 @@ describe('type keyword', () => {
   });
 
   it('Test number', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'number',
       },
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate();
@@ -76,13 +74,13 @@ describe('type keyword', () => {
   });
 
   it('Test integer', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'integer',
       },
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate();
@@ -107,13 +105,13 @@ describe('type keyword', () => {
   });
 
   it('Test boolean', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'boolean',
       },
       false,
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate();
@@ -142,13 +140,13 @@ describe('type keyword', () => {
   });
 
   it('Test array', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'array',
       },
       [],
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate();
@@ -173,13 +171,13 @@ describe('type keyword', () => {
   });
 
   it('Test object', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'object',
       },
       {},
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate();
@@ -204,13 +202,13 @@ describe('type keyword', () => {
   });
 
   it('Test multiple types', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: ['array', 'integer'],
       },
       [],
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate();
@@ -243,14 +241,14 @@ describe('type keyword', () => {
   });
 
   it('Coerce to number', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'number',
         coerceTypes: true,
       },
       '123',
     );
+    await model.prepare();
 
     const ref = model.ref();
     let isValid = await ref.validate();
@@ -274,14 +272,14 @@ describe('type keyword', () => {
   });
 
   it('Coerce to integer', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'integer',
         coerceTypes: true,
       },
       '123',
     );
+    await model.prepare();
 
     const ref = model.ref();
     let isValid = await ref.validate();
@@ -310,14 +308,14 @@ describe('type keyword', () => {
   });
 
   it('Coerce to number or integer', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: ['number', 'integer'],
         coerceTypes: true,
       },
       '123',
     );
+    await model.prepare();
 
     const ref = model.ref();
     let isValid = await ref.validate();
@@ -336,14 +334,14 @@ describe('type keyword', () => {
   });
 
   it('Coerce to string', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'string',
         coerceTypes: true,
       },
       123,
     );
+    await model.prepare();
 
     const ref = model.ref();
     let isValid = await ref.validate();
@@ -373,14 +371,14 @@ describe('type keyword', () => {
   });
 
   it('Coerce to boolean', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'boolean',
         coerceTypes: true,
       },
       null,
     );
+    await model.prepare();
 
     const ref = model.ref();
     let isValid = await ref.validate();
@@ -414,14 +412,14 @@ describe('type keyword', () => {
   });
 
   it('Coerce to null', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'null',
         coerceTypes: true,
       },
       0,
     );
+    await model.prepare();
 
     const ref = model.ref();
     let isValid = await ref.validate();
@@ -445,17 +443,18 @@ describe('type keyword', () => {
   });
 
   it('Test model\'s coerceTypes option', async () => {
-    const model = new Model({
-      validation: {
-        coerceTypes: true,
-      },
-    });
-    await model.init(
+    const model = new Model(
       {
         type: 'number',
       },
       '123',
+      {
+        validation: {
+          coerceTypes: true,
+        },
+      },
     );
+    await model.prepare();
     const ref = model.ref();
     const isValid = await ref.validate();
     expect(isValid).toBe(true);
@@ -463,13 +462,13 @@ describe('type keyword', () => {
   });
 
   it('Test validation\'s process coerceTypes option', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         type: 'number',
       },
       '123',
     );
+    await model.prepare();
 
     const ref = model.ref();
     const isValid = await ref.validate({

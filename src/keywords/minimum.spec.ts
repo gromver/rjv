@@ -1,20 +1,18 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('minimum keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         minimum: 5,
       },
       5,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -34,14 +32,14 @@ describe('minimum keyword', () => {
   });
 
   it('Some integration tests with exclusive mode', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         minimum: 5,
         exclusiveMinimum: true,
       },
       6,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -57,30 +55,25 @@ describe('minimum keyword', () => {
   });
 
   it('Should expose error', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+    await expect(() => new Model(
       {
         // @ts-ignore
         minimum: '1',
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "minimum" keyword should be a number.',
-      });
+      .toThrow('The schema of the "minimum" keyword should be a number.');
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         minimum: 5,
         exclusiveMinimum: true,
       },
       '',
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();

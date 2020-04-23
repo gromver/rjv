@@ -1,4 +1,5 @@
 import Ref from './Ref';
+import { IValidationOptionsPartial } from './Validator';
 
 export type Path = string;
 export type Route = (string | number)[];
@@ -53,6 +54,15 @@ export interface IRuleValidationResult {
 export interface IModelValidationResult extends IRuleValidationResult {
   valLock: number;
   errLock?: number;
+}
+
+export interface IModelOptionsPartial {
+  // default validate options
+  validation?: IValidationOptionsPartial;
+  // validator settings
+  keywords?: IKeyword[];
+  // mode
+  debug?: boolean;
 }
 
 // schema

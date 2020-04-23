@@ -7,27 +7,19 @@ import ChangeRefValueEvent from './events/ChangeRefValueEvent';
 import LodashStorage from './storage/LodashStorage';
 import Validator, { IValidationOptionsPartial } from './Validator';
 import {
-  ISchema, IStorage, IRule, ValidateRuleFn, IKeyword, IRuleValidationResult, IModelValidationResult,
+  ISchema, IStorage, IRule, ValidateRuleFn, IRuleValidationResult,
+  IModelValidationResult, IModelOptionsPartial,
 } from './types';
 import utils from './utils';
 
 const _ = {
   extend: require('lodash/extend'),
+  assignIn: require('lodash/assignIn'),
   cloneDeep: require('lodash/cloneDeep'),
   memoize: require('lodash/memoize'),
   get: require('lodash/get'),
   set: require('lodash/set'),
 };
-
-export interface IModelOptionsPartial {
-  // default validate options
-  validation?: IValidationOptionsPartial;
-  // validator settings
-  keywords?: IKeyword[];
-  // mode
-  forceValidatedOnInit?: boolean; // при инициализации помечаем все рефы как "валидировано"
-  debug?: boolean;
-}
 
 export interface IModelOptions extends IModelOptionsPartial {
   // validation's process default opts
@@ -55,44 +47,44 @@ export type RefMap = {
 
 export default class Model {
   private refs: RefMap;
-  private isInitiated = false;
   private valLock = 0;
   private errLock = 0;
   private validator: Validator;
   private dataStorage: IStorage;
   private initialDataStorage: IStorage;
+  private schema: ISchema;
 
   public readonly observable: Subject<Event>;
   public readonly options: IModelOptions;
-  public readonly schema: ISchema;
 
-  constructor(options?: IModelOptionsPartial) {
+  /**
+   * Creates model
+   * @param schema
+   * @param initialValue
+   * @param options
+   */
+  constructor(schema: ISchema, initialValue: LodashStorage | any, options?: IModelOptionsPartial) {
     this.refs = {};
     this.options = _.extend({}, DEFAULT_OPTIONS, options);
     this.observable = new Subject();
-  }
+    this.setSchema(schema);
 
-  /**
-   * The entry point to work with the model. Initializes model and launches pre validating process
-   * which validates initial value creating refs and initial states
-   * @param schema - validation JSON schema
-   * @param initialValue - initial value
-   */
-  async init(schema: ISchema, initialValue: any) {
-    try {
+    if (initialValue instanceof LodashStorage) {
+      this.dataStorage = initialValue;
+      this.initialDataStorage = new LodashStorage(_.cloneDeep(initialValue.get([])));
+    } else {
       this.dataStorage = new LodashStorage(_.cloneDeep(initialValue));
       this.initialDataStorage = new LodashStorage(_.cloneDeep(initialValue));
-      this.validator = new Validator(schema, this.options.validation);
-      this.isInitiated = true;
-
-      await this.validate({ forceValidated: this.options.forceValidatedOnInit });
-    } catch (e) {
-      if (this.options.debug) {
-        console.error(e);
-      }
-
-      return Promise.reject(e);
     }
+  }
+
+  setSchema(schema: ISchema) {
+    this.schema = schema;
+    this.validator = new Validator(schema, this.options.validation);
+  }
+
+  getSchema(): ISchema {
+    return this.schema;
   }
 
   /**
@@ -109,8 +101,6 @@ export default class Model {
    * @param resolve - resolve given path to the root path
    */
   ref(path = '/', resolve= true): Ref {
-    this.checkInitiated();
-
     let resolvedPath = path;
 
     if (resolve) {
@@ -128,8 +118,6 @@ export default class Model {
    * @param resolve - resolve given path to the root path
    */
   safeRef(path = '/', resolve= true): Ref | undefined {
-    this.checkInitiated();
-
     let resolvedPath = path;
 
     if (resolve) {
@@ -149,8 +137,6 @@ export default class Model {
    * @param {IModelValidationResult} state
    */
   private setRefState(ref: Ref, state: IModelValidationResult) {
-    this.checkInitiated();
-
     const curState = ref.state;
 
     if (curState.valLock > state.valLock) {
@@ -168,8 +154,6 @@ export default class Model {
    * @returns {IModelValidationResult}
    */
   getRefState(ref: Ref): IModelValidationResult {
-    this.checkInitiated();
-
     return ref.state;
   }
 
@@ -202,8 +186,6 @@ export default class Model {
    * @param value
    */
   setRefValue(ref: Ref, value: any) {
-    this.checkInitiated();
-
     this.dataStorage.set(ref.route, value);
 
     this.dispatch(new ChangeRefValueEvent(ref.path, ref.getValue()));
@@ -215,8 +197,6 @@ export default class Model {
    * @returns value
    */
   getRefValue(ref: Ref): any {
-    this.checkInitiated();
-
     return this.dataStorage.get(ref.route);
   }
 
@@ -224,8 +204,6 @@ export default class Model {
    * Get initial value
    */
   getRefInitialValue(ref: Ref): any {
-    this.checkInitiated();
-
     return this.initialDataStorage.get(ref.route);
   }
 
@@ -234,8 +212,6 @@ export default class Model {
    * @param ref
    */
   getRefErrors(ref: Ref): Ref[] {
-    this.checkInitiated();
-
     return Object.values(this.getRefs(ref))
       .filter((ref) => ref.state.valid === false);
   }
@@ -244,8 +220,6 @@ export default class Model {
    * Returns incremented validation lock, used to track validation queue
    */
   get validationLock(): number {
-    this.checkInitiated();
-
     return this.valLock += 1;
   }
 
@@ -253,8 +227,6 @@ export default class Model {
    * Returns incremented error lock, used to track the order of incoming errors
    */
   get errorLock(): number {
-    this.checkInitiated();
-
     return this.errLock += 1;
   }
 
@@ -264,8 +236,6 @@ export default class Model {
    * @param options - validation options
    */
   validateRef(ref: Ref, options: IModelValidationOptions = {}): Promise<boolean> {
-    this.checkInitiated();
-
     const valLock = this.validationLock;
     const results: { [path: string]: IRuleValidationResult } = {};
     const refs: RefMap = {};
@@ -371,9 +341,20 @@ export default class Model {
    * @param options - validation options
    */
   validate(options?: IModelValidationOptions): Promise<boolean> {
-    this.checkInitiated();
-
     return this.ref().validate(options);
+  }
+
+  /**
+   * Validates root ref, by default all validated refs will be marked as validated
+   * @param options - validation options
+   */
+  prepare(options: IModelValidationOptions = {}): Promise<boolean> {
+    const opts = {
+      ...options,
+      forceValidated: false,
+    };
+
+    return this.ref().validate(opts);
   }
 
   /**
@@ -388,14 +369,5 @@ export default class Model {
    */
   get attributes(): any {
     return this.getAttributes();
-  }
-
-  /**
-   * Checks if the model has been validated, otherwise throws an error
-   */
-  private checkInitiated() {
-    if (!this.isInitiated) {
-      throw new Error('You should initialize your model to work with it.');
-    }
   }
 }

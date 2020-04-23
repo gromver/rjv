@@ -1,15 +1,12 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('contains keyword', () => {
   it('sync test', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         contains: {
           type: 'number',
@@ -17,6 +14,7 @@ describe('contains keyword', () => {
       },
       [1, 'a', null],
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -36,8 +34,7 @@ describe('contains keyword', () => {
   });
 
   it('async test', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         contains: {
           resolveSchema: () => Promise.resolve({ type: 'number' }),
@@ -45,6 +42,7 @@ describe('contains keyword', () => {
       },
       [1, 'a', null],
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -64,8 +62,7 @@ describe('contains keyword', () => {
   });
 
   it('schema test', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         not: {
           type: 'array',
@@ -76,6 +73,7 @@ describe('contains keyword', () => {
       },
       [1, 'a', null],
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -95,18 +93,13 @@ describe('contains keyword', () => {
   });
 
   it('Should expose error', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+    await expect(() => new Model(
       {
         // @ts-ignore
         contains: 1,
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "contains" keyword should be a schema object.',
-      });
+      .toThrow('The schema of the "contains" keyword should be a schema object.');
   });
 });

@@ -1,20 +1,18 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('pattern keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         pattern: '[abc]+',
       },
       'a',
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -42,29 +40,24 @@ describe('pattern keyword', () => {
   });
 
   it('Should expose error', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+    await expect(() => new Model(
       {
         // @ts-ignore
         pattern: 1,
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "pattern" keyword should be a string.',
-      });
+      .toThrow('The schema of the "pattern" keyword should be a string.');
   });
 
   it('Should expose metadata', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         pattern: '[abc]+',
       },
       1,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();

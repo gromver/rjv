@@ -1,15 +1,12 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('if keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         if: {
           type: 'number',
@@ -24,6 +21,7 @@ describe('if keyword', () => {
       },
       5,
     );
+    await model.prepare();
 
     const ref = model.ref();
     await ref.validate();
@@ -47,8 +45,7 @@ describe('if keyword', () => {
   });
 
   it('Properties integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         if: {
           properties: {
@@ -60,6 +57,7 @@ describe('if keyword', () => {
       },
       { power: 10000, disbelief: true },
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.state.valid).toBe(true);
@@ -85,34 +83,24 @@ describe('if keyword', () => {
     expect(ref.state.valid).toBe(false);
   });
 
-  it('Should expose error 1', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #1', async () => {
+    await expect(() => new Model(
       {
         // @ts-ignore
         if: 1,
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The value of the "if" keyword should be a schema object.',
-      });
+      .toThrow('The value of the "if" keyword should be a schema object.');
   });
 
-  it('Should expose error 2', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+  it('Should expose error #2', async () => {
+    await expect(() => new Model(
       {
         if: {},
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'For the "if" keyword You must specify at least the keyword "then" or "else".',
-      });
+      .toThrow('For the "if" keyword You must specify at least the keyword "then" or "else".');
   });
 });

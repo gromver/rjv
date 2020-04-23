@@ -67,7 +67,7 @@ export default class Ref {
    * Useful if ref's value has an array or an object types.
    * Should be called when new props or items added to the ref's value.
    */
-  refresh(): Promise<boolean> {
+  prepare(): Promise<boolean> {
     return this.validate({ forceValidated: false });
   }
 

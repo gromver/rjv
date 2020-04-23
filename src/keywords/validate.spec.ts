@@ -1,15 +1,12 @@
-declare const jest;
 declare const describe;
 declare const it;
 declare const expect;
-declare const require;
 
 import Model from '../Model';
 
 describe('validate keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model();
-    await model.init(
+    const model = new Model(
       {
         validate: (ref) => {
           return Promise.resolve().then(() => {
@@ -32,6 +29,7 @@ describe('validate keyword', () => {
       },
       10,
     );
+    await model.prepare();
 
     const ref = model.ref();
     expect(ref.state.valid).toBe(true);
@@ -52,18 +50,13 @@ describe('validate keyword', () => {
   });
 
   it('Should expose error', async () => {
-    const model = new Model();
-
-    await expect(model.init(
+    await expect(() => new Model(
       {
         // @ts-ignore
         validate: {},
       },
       '',
     ))
-      .rejects
-      .toMatchObject({
-        message: 'The schema of the "validate" keyword should be an async validation function.',
-      });
+      .toThrow('The schema of the "validate" keyword should be an async validation function.');
   });
 });
