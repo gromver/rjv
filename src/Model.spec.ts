@@ -388,7 +388,7 @@ describe('Model test', () => {
     model.ref().setValue('bar');
     await model.ref().validate();
 
-    expect(fn).toHaveBeenCalledTimes(3); // set => validating => success
+    expect(fn).toHaveBeenCalledTimes(5); // set => validating => success
   });
 
   it('Should properly validate nested refs', async () => {
