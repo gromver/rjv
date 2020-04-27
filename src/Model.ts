@@ -4,6 +4,8 @@ import Ref from './Ref';
 import Event from './events/Event';
 import ChangeRefStateEvent from './events/ChangeRefStateEvent';
 import ChangeRefValueEvent from './events/ChangeRefValueEvent';
+import BeforeValidationEvent from './events/BeforeValidationEvent';
+import AfterValidationEvent from './events/AfterValidationEvent';
 import LodashStorage from './storage/LodashStorage';
 import Validator, { IValidationOptionsPartial } from './Validator';
 import {
@@ -24,7 +26,6 @@ const _ = {
 export interface IModelOptions extends IModelOptionsPartial {
   // validation's process default opts
   validation: IValidationOptionsPartial;
-  forceValidatedOnInit?: boolean; // при инициализации помечаем все рефы как "валидировано"
   debug: boolean;
 }
 
@@ -34,7 +35,6 @@ export interface IModelValidationOptions extends IValidationOptionsPartial {
 
 const DEFAULT_OPTIONS: IModelOptions = {
   validation: {},
-  forceValidatedOnInit: false,
   debug: false,
 };
 
@@ -311,6 +311,10 @@ export default class Model {
         });
     };
 
+    const validationPath = targetScope || '/';
+
+    this.dispatch(new BeforeValidationEvent(validationPath));
+
     return this.validator.validate(this.ref(), validateRuleFn, options)
       .then((result) => {
         if (this.options.debug && result.valid === undefined) {
@@ -332,7 +336,11 @@ export default class Model {
           this.refs = refs;
         }
 
-        return !!ref.state.valid;
+        const valid = !!ref.state.valid;
+
+        this.dispatch(new AfterValidationEvent(validationPath, valid));
+
+        return valid;
       });
   }
 
