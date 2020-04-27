@@ -63,12 +63,15 @@ export default class Ref {
   }
 
   /**
-   * Shortcut method for populating initial state of the ref.
+   * Shortcut method for populating initial state of the whole model or the current ref.
    * Useful if ref's value has an array or an object types.
    * Should be called when new props or items added to the ref's value.
+   * @param onlyRef
    */
-  prepare(): Promise<boolean> {
-    return this.validate({ forceValidated: false });
+  prepare(onlyRef = false): Promise<boolean> {
+    return onlyRef
+      ? this.validate({ forceValidated: false })
+      : this.model.prepare();
   }
 
   /**
