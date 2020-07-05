@@ -117,7 +117,7 @@ export default class Model {
    * @param path - a relative or absolute path to the property
    * @param resolve - resolve given path to the root path
    */
-  safeRef(path = '/', resolve= true): Ref | undefined {
+  safeRef(path = '/', resolve = true): Ref | undefined {
     let resolvedPath = path;
 
     if (resolve) {
@@ -125,7 +125,7 @@ export default class Model {
     }
 
     if (this.options.debug) {
-      console.warn('Attention, you are trying to get a ref to a property that does not have a corresponding rule in the JSON schema');
+      console.warn('Attention, you are trying to get a ref to a property that might not have a corresponding rule in the JSON schema');
     }
 
     return this.refs[resolvedPath];
@@ -368,14 +368,14 @@ export default class Model {
   /**
    * Function - Returns a cloned data of the model
    */
-  getAttributes(): any {
+  getData(): any {
     return _.cloneDeep(this.dataStorage.get([]));
   }
 
   /**
    * Getter - Returns a cloned data of the model
    */
-  get attributes(): any {
-    return this.getAttributes();
+  get data(): any {
+    return this.getData();
   }
 }

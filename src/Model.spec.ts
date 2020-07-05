@@ -656,9 +656,9 @@ describe('Model test', () => {
     const model = new Model({}, initialData);
 
     await model.prepare();
-    expect(model.getAttributes()).toMatchObject(initialData);
-    expect(model.getAttributes()).not.toBe(initialData);
-    expect(model.attributes).toMatchObject(initialData);
-    expect(model.attributes).not.toBe(initialData);
+    expect(model.getData()).toMatchObject(initialData);
+    expect(model.getData()).not.toBe(initialData);
+    expect(model.data).toMatchObject(initialData);
+    expect(model.data).not.toBe(initialData);
   });
 });
