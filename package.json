@@ -67,6 +67,11 @@
       "pre-push": "npm test -- --bail --onlyChanged"
     }
   },
+  "standard-version": {
+    "skip": {
+      "changelog": true
+    }
+  },
   "jest": {
     "rootDir": "src",
     "coverageDirectory": "../coverage",
