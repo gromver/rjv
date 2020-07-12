@@ -44,12 +44,14 @@ const keyword: IKeyword = {
 
 export default keyword;
 
+type ConstValue = number | string | null | {} | [];
+
 declare module '../types' {
   export interface ISchema {
-    const?: any | ((ref: Ref) => any);
+    const?: ((ref: Ref) => ConstValue) | ConstValue;
   }
 
   export interface IRuleValidationResult {
-    const?: any;
+    const?: ConstValue;
   }
 }
