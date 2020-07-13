@@ -110,7 +110,7 @@
     "rxjs": "^6.4.0",
     "rxjs-compat": "^6.4.0",
     "shx": "^0.3.2",
-    "standard-version": "^4.0.0",
+    "standard-version": "^8.0.1",
     "ts-jest": "^24.0.1",
     "tslint": "^5.4.3",
     "tslint-config-airbnb": "^5.3.0",
