@@ -327,6 +327,7 @@ export default class Ref {
 
   /**
    * Checks if the ref's value has desired type
+   * todo: replace to the utils
    * @param dataType
    */
   checkDataType(dataType: DataType): boolean {

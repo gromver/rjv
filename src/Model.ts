@@ -240,7 +240,7 @@ export default class Model {
     const results: { [path: string]: IRuleValidationResult } = {};
     const refs: RefMap = {};
     let scopes = ref.route.length ? [ref.path] : [];
-    const targetScope = ref.route.length ? ref.path : '';
+    const validatingScope = ref.path;
 
     if (ref.state.dependencies) {
       const resolvedDependencies = ref.state.dependencies
@@ -261,26 +261,29 @@ export default class Model {
         scopes.push(curRef.path);
       }
 
-      const isRefInTargetScope = !targetScope
-        || curScope === targetScope || curScope.startsWith(`${targetScope}/`);
+      const isRefInValidatingScope = validatingScope === '/'
+        || curScope === validatingScope || curScope.startsWith(`${validatingScope}/`);
 
-      const isRefInScope = !scopes.length
-        || !!scopes.find((scope) => curScope === scope || curScope.startsWith(`${scope}/`));
+      const isRefInPreparingScope = !scopes.length
+        || !!scopes.find(
+          (scope) => curScope === scope || curScope.startsWith(utils.withTrailingSlash(scope)),
+        );
 
-      const isRefInParentScope = !isRefInScope
+      // Whether the ref is the parent of the validating and preparing scopes
+      const isRefInParentScope = !isRefInPreparingScope
         && !!scopes.find((scope) => scope.startsWith(curScope));
 
-      if (!rule.validate && !isRefInScope && !isRefInParentScope) {
+      if (!rule.validate && !isRefInPreparingScope && !isRefInParentScope) {
         return Promise.resolve(curRef.createUndefinedResult());
       }
 
-      if (isRefInScope) {
+      if (isRefInPreparingScope) {
         refs[curRef.path] = curRef;
 
         // validating state
         const curState = curRef.state;
 
-        if (options.forceValidated && isRefInTargetScope) {
+        if (options.forceValidated && isRefInValidatingScope) {
           curRef.markAsValidated();
         }
 
@@ -293,7 +296,7 @@ export default class Model {
 
       return (rule as any).validate(curRef, validateRuleFn, validationOptions)
         .then((result: IRuleValidationResult) => {
-          if (isRefInScope) {
+          if (isRefInPreparingScope) {
             if (result.valid === false) {
               result.errLock = this.errorLock;
             }
@@ -311,7 +314,7 @@ export default class Model {
         });
     };
 
-    const validationPath = targetScope || '/';
+    const validationPath = validatingScope || '/';
 
     this.dispatch(new BeforeValidationEvent(validationPath));
 
@@ -325,7 +328,7 @@ export default class Model {
         if (scopes.length) {
           scopes.forEach((scope) => {
             Object.keys(this.refs).forEach((refPath) => {
-              if (refPath === scope || refPath.startsWith(`${scope}/`)) {
+              if (refPath === scope || refPath.startsWith(utils.withTrailingSlash(scope))) {
                 delete this.refs[refPath];
               }
             });
@@ -353,7 +356,7 @@ export default class Model {
   }
 
   /**
-   * Validates root ref, by default all validated refs will be marked as validated
+   * Validates root ref, all validated refs are not marked as validated
    * @param options - validation options
    */
   prepare(options: IModelValidationOptions = {}): Promise<boolean> {

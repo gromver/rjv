@@ -539,13 +539,58 @@ describe('Model test', () => {
     expect(model.safeRef('b')).toBeInstanceOf(Ref);
   });
 
-  it('Test dependencies keyword', async () => {
+  it('Test dependencies keyword 1', async () => {
     const model = new Model(
       {
         properties: {
           case: {
             enum: [1, 2],
             dependencies: ['/a', '/b'],
+          },
+        },
+        if: {
+          properties: {
+            case: { const: 1 },
+          },
+        },
+        then: {
+          properties: {
+            a: { type: 'string', presence: true },
+          },
+        },
+        else: {
+          properties: {
+            b: { type: 'string', presence: true },
+          },
+        },
+      },
+      {
+        case: 1,
+        a: 'a',
+        b: 'b',
+      },
+    );
+    await model.prepare();
+
+    expect(model.safeRef('a')).toBeInstanceOf(Ref);
+    expect((model.safeRef('a') as Ref).isValidated).toBe(false);
+    expect(model.safeRef('b')).toBeUndefined();
+
+    const caseRef = model.safeRef('case') as Ref;
+    caseRef.setValue(2);
+    await caseRef.validate();
+    expect(model.safeRef('a')).toBeUndefined();
+    expect(model.safeRef('b')).toBeInstanceOf(Ref);
+    expect((model.safeRef('b') as Ref).isValidated).toBe(false);
+  });
+
+  it('Test dependencies keyword 2', async () => {
+    const model = new Model(
+      {
+        properties: {
+          case: {
+            enum: [1, 2],
+            dependencies: ['/'],
           },
         },
         if: {

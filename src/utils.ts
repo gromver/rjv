@@ -21,6 +21,8 @@ function normalizeSlug(slug): string | number {
   return slug;
 }
 
+const removeTrailingSlash = /\/+$/;
+
 const utils = {
   promiseAny,
   isObject(value: any): boolean {
@@ -66,6 +68,9 @@ const utils = {
     });
 
     return result;
+  },
+  withTrailingSlash(string: string): string {
+    return `${string.replace(removeTrailingSlash, '')}/`;
   },
 };
 
