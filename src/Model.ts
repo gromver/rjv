@@ -2,7 +2,7 @@
 import { Subject } from 'rxjs/Subject';
 import Ref from './Ref';
 import Event from './events/Event';
-import ChangeRefStateEvent from './events/ChangeRefStateEvent';
+import ChangeRefValidationStateEvent from './events/ChangeRefValidationStateEvent';
 import ChangeRefValueEvent from './events/ChangeRefValueEvent';
 import BeforeValidationEvent from './events/BeforeValidationEvent';
 import AfterValidationEvent from './events/AfterValidationEvent';
@@ -145,7 +145,7 @@ export default class Model {
 
     ref.state = state;
 
-    this.dispatch(new ChangeRefStateEvent(ref.path, state));
+    this.dispatch(new ChangeRefValidationStateEvent(ref.path, state));
   }
 
   /**
@@ -314,9 +314,7 @@ export default class Model {
         });
     };
 
-    const validationPath = validatingScope || '/';
-
-    this.dispatch(new BeforeValidationEvent(validationPath));
+    this.dispatch(new BeforeValidationEvent(validatingScope));
 
     return this.validator.validate(this.ref(), validateRuleFn, options)
       .then((result) => {
@@ -341,7 +339,7 @@ export default class Model {
 
         const valid = !!ref.state.valid;
 
-        this.dispatch(new AfterValidationEvent(validationPath, valid));
+        this.dispatch(new AfterValidationEvent(validatingScope, valid));
 
         return valid;
       });

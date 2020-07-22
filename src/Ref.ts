@@ -1,4 +1,5 @@
 import Model, { IModelValidationOptions } from './Model';
+import ChangeRefUIStateEvent from './events/ChangeRefUIStateEvent';
 import {
   Path, Route, IRuleValidationResult, IModelValidationResult, IValidationMessage,
 } from './types';
@@ -144,37 +145,49 @@ export default class Ref {
   }
 
   /**
-   * Mark ref as dirty
+   * Mark ref as dirty and emit ChangeRefUIStateEvent if the ref has not been dirty yet
    * @return this
    */
   markAsDirty(): this {
+    const dispatch = !this.dirty;
+
     this.dirty = true;
+
+    dispatch && this.model.dispatch(new ChangeRefUIStateEvent(this.path, 'dirty'));
 
     return this;
   }
 
   /**
-   * Mark ref as touched
+   * Mark ref as touched and emit ChangeRefUIStateEvent if the ref has not been touched yet
    * @return this
    */
   markAsTouched(): this {
+    const dispatch = !this.touched;
+
     this.touched = true;
+
+    dispatch && this.model.dispatch(new ChangeRefUIStateEvent(this.path, 'touched'));
 
     return this;
   }
 
   /**
-   * Mark ref as validated
+   * Mark ref as validated and emit ChangeRefUIStateEvent if the ref has not been validated yet
    * @return this
    */
   markAsValidated(): this {
+    const dispatch = !this.validated;
+
     this.validated = true;
+
+    dispatch && this.model.dispatch(new ChangeRefUIStateEvent(this.path, 'validated'));
 
     return this;
   }
 
   /**
-   * Mark ref as pristine
+   * Mark ref as pristine and emit ChangeRefUIStateEvent
    * @return this
    */
   markAsPristine(): this {
@@ -183,6 +196,8 @@ export default class Ref {
     this.validated = false;
     delete this.state.valid;
     delete this.state.message;
+
+    this.model.dispatch(new ChangeRefUIStateEvent(this.path, 'pristine'));
 
     return this;
   }

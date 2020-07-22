@@ -383,12 +383,12 @@ describe('Model test', () => {
     );
     await model.prepare();
 
-    const fn = jest.fn();
+    const fn = jest.fn((e) => console.log(e));
     model.observable.subscribe(fn);
     model.ref().setValue('bar');
     await model.ref().validate();
 
-    expect(fn).toHaveBeenCalledTimes(5); // set => validating => success
+    expect(fn).toHaveBeenCalledTimes(6); // set => validating => success
   });
 
   it('Should properly validate nested refs', async () => {
