@@ -1,6 +1,6 @@
-import Ref, { DataType } from '../Ref';
+import Ref from '../Ref';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult, ValueType,
 } from '../types';
 
 /**
@@ -22,11 +22,11 @@ const keyword: IKeyword = {
   reserveNames: ['coerceTypes'],
   compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
     // Type can be: number, integer, string, boolean, array, object or null.
-    let types: DataType[] = [];
+    let types: ValueType[] = [];
     const data = schema.data ? schema.data : schema;
 
     if (typeof data === 'string') {
-      types = [data as DataType];
+      types = [data as ValueType];
     } else if (Array.isArray(data)) {
       types = data;
     }

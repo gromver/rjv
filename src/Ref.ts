@@ -1,7 +1,7 @@
 import Model, { IModelValidationOptions } from './Model';
 import ChangeRefUIStateEvent from './events/ChangeRefUIStateEvent';
 import {
-  Path, Route, IRuleValidationResult, IModelValidationResult, IValidationMessage,
+  Path, Route, ValueType, IRuleValidationResult, IModelValidationResult, IValidationMessage,
 } from './types';
 import utils from './utils';
 
@@ -13,8 +13,6 @@ const _ = {
 const DEFAULT_VALIDATION_OPTIONS: IModelValidationOptions = {
   markAsValidated: true,
 };
-
-export type DataType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean';
 
 export default class Ref {
   private validated = false;
@@ -342,24 +340,12 @@ export default class Ref {
 
   /**
    * Checks if the ref's value has desired type
-   * todo: replace to the utils
    * @param dataType
    */
-  checkDataType(dataType: DataType): boolean {
+  checkDataType(dataType: ValueType): boolean {
     const value = this.getValue();
 
-    switch (dataType) {
-      case 'null':
-        return value === null;
-      case 'array':
-        return Array.isArray(value);
-      case 'object':
-        return value && typeof value === 'object' && !Array.isArray(value);
-      case 'integer':
-        return typeof value === 'number' && !(value % 1);
-      default:
-        return typeof value === dataType;
-    }
+    return utils.checkDataType(dataType, value);
   }
 
   /**

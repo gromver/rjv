@@ -4,6 +4,8 @@ import { IValidationOptionsPartial } from './Validator';
 export type Path = string;
 export type Route = (string | number)[];
 
+export type ValueType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean';
+
 // validation
 export interface IValidationMessage {
   keyword: string;
