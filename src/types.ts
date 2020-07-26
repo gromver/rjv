@@ -82,6 +82,7 @@ export interface ISchema {
   warnings?: { [keywordName: string]: any };
   dependencies?: string[];
   dependsOn?: string[];
+  removeAdditional?: boolean;
 }
 
 // keywords

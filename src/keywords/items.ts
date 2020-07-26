@@ -35,6 +35,8 @@ const keyword: IKeyword = {
       additionalRule = compile(parentSchema.additionalItems, parentSchema);
     }
 
+    const removeAdditional = !!parentSchema.removeAdditional;
+
     const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
       : Promise<IRuleValidationResult> => {
       const results: IRuleValidationResult[] = [];
@@ -60,16 +62,29 @@ const keyword: IKeyword = {
 
           // check additional items
           if (value.length > rule.length) {
-            if (noAdditional) {
+            if (noAdditional && !removeAdditional && !options.removeAdditional) {
               hasItemsOverflow = true;
             } else if (additionalRule) {
-              for (let i = value.length - 1; i < value.length; i += 1) {
+              const removeIndices: number[] = [];
+
+              for (let i = rule.length; i < value.length; i += 1) {
                 const res = await validateRuleFn(
                   ref.ref(`${i}`), additionalRule, options,
                 ) as IRuleValidationResult;
 
-                results.push(res);
+                if (res.valid === false && removeAdditional) {
+                  removeIndices.push(i);
+                  // removeIndices.unshift(i);
+                } else {
+                  results.push(res);
+                }
               }
+
+              ref.setValue(value.filter((v, i) => removeIndices.indexOf(i) === -1));
+              // removeIndices.forEach((index) => value.splice(index, 1));
+            } else if (removeAdditional || options.removeAdditional) {
+              ref.setValue(value.slice(0, rule.length));
+              // value.splice(rule.length, value.length);
             }
           }
         } else {

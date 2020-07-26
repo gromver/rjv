@@ -10,7 +10,6 @@ const keyword: IKeyword = {
   name: 'properties',
   reserveNames: [
     'additionalProperties',
-    'removeAdditional',
     'patternProperties',    // todo
     'propertyNames',        // todo
   ],
@@ -66,6 +65,7 @@ const keyword: IKeyword = {
         if (!allowAdditional) {
           const value = ref.getValue();
           const valueProps = Object.keys(value);
+          const removeProps: string[] = [];
 
           for (const propName of valueProps) {
             if (!Object.prototype.hasOwnProperty.call(properties, propName)) {
@@ -78,8 +78,8 @@ const keyword: IKeyword = {
                   hasValidProps = true;
                 } else if (result.valid === false) {
                   if (removeAdditional || options.removeAdditional) {
-                    // remove prop
-                    delete value[propName];
+                    // store prop to remove later
+                    removeProps.push(propName);
                   } else {
                     hasInvalidProps = true;
                     invalidProperties.push(propName);
@@ -87,14 +87,27 @@ const keyword: IKeyword = {
                 }
               } else {
                 if (removeAdditional || options.removeAdditional) {
-                  // remove prop
-                  delete value[propName];
+                  // store prop to remove later
+                  removeProps.push(propName);
                 } else {
                   hasInvalidProps = true;
                   invalidProperties.push(propName);
                 }
               }
             }
+          }
+
+          // replace current value with new one without invalid additional props
+          if (removeProps.length) {
+            const cleanedValue = {};
+
+            valueProps.forEach((prop) => {
+              if (removeProps.indexOf(prop) === -1) {
+                cleanedValue[prop] = value[prop];
+              }
+            });
+
+            ref.setValue(cleanedValue);
           }
         }
 
@@ -126,6 +139,5 @@ declare module '../types' {
   export interface ISchema {
     properties?: PropertiesSchema;
     additionalProperties?: boolean | ISchema;
-    removeAdditional?: boolean;
   }
 }

@@ -35,6 +35,7 @@ const SCHEMA_ANNOTATIONS = [
   'warnings',
   'dependencies',
   'dependsOn',
+  'removeAdditional',
 ];
 
 export interface IValidationOptionsPartial {
@@ -53,6 +54,9 @@ export interface IValidationOptions extends IValidationOptionsPartial {
   keywords: IKeyword[];
 }
 
+/**
+ * Compiles given schema to a validation rule and gives an ability to validate ref using this schema
+ */
 export default class Validator {
   private readonly options: IValidationOptions;
   private readonly keywords: IKeywordMap;
