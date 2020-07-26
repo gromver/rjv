@@ -30,7 +30,7 @@ export interface IModelOptions extends IModelOptionsPartial {
 }
 
 export interface IModelValidationOptions extends IValidationOptionsPartial {
-  forceValidated?: boolean;
+  markAsValidated?: boolean;
 }
 
 const DEFAULT_OPTIONS: IModelOptions = {
@@ -283,7 +283,7 @@ export default class Model {
         // validating state
         const curState = curRef.state;
 
-        if (options.forceValidated && isRefInValidatingScope) {
+        if (options.markAsValidated && isRefInValidatingScope) {
           curRef.markAsValidated();
         }
 
@@ -358,9 +358,9 @@ export default class Model {
    * @param options - validation options
    */
   prepare(options: IModelValidationOptions = {}): Promise<boolean> {
-    const opts = {
+    const opts: IModelValidationOptions = {
       ...options,
-      forceValidated: false,
+      markAsValidated: false,
     };
 
     return this.ref().validate(opts);

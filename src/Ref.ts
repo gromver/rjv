@@ -11,7 +11,7 @@ const _ = {
 };
 
 const DEFAULT_VALIDATION_OPTIONS: IModelValidationOptions = {
-  forceValidated: true,
+  markAsValidated: true,
 };
 
 export type DataType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean';
@@ -71,7 +71,7 @@ export default class Ref {
    */
   prepare(onlyRef = false): Promise<boolean> {
     return onlyRef
-      ? this.validate({ forceValidated: false })
+      ? this.validate({ markAsValidated: false })
       : this.model.prepare();
   }
 
