@@ -78,24 +78,6 @@ export default class Ref {
    */
 
   /**
-   * Get the error that occurred first
-   * @returns {Ref | void}
-   */
-  get firstError(): Ref | void {
-    return this.model.getRefErrors(this).sort((a, b) => {
-      if ((a.state as any).errLock > (b.state as any).errLock) {
-        return 1;
-      }
-
-      if ((a.state as any).errLock < (b.state as any).errLock) {
-        return -1;
-      }
-
-      return 0;
-    })[0];
-  }
-
-  /**
    * Set value as method
    * @param value
    */
@@ -224,10 +206,53 @@ export default class Ref {
   }
 
   /**
-   * Returns error refs related to this ref if exists
+   * Returns error refs related to this ref if exist
    */
   get errors(): Ref[] {
     return this.model.getRefErrors(this);
+  }
+
+  /**
+   * Returns error refs related to this ref if they exist and are marked as validated
+   */
+  get validatedErrors(): Ref[] {
+    return this.model.getRefErrors(this).filter((ref) => ref.isValidated);
+  }
+
+  /**
+   * Get the error ref that occurred first
+   * @returns {Ref | void}
+   */
+  get firstError(): Ref | void {
+    return this.errors.sort((a, b) => {
+      if ((a.state as any).errLock > (b.state as any).errLock) {
+        return 1;
+      }
+
+      if ((a.state as any).errLock < (b.state as any).errLock) {
+        return -1;
+      }
+
+      return 0;
+    })[0];
+  }
+
+  /**
+   * Get the error ref that occurred first and was marked as validated
+   * @returns {Ref | void}
+   */
+  get validatedFirstError(): Ref | void {
+    return this.validatedErrors.sort((a, b) => {
+      if ((a.state as any).errLock > (b.state as any).errLock) {
+        return 1;
+      }
+
+      if ((a.state as any).errLock < (b.state as any).errLock) {
+        return -1;
+      }
+
+      return 0;
+    })[0];
   }
 
   /**

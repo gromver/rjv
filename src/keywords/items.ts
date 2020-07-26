@@ -74,17 +74,14 @@ const keyword: IKeyword = {
 
                 if (res.valid === false && removeAdditional) {
                   removeIndices.push(i);
-                  // removeIndices.unshift(i);
                 } else {
                   results.push(res);
                 }
               }
 
               ref.setValue(value.filter((v, i) => removeIndices.indexOf(i) === -1));
-              // removeIndices.forEach((index) => value.splice(index, 1));
             } else if (removeAdditional || options.removeAdditional) {
               ref.setValue(value.slice(0, rule.length));
-              // value.splice(rule.length, value.length);
             }
           }
         } else {
