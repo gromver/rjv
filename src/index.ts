@@ -7,7 +7,7 @@ export { default as Model } from './Model';
 
 export { default as Ref } from './Ref';
 
-export { default as Storage } from './storage/LodashStorage';
+export { default as Storage } from './storage/Storage';
 
 export { default as utils } from './utils';
 

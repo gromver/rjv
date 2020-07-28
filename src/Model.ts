@@ -6,7 +6,7 @@ import ChangeRefValidationStateEvent from './events/ChangeRefValidationStateEven
 import ChangeRefValueEvent from './events/ChangeRefValueEvent';
 import BeforeValidationEvent from './events/BeforeValidationEvent';
 import AfterValidationEvent from './events/AfterValidationEvent';
-import LodashStorage from './storage/LodashStorage';
+import Storage from './storage/Storage';
 import Validator, { IValidationOptionsPartial } from './Validator';
 import {
   ISchema, IStorage, IRule, ValidateRuleFn, IRuleValidationResult,
@@ -63,18 +63,18 @@ export default class Model {
    * @param initialValue
    * @param options
    */
-  constructor(schema: ISchema, initialValue: LodashStorage | any, options?: IModelOptionsPartial) {
+  constructor(schema: ISchema, initialValue: Storage | any, options?: IModelOptionsPartial) {
     this.refs = {};
     this.options = _.extend({}, DEFAULT_OPTIONS, options);
     this.observable = new Subject();
     this.setSchema(schema);
 
-    if (initialValue instanceof LodashStorage) {
+    if (initialValue instanceof Storage) {
       this.dataStorage = initialValue;
-      this.initialDataStorage = new LodashStorage(_.cloneDeep(initialValue.get([])));
+      this.initialDataStorage = new Storage(_.cloneDeep(initialValue.get([])));
     } else {
-      this.dataStorage = new LodashStorage(_.cloneDeep(initialValue));
-      this.initialDataStorage = new LodashStorage(_.cloneDeep(initialValue));
+      this.dataStorage = new Storage(_.cloneDeep(initialValue));
+      this.initialDataStorage = new Storage(_.cloneDeep(initialValue));
     }
   }
 

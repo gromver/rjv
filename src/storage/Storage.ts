@@ -5,7 +5,7 @@ const _ = {
   set: require('lodash/set'),
 };
 
-export default class LodashStorage implements IStorage {
+export default class Storage implements IStorage {
   constructor(private data?: any) {}
 
   get(route: Route): any {
