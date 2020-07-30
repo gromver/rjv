@@ -221,9 +221,9 @@ export default class Ref {
 
   /**
    * Get the error ref that occurred first
-   * @returns {Ref | void}
+   * @returns {Ref | undefined}
    */
-  get firstError(): Ref | void {
+  get firstError(): Ref | undefined {
     return this.errors.sort((a, b) => {
       if ((a.state as any).errLock > (b.state as any).errLock) {
         return 1;
@@ -239,9 +239,9 @@ export default class Ref {
 
   /**
    * Get the error ref that occurred first and was marked as validated
-   * @returns {Ref | void}
+   * @returns {Ref | undefined}
    */
-  get validatedFirstError(): Ref | void {
+  get validatedFirstError(): Ref | undefined {
     return this.validatedErrors.sort((a, b) => {
       if ((a.state as any).errLock > (b.state as any).errLock) {
         return 1;
