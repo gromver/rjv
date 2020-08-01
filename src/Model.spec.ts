@@ -692,8 +692,8 @@ describe('Model test', () => {
     const ref = model.ref();
     await ref.validate();
     expect(ref.isValid).toBe(false);
-    expect(fn.mock.calls[0][0]).toMatchObject({ path: '/' });
-    expect(fn.mock.calls[1][0]).toMatchObject({ path: '/' });
+    expect(fn.mock.calls[0][0]).toMatchObject({ scopes: ['/'],  type: 'beforeValidation' });
+    expect(fn.mock.calls[1][0]).toMatchObject({ path: '/', type: 'changeRefValidationState' });
   });
 
   it('Should return a cloned version of model data', async () => {

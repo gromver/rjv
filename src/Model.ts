@@ -239,13 +239,27 @@ export default class Model {
     const valLock = this.validationLock;
     const results: { [path: string]: IRuleValidationResult } = {};
     const refs: RefMap = {};
-    let scopes = ref.route.length ? [ref.path] : [];
-    const validatingScope = ref.path;
+    let validatingFromRoot = false;
+    // collect all validating scopes including ref's path and related to it
+    // "dependencies" and "dependsOn" annotation keywords
+    let validatingScopes: string[] = [];
+
+    // add path to the validationScopes if not already added and check if it is the root scope
+    function addValidationScope(path: string) {
+      if (path === '/') {
+        validatingFromRoot = true;
+      }
+
+      validatingScopes.indexOf(path) === -1 && validatingScopes.push(path);
+    }
+
+    addValidationScope(ref.path);
 
     if (ref.state.dependencies) {
       const resolvedDependencies = ref.state.dependencies
         .map((depPath) => utils.resolvePath(depPath, ref.path));
-      scopes = [...scopes, ...resolvedDependencies];
+
+      validatingScopes = [...validatingScopes, ...resolvedDependencies];
     }
 
     // validate attribute function
@@ -258,20 +272,20 @@ export default class Model {
         && curRef.state.dependsOn
           .find((depPath) => utils.resolvePath(depPath, curRef.path) === ref.path)
       ) {
-        scopes.push(curRef.path);
+        validatingScopes.push(curRef.path);
       }
 
-      const isRefInValidatingScope = validatingScope === '/'
-        || curScope === validatingScope || curScope.startsWith(`${validatingScope}/`);
+      const isRefInValidatingScope = validatingFromRoot
+        || curScope === ref.path || curScope.startsWith(`${ref.path}/`);
 
-      const isRefInPreparingScope = !scopes.length
-        || !!scopes.find(
+      const isRefInPreparingScope = isRefInValidatingScope
+        || !!validatingScopes.find(
           (scope) => curScope === scope || curScope.startsWith(utils.withTrailingSlash(scope)),
         );
 
       // Whether the ref is the parent of the validating and preparing scopes
       const isRefInParentScope = !isRefInPreparingScope
-        && !!scopes.find((scope) => scope.startsWith(curScope));
+        && !!validatingScopes.find((scope) => scope.startsWith(curScope));
 
       if (!rule.validate && !isRefInPreparingScope && !isRefInParentScope) {
         return Promise.resolve(curRef.createUndefinedResult());
@@ -314,7 +328,7 @@ export default class Model {
         });
     };
 
-    this.dispatch(new BeforeValidationEvent(validatingScope));
+    this.dispatch(new BeforeValidationEvent(validatingScopes));
 
     return this.validator.validate(this.ref(), validateRuleFn, options)
       .then((result) => {
@@ -323,8 +337,8 @@ export default class Model {
         }
 
         // merge map
-        if (scopes.length) {
-          scopes.forEach((scope) => {
+        if (!validatingFromRoot) {
+          validatingScopes.forEach((scope) => {
             Object.keys(this.refs).forEach((refPath) => {
               if (refPath === scope || refPath.startsWith(utils.withTrailingSlash(scope))) {
                 delete this.refs[refPath];
@@ -339,7 +353,7 @@ export default class Model {
 
         const valid = !!ref.state.valid;
 
-        this.dispatch(new AfterValidationEvent(validatingScope, valid));
+        this.dispatch(new AfterValidationEvent(validatingScopes, valid));
 
         return valid;
       });
