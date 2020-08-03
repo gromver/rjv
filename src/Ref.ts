@@ -11,10 +11,6 @@ const _ = {
   extend: require('lodash/extend'),
 };
 
-const DEFAULT_VALIDATION_OPTIONS: IModelValidationOptions = {
-  markAsValidated: true,
-};
-
 export default class Ref {
   private validated = false;
   private dirty = false;
@@ -57,7 +53,9 @@ export default class Ref {
    * @param options
    */
   validate(options: IModelValidationOptions = {}): Promise<boolean> {
-    const normalizedOptions = _.extend({}, DEFAULT_VALIDATION_OPTIONS, options);
+    const normalizedOptions = _.extend(
+      {}, this.model.options.validation, options,
+    );
 
     return this.model.validateRef(this, normalizedOptions);
   }

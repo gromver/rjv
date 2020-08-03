@@ -25,7 +25,7 @@ const _ = {
 
 export interface IModelOptions extends IModelOptionsPartial {
   // validation's process default opts
-  validation: IValidationOptionsPartial;
+  validation: IModelValidationOptions;
   debug: boolean;
 }
 
@@ -34,7 +34,9 @@ export interface IModelValidationOptions extends IValidationOptionsPartial {
 }
 
 const DEFAULT_OPTIONS: IModelOptions = {
-  validation: {},
+  validation: {
+    markAsValidated: true,
+  },
   debug: false,
 };
 
