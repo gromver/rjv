@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import { ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult } from '../types';
 
 const keyword: IKeyword = {
@@ -25,11 +26,11 @@ const keyword: IKeyword = {
 
           if (value.length > limit) {
             return ref.createErrorResult(
-              {
-                keyword: keyword.name,
-                description: `Should not have more than ${limit} items`,
-                bindings: { limit },
-              },
+              new ValidationMessage(
+                keyword.name,
+                `Should not have more than ${limit} items`,
+                { limit },
+              ),
               metadata,
             );
           }

@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult, ValueType,
 } from '../types';
@@ -105,11 +106,11 @@ const keyword: IKeyword = {
 
         return valid
           ? ref.createSuccessResult()
-          : ref.createErrorResult({
-            keyword: keyword.name,
-            description: `Should be ${typesAsString}`,
-            bindings: { types, typesAsString },
-          });
+          : ref.createErrorResult(new ValidationMessage(
+            keyword.name,
+            `Should be ${typesAsString}`,
+            { types, typesAsString },
+          ));
       },
     };
   },

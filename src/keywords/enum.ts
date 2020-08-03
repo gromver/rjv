@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
 } from '../types';
@@ -28,11 +29,11 @@ const keyword: IKeyword = {
         return valid
           ? ref.createSuccessResult(undefined, metadata)
           : ref.createErrorResult(
-            {
-              keyword: keyword.name,
-              description: 'Should be equal to one of the allowed values',
-              bindings: { allowedValues },
-            },
+            new ValidationMessage(
+              keyword.name,
+              'Should be equal to one of the allowed values',
+              { allowedValues },
+            ),
             metadata,
           );
       },

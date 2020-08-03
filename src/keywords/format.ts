@@ -1,5 +1,6 @@
 // tslint:disable:max-line-length
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
 } from '../types';
@@ -60,11 +61,11 @@ const keyword: IKeyword = {
           }
 
           return ref.createErrorResult(
-            {
-              keyword: keyword.name,
-              description: `Should match format "${schema}"`,
-              bindings: { format: schema },
-            },
+            new ValidationMessage(
+              keyword.name,
+              `Should match format "${schema}"`,
+              { format: schema },
+            ),
             metadata,
           );
         }

@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
 } from '../types';
@@ -106,21 +107,21 @@ const keyword: IKeyword = {
         });
 
         if (hasInvalidProps) {
-          return ref.createErrorResult({
-            keyword: keyword.name,
-            description: 'Should have valid items',
-            bindings: { invalidIndexes },
-          });
+          return ref.createErrorResult(new ValidationMessage(
+            keyword.name,
+            'Should have valid items',
+            { invalidIndexes },
+          ));
         }
 
         if (hasItemsOverflow) {
           const limit = (rule as IRule[]).length;
 
-          return ref.createErrorResult({
-            keyword: `${keyword.name}_overflow`,
-            description: `Should not have more than ${limit} items`,
-            bindings: { limit },
-          });
+          return ref.createErrorResult(new ValidationMessage(
+            `${keyword.name}_overflow`,
+            `Should not have more than ${limit} items`,
+            { limit },
+          ));
         }
 
         if (hasValidProps) {

@@ -5,6 +5,7 @@ declare const expect;
 
 import Model from './Model';
 import Ref from './Ref';
+import ValidationMessage from './ValidationMessage';
 import { IRule } from './types';
 
 describe('Model test', () => {
@@ -181,10 +182,7 @@ describe('Model test', () => {
   });
 
   it('Test warning keyword #2', async () => {
-    const validator = async (ref: Ref) => ref.createSuccessResult({
-      keyword: 'custom',
-      description: 'Validator\'s warning message.',
-    });
+    const validator = async (ref: Ref) => ref.createSuccessResult('Validator\'s warning message.');
 
     const m1 = new Model(
       {
@@ -226,10 +224,10 @@ describe('Model test', () => {
               name: 'newKeyword',
               compile(): IRule {
                 return {
-                  validate: async (ref) => (ref.createSuccessResult({
-                    keyword: 'newKeyword',
-                    description: 'Ok',
-                  })),
+                  validate: async (ref) => (ref.createSuccessResult(new ValidationMessage(
+                    'newKeyword',
+                    'Ok',
+                  ))),
                 };
               },
             },
@@ -281,10 +279,10 @@ describe('Model test', () => {
     const model = new Model(
       {
         // @ts-ignore
-        validate: async (ref) => ref.createSuccessResult({
-          keyword: 'customValidation',
-          description: 'default warning',
-        }),
+        validate: async (ref) => ref.createSuccessResult(new ValidationMessage(
+          'customValidation',
+          'default warning',
+        )),
       },
       {},
       {
@@ -341,10 +339,10 @@ describe('Model test', () => {
     const model = new Model(
       {
         // @ts-ignore
-        validate: async (ref) => ref.createSuccessResult({
-          keyword: 'customValidation',
-          description: 'default warning',
-        }),
+        validate: async (ref) => ref.createSuccessResult(new ValidationMessage(
+          'customValidation',
+          'default warning',
+        )),
         warnings: {
           customValidation: 'schema\'s custom warning message',
         },

@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
 } from '../types';
@@ -23,11 +24,11 @@ const keyword: IKeyword = {
 
           if (!regexp.test(value)) {
             return ref.createErrorResult(
-              {
-                keyword: keyword.name,
-                description: `Should match pattern ${schema}`,
-                bindings: { pattern: schema },
-              },
+              new ValidationMessage(
+                keyword.name,
+                `Should match pattern ${schema}`,
+                { pattern: schema },
+              ),
               metadata,
             );
           }

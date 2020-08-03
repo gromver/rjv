@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
 } from '../types';
@@ -32,10 +33,10 @@ const keyword: IKeyword = {
         }
 
         if (!hasValidItem) {
-          return ref.createErrorResult({
-            keyword: keyword.name,
-            description: 'Should contain a valid item',
-          });
+          return ref.createErrorResult(new ValidationMessage(
+            keyword.name,
+            'Should contain a valid item',
+          ));
         }
 
         return ref.createSuccessResult();

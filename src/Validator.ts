@@ -152,7 +152,7 @@ export default class Validator {
       const keyword: IKeyword = this.keywords[keywordName];
 
       if (!keyword) {
-        throw new Error(`Keyword "${keywordName}" does't exists.`);
+        throw new Error(`Keyword "${keywordName}" doesn't exists.`);
       }
 
       const rule = keyword.compile(this.compile, keywordSchema, schema) as IRuleCompiled;

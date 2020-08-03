@@ -1,4 +1,5 @@
 import Model, { IModelValidationOptions } from './Model';
+import ValidationMessage from './ValidationMessage';
 import ChangeRefUIStateEvent from './events/ChangeRefUIStateEvent';
 import {
   Path, Route, ValueType, IRuleValidationResult, IModelValidationResult, IValidationMessage,
@@ -394,11 +395,11 @@ export default class Ref {
    * @param message
    * @param metadata
    */
-  createSuccessResult(message?: IValidationMessage, metadata: IRuleValidationResult = {})
+  createSuccessResult(message?: ValidationMessage | any, metadata: IRuleValidationResult = {})
     : IRuleValidationResult {
     return {
       ...metadata,
-      message,
+      message: this.toValidationMessage(message),
       valid: true,
     };
   }
@@ -408,12 +409,22 @@ export default class Ref {
    * @param message
    * @param metadata
    */
-  createErrorResult(message: IValidationMessage, metadata: IRuleValidationResult = {})
+  createErrorResult(message: ValidationMessage | any, metadata: IRuleValidationResult = {})
     : IRuleValidationResult {
     return {
       ...metadata,
-      message,
+      message: this.toValidationMessage(message),
       valid: false,
     };
+  }
+
+  private toValidationMessage(message: ValidationMessage | any) {
+    return message instanceof ValidationMessage || message === undefined
+      ? message
+      : new ValidationMessage(
+        'inline',
+        message,
+        {},
+      );
   }
 }

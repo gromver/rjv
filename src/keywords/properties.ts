@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
 } from '../types';
@@ -112,11 +113,11 @@ const keyword: IKeyword = {
         }
 
         if (hasInvalidProps) {
-          return ref.createErrorResult({
-            keyword: keyword.name,
-            description: 'Should have valid properties',
-            bindings: { invalidProperties },
-          });
+          return ref.createErrorResult(new ValidationMessage(
+            keyword.name,
+            'Should have valid properties',
+            { invalidProperties },
+          ));
         }
 
         if (hasValidProps) {

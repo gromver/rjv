@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
 } from '../types';
@@ -26,13 +27,13 @@ const keyword: IKeyword = {
 
           if (exclusive ? value >= limit : value > limit) {
             return ref.createErrorResult(
-              {
-                keyword: exclusive ? `${keyword.name}_exclusive` : keyword.name,
-                description: exclusive
+              new ValidationMessage(
+                exclusive ? `${keyword.name}_exclusive` : keyword.name,
+                exclusive
                   ? `Should be less than ${limit}`
                   : `Should be less than or equal ${limit}`,
-                bindings: { limit, exclusive },
-              },
+                { limit, exclusive },
+              ),
               metadata,
             );
           }

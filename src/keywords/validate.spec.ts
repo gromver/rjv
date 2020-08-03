@@ -3,6 +3,7 @@ declare const it;
 declare const expect;
 
 import Model from '../Model';
+import ValidationMessage from '../ValidationMessage';
 
 describe('validate keyword', () => {
   it('Some integration tests', async () => {
@@ -17,10 +18,10 @@ describe('validate keyword', () => {
                 return ref.createSuccessResult();
               }
 
-              return ref.createErrorResult({
-                keyword: 'customFn',
-                description: 'Value should be greater than 5.',
-              });
+              return ref.createErrorResult(new ValidationMessage(
+                'customFn',
+                'Value should be greater than 5.',
+              ));
             }
 
             return ref.createUndefinedResult();
