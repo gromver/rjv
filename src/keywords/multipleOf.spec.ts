@@ -21,6 +21,11 @@ describe('multipleOf keyword', () => {
     ref.setValue(4.1);
     await ref.validate();
     expect(ref.state.valid).toBe(false);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'multipleOf',
+      description: 'Should be multiple of {multiplier}',
+      bindings: { multiplier: 2 },
+    });
 
     ref.setValue(null);
     await ref.validate();

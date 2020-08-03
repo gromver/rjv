@@ -30,8 +30,8 @@ const keyword: IKeyword = {
               new ValidationMessage(
                 exclusive ? `${keyword.name}_exclusive` : keyword.name,
                 exclusive
-                  ? `Should be less than ${limit}`
-                  : `Should be less than or equal ${limit}`,
+                  ? 'Should be less than {limit}'
+                  : 'Should be less than or equal {limit}',
                 { limit, exclusive },
               ),
               metadata,

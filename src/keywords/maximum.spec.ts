@@ -23,7 +23,8 @@ describe('maximum keyword', () => {
     expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'maximum',
-      description: 'Should be less than or equal 5',
+      description: 'Should be less than or equal {limit}',
+      bindings: { limit: 5, exclusive: false },
     });
 
     ref.setValue(null);
@@ -50,7 +51,8 @@ describe('maximum keyword', () => {
     expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'maximum_exclusive',
-      description: 'Should be less than 5',
+      description: 'Should be less than {limit}',
+      bindings: { limit: 5, exclusive: true },
     });
   });
 

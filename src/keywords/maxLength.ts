@@ -30,7 +30,7 @@ const keyword: IKeyword = {
             return ref.createErrorResult(
               new ValidationMessage(
                 keyword.name,
-                `Should not be longer than ${limit} characters`,
+                'Should not be longer than {limit} characters',
                 { limit },
               ),
               metadata,

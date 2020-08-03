@@ -235,7 +235,7 @@ describe('items keyword', () => {
     await ref.validate();
     expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
-      description: 'Should not have more than 2 items',
+      description: 'Should not have more than {limit} items',
       bindings: { limit: 2 },
     });
   });
@@ -383,7 +383,7 @@ describe('items keyword', () => {
     expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'items_overflow',
-      description: 'Should not have more than 2 items',
+      description: 'Should not have more than {limit} items',
       bindings: { limit: 2 },
     });
   });

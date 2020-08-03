@@ -26,7 +26,7 @@ const keyword: IKeyword = {
             return ref.createErrorResult(
               new ValidationMessage(
                 keyword.name,
-                `Should match pattern ${schema}`,
+                'Should match pattern {pattern}',
                 { pattern: schema },
               ),
               metadata,

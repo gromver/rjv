@@ -36,3 +36,18 @@ describe('utils.withTrailingSlash tests', () => {
     expect(utils.withTrailingSlash('///')).toEqual('/');
   });
 });
+
+describe('utils.injectVarsToString tests', () => {
+  it('should get a string with injected variables', () => {
+    expect(utils.injectVarsToString('{foo}', { foo: 'bar' })).toEqual('bar');
+    expect(utils.injectVarsToString('{{foo}}', { foo: 'bar' })).toEqual('{bar}');
+    expect(utils.injectVarsToString(
+      '{a}, {b}, {c}',
+      { a: 'A', b: 'B', c: 'C' },
+    )).toEqual('A, B, C');
+    expect(utils.injectVarsToString(
+      '{a}, {undefinedVariable}',
+      { a: 'A' },
+    )).toEqual('A, {undefinedVariable}');
+  });
+});

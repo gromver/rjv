@@ -119,7 +119,7 @@ const keyword: IKeyword = {
 
           return ref.createErrorResult(new ValidationMessage(
             `${keyword.name}_overflow`,
-            `Should not have more than ${limit} items`,
+            'Should not have more than {limit} items',
             { limit },
           ));
         }

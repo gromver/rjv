@@ -86,6 +86,13 @@ const utils = {
         return typeof value === dataType;
     }
   },
+  injectVarsToString(str: string, variables: {}): string {
+    if (Object.keys(variables).length === 0) {
+      return str;
+    }
+
+    return str.replace(/{([^{}]+)}/g, (match, name) => variables[name] || `{${name}}`);
+  },
 };
 
 export default utils;

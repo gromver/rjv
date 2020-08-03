@@ -262,6 +262,15 @@ export default class Ref {
   }
 
   /**
+   * Returns normalized description of the validation message if exists
+   */
+  get messageDescription(): string | any | undefined {
+    const message = this.state.message;
+
+    return message && this.model.options.descriptionResolver(message);
+  }
+
+  /**
    * Is ref's value changed?
    */
   get isChanged(): boolean {
@@ -416,6 +425,13 @@ export default class Ref {
     };
   }
 
+  /**
+   * A helper for the create*Result functions
+   * If the provided message is not an instance of ValidationMessage, creates and returns
+   * a new ValidationMessage object using the message as the description of the "inline" keyword
+   * @param message
+   * @private
+   */
   private toValidationMessage(message: ValidationMessage | any) {
     return message instanceof ValidationMessage || message === undefined
       ? message

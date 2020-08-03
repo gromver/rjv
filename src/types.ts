@@ -10,7 +10,7 @@ export type ValueType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'a
 export interface IValidationMessage {
   keyword: string;
   description: any;
-  bindings?: {};
+  bindings: {};
 }
 
 export default interface IValidationOptions {

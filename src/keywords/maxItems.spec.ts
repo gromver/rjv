@@ -21,6 +21,11 @@ describe('maxItems keyword', () => {
     ref.setValue([1, 2, 3]);
     await ref.validate();
     expect(ref.state.valid).toBe(false);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'maxItems',
+      description: 'Should not have more than {limit} items',
+      bindings: { limit: 2 },
+    });
 
     ref.setValue(null);
     await ref.validate();

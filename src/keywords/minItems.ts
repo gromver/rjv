@@ -28,7 +28,7 @@ const keyword: IKeyword = {
             return ref.createErrorResult(
               new ValidationMessage(
                 keyword.name,
-                `Should not have fewer than ${limit} items`,
+                'Should not have fewer than {limit} items',
                 { limit },
               ),
               metadata,

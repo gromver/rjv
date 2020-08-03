@@ -10,7 +10,7 @@ import Storage from './storage/Storage';
 import Validator, { IValidationOptionsPartial } from './Validator';
 import {
   ISchema, IStorage, IRule, ValidateRuleFn, IRuleValidationResult,
-  IModelValidationResult, IModelOptionsPartial,
+  IModelValidationResult, IModelOptionsPartial, IValidationMessage,
 } from './types';
 import utils from './utils';
 
@@ -23,9 +23,27 @@ const _ = {
   set: require('lodash/set'),
 };
 
+/**
+ * A default function that resolves raw message to the readable description
+ * If the description of the message is a string, injects bindings to that string.
+ * For example:
+ * descriptionResolver(
+ *  { description: 'Should be a {typesAsString}', bindings: { typesAsString: 'string' } }
+ * ) => Should be a string
+ * @param message
+ */
+function descriptionResolver(message: IValidationMessage): string | any {
+  if (typeof message.description === 'string') {
+    return utils.injectVarsToString(message.description, message.bindings);
+  }
+
+  return message.description;
+}
+
 export interface IModelOptions extends IModelOptionsPartial {
   // validation's process default opts
   validation: IModelValidationOptions;
+  descriptionResolver: (message: IValidationMessage) => string | any;
   debug: boolean;
 }
 
@@ -34,6 +52,7 @@ export interface IModelValidationOptions extends IValidationOptionsPartial {
 }
 
 const DEFAULT_OPTIONS: IModelOptions = {
+  descriptionResolver,
   validation: {
     markAsValidated: true,
   },

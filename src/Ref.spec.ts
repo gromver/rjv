@@ -212,6 +212,27 @@ describe('Ref tests', () => {
     });
   });
 
+  it('Ref::messageDescription', async () => {
+    const model = new Model(
+      { type: 'string', format: 'email' },
+      undefined,
+    );
+    await model.prepare();
+    const ref = model.ref();
+    expect(ref.messageDescription).toBeUndefined();
+
+    await ref.validate();
+    expect(ref.messageDescription).toBeUndefined();
+
+    ref.setValue(1);
+    await ref.validate();
+    expect(ref.messageDescription).toEqual('Should be string');
+
+    ref.setValue('wrong email');
+    await ref.validate();
+    expect(ref.messageDescription).toEqual('Should match format "email"');
+  });
+
   it('Ref::isDirty', async () => {
     const model = new Model(
       {},
@@ -238,7 +259,6 @@ describe('Ref tests', () => {
     );
     await model.prepare();
 
-    const ref = model.ref();
     const fooRef = model.ref('foo');
     expect(fooRef.isRequired).toBe(true);
   });

@@ -25,7 +25,7 @@ const keyword: IKeyword = {
           if ((value / multiplier) % 1 !== 0) {
             return ref.createErrorResult(new ValidationMessage(
               keyword.name,
-              `Should be multiple of ${multiplier}`,
+              'Should be multiple of {multiplier}',
               { multiplier },
             ));
           }

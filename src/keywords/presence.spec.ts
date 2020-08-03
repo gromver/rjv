@@ -37,6 +37,11 @@ describe('presence keyword', () => {
     await ref.validate();
     expect(ref.state.valid).toBe(false);
     expect(fooRef.state.valid).toBe(false);
+    expect(fooRef.state.message).toMatchObject({
+      keyword: 'presence',
+      description: 'Should not be blank',
+      bindings: { path: '/foo' },
+    });
     expect(barRef.state.valid).toBe(true);
     expect(carRef.state.valid).toBeUndefined();
     expect(fooRef.isShouldNotBeBlank).toBe(true);

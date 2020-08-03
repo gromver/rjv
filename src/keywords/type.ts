@@ -108,7 +108,7 @@ const keyword: IKeyword = {
           ? ref.createSuccessResult()
           : ref.createErrorResult(new ValidationMessage(
             keyword.name,
-            `Should be ${typesAsString}`,
+            'Should be {typesAsString}',
             { types, typesAsString },
           ));
       },

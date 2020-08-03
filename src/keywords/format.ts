@@ -63,7 +63,7 @@ const keyword: IKeyword = {
           return ref.createErrorResult(
             new ValidationMessage(
               keyword.name,
-              `Should match format "${schema}"`,
+              'Should match format "{format}"',
               { format: schema },
             ),
             metadata,

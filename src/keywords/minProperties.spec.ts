@@ -21,6 +21,11 @@ describe('minProperties keyword', () => {
     ref.setValue({ a: 1 });
     await ref.validate();
     expect(ref.state.valid).toBe(false);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'minProperties',
+      description: 'Should not have fewer than {limit} properties',
+      bindings: { limit: 2 },
+    });
 
     ref.setValue(null);
     await ref.validate();

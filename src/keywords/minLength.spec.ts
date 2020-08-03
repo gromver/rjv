@@ -21,6 +21,11 @@ describe('minLength keyword', () => {
     ref.setValue('ab');
     await ref.validate();
     expect(ref.state.valid).toBe(false);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'minLength',
+      description: 'Should not be shorter than {limit} characters',
+      bindings: { limit: 3 },
+    });
 
     ref.setValue(null);
     await ref.validate();

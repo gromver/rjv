@@ -25,7 +25,7 @@ describe('type keyword', () => {
     expect(ref.isValid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'type',
-      description: 'Should be string',
+      description: 'Should be {typesAsString}',
       bindings: {
         types: ['string'],
         typesAsString: 'string',
@@ -220,7 +220,7 @@ describe('type keyword', () => {
     expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'type',
-      description: 'Should be array, integer',
+      description: 'Should be {typesAsString}',
       bindings: {
         types: ['array', 'integer'],
         typesAsString: 'array, integer',
