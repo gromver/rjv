@@ -1,4 +1,5 @@
-import { Path, IModelValidationResult } from '../types';
+import { Path } from '../types';
+import { IModelValidationResult } from '../Model';
 
 export default class ChangeRefValidationStateEvent {
   type: string = 'changeRefValidationState';

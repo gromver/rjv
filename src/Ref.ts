@@ -1,8 +1,8 @@
-import Model, { IModelValidationOptions } from './Model';
+import Model, { IModelValidationOptions, IModelValidationResult } from './Model';
 import ValidationMessage from './ValidationMessage';
 import ChangeRefUIStateEvent from './events/ChangeRefUIStateEvent';
 import {
-  Path, Route, ValueType, IRuleValidationResult, IModelValidationResult, IValidationMessage,
+  Path, Route, ValueType, IRuleValidationResult, IValidationMessage,
 } from './types';
 import utils from './utils';
 

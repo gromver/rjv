@@ -7,10 +7,17 @@ import ChangeRefValueEvent from './events/ChangeRefValueEvent';
 import BeforeValidationEvent from './events/BeforeValidationEvent';
 import AfterValidationEvent from './events/AfterValidationEvent';
 import Storage from './storage/Storage';
-import Validator, { IValidationOptionsPartial } from './Validator';
+import Validator from './Validator';
 import {
-  ISchema, IStorage, IRule, ValidateRuleFn, IRuleValidationResult,
-  IModelValidationResult, IModelOptionsPartial, IValidationMessage,
+  ISchema,
+  IStorage,
+  IRule,
+  ValidateRuleFn,
+  IRuleValidationResult,
+  IModelOptions,
+  IModelOptionsPartial,
+  IValidationMessage,
+  IRuleValidationOptions,
 } from './types';
 import utils from './utils';
 
@@ -40,14 +47,12 @@ function descriptionResolver(message: IValidationMessage): string | any {
   return message.description;
 }
 
-export interface IModelOptions extends IModelOptionsPartial {
-  // validation's process default opts
-  validation: IModelValidationOptions;
-  descriptionResolver: (message: IValidationMessage) => string | any;
-  debug: boolean;
+export interface IModelValidationResult extends IRuleValidationResult {
+  valLock: number;
+  errLock?: number;
 }
 
-export interface IModelValidationOptions extends IValidationOptionsPartial {
+export interface IModelValidationOptions extends IRuleValidationOptions {
   markAsValidated?: boolean;
 }
 
