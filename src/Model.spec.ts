@@ -218,7 +218,7 @@ describe('Model test', () => {
       },
       '',
       {
-        validation: {
+        validator: {
           keywords: [
             {
               name: 'newKeyword',
@@ -259,7 +259,7 @@ describe('Model test', () => {
         foo: '',
       },
       {
-        validation: {
+        validator: {
           errors: {
             presence: 'Custom error message',
           },
@@ -286,7 +286,7 @@ describe('Model test', () => {
       },
       {},
       {
-        validation: {
+        validator: {
           warnings: {
             customValidation: 'Custom warning message',
           },
@@ -319,7 +319,7 @@ describe('Model test', () => {
         foo: '',
       },
       {
-        validation: {
+        validator: {
           errors: {
             presence: 'model\'s custom error message',
           },
@@ -349,7 +349,7 @@ describe('Model test', () => {
       },
       {},
       {
-        validation: {
+        validator: {
           warnings: {
             customValidation: 'model\'s custom warning message',
           },
@@ -381,7 +381,7 @@ describe('Model test', () => {
     );
     await model.prepare();
 
-    const fn = jest.fn((e) => console.log(e));
+    const fn = jest.fn();
     model.observable.subscribe(fn);
     model.ref().setValue('bar');
     await model.ref().validate();

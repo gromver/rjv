@@ -58,7 +58,7 @@ export interface IModelValidationOptions extends IRuleValidationOptions {
 
 const DEFAULT_OPTIONS: IModelOptions = {
   descriptionResolver,
-  validation: {
+  validator: {
     markAsValidated: true,
   },
   debug: false,
@@ -106,7 +106,7 @@ export default class Model {
 
   setSchema(schema: ISchema) {
     this.schema = schema;
-    this.validator = new Validator(schema, this.options.validation);
+    this.validator = new Validator(schema, this.options.validator);
   }
 
   getSchema(): ISchema {

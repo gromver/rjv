@@ -54,7 +54,7 @@ export default class Ref {
    */
   validate(options: IModelValidationOptions = {}): Promise<boolean> {
     const normalizedOptions = _.extend(
-      {}, this.model.options.validation, options,
+      {}, this.model.options.validator, options,
     );
 
     return this.model.validateRef(this, normalizedOptions);

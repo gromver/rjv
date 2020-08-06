@@ -449,7 +449,7 @@ describe('type keyword', () => {
       },
       '123',
       {
-        validation: {
+        validator: {
           coerceTypes: true,
         },
       },

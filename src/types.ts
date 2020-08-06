@@ -8,9 +8,11 @@ export type ValueType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'a
 
 // Model
 export interface IModelOptionsPartial {
+  // utilized by Ref::messageDescription to make messages readable
+  descriptionResolver?: (message: IValidationMessage) => string | any;
   // default validator options
-  validation?: IValidatorOptionsPartial;
-  // validator settings
+  validator?: IValidatorOptionsPartial;
+  // additional keywords
   keywords?: IKeyword[];
   // mode
   debug?: boolean;
@@ -18,7 +20,7 @@ export interface IModelOptionsPartial {
 
 export interface IModelOptions extends IModelOptionsPartial {
   // validation's process default opts
-  validation: IModelValidationOptions;
+  validator: IModelValidationOptions;
   descriptionResolver: (message: IValidationMessage) => string | any;
   debug: boolean;
 }

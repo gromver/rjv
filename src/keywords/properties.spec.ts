@@ -262,7 +262,7 @@ describe('properties keyword', () => {
         },
       },
       {
-        validation: { removeAdditional: true },
+        validator: { removeAdditional: true },
       },
     );
     await model.prepare();
