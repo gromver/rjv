@@ -23,6 +23,7 @@ import utils from './utils';
 
 const _ = {
   extend: require('lodash/extend'),
+  merge: require('lodash/merge'),
   assignIn: require('lodash/assignIn'),
   cloneDeep: require('lodash/cloneDeep'),
   memoize: require('lodash/memoize'),
@@ -91,7 +92,7 @@ export default class Model {
    */
   constructor(schema: ISchema, initialValue: Storage | any, options?: IModelOptionsPartial) {
     this.refs = {};
-    this.options = _.extend({}, DEFAULT_OPTIONS, options);
+    this.options = _.merge({}, DEFAULT_OPTIONS, options);
     this.observable = new Subject();
     this.setSchema(schema);
 
