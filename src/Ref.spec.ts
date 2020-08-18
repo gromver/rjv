@@ -131,6 +131,37 @@ describe('Ref tests', () => {
     expect(ref.ref('foo/bar').errors).toHaveLength(0);
   });
 
+  it('Ref::validatedErrors', async () => {
+    const model = new Model(
+      {
+        properties: {
+          foo: {
+            properties: {
+              bar: {
+                type: 'number',
+              },
+            },
+          },
+        },
+      },
+      {
+        foo: {
+          bar: 'abc',
+        },
+      },
+    );
+    await model.prepare();
+
+    const ref = model.ref();
+    expect(ref.validatedErrors).toHaveLength(0);
+
+    await ref.validate();
+    expect(ref.validatedErrors).toHaveLength(3);
+
+    expect(ref.ref('foo').validatedErrors).toHaveLength(1);
+    expect(ref.ref('foo/bar').validatedErrors).toHaveLength(0);
+  });
+
   it('Ref::isChanged', async () => {
     const model = new Model(
       {
@@ -181,6 +212,27 @@ describe('Ref tests', () => {
     });
   });
 
+  it('Ref::messageDescription', async () => {
+    const model = new Model(
+      { type: 'string', format: 'email' },
+      undefined,
+    );
+    await model.prepare();
+    const ref = model.ref();
+    expect(ref.messageDescription).toBeUndefined();
+
+    await ref.validate();
+    expect(ref.messageDescription).toBeUndefined();
+
+    ref.setValue(1);
+    await ref.validate();
+    expect(ref.messageDescription).toEqual('Should be string');
+
+    ref.setValue('wrong email');
+    await ref.validate();
+    expect(ref.messageDescription).toEqual('Should match format "email"');
+  });
+
   it('Ref::isDirty', async () => {
     const model = new Model(
       {},
@@ -207,7 +259,6 @@ describe('Ref tests', () => {
     );
     await model.prepare();
 
-    const ref = model.ref();
     const fooRef = model.ref('foo');
     expect(fooRef.isRequired).toBe(true);
   });
@@ -398,6 +449,38 @@ describe('Ref tests', () => {
 
     await ref.validate();
     expect(ref.firstError).toMatchObject({ path: '/a/aa' });
+    expect((ref.ref('a').firstError as any).state).toMatchObject({ errLock: 6 });
+    expect((ref.ref('b').firstError as any).state).toMatchObject({ errLock: 8 });
+  });
+
+  it('Ref::validatedFirstError', async () => {
+    const model = new Model(
+      {
+        properties: {
+          a: {
+            properties: {
+              aa: { type: 'number' },
+            },
+          },
+          b: {
+            properties: {
+              bb: { type: 'number' },
+            },
+          },
+        },
+      },
+      {
+        a: { aa: '' },
+        b: { bb: '' },
+      },
+    );
+    await model.prepare();
+
+    const ref = model.ref();
+    expect(ref.validatedFirstError).toBeUndefined();
+
+    await ref.validate();
+    expect(ref.validatedFirstError).toMatchObject({ path: '/a/aa' });
     expect((ref.ref('a').firstError as any).state).toMatchObject({ errLock: 6 });
     expect((ref.ref('b').firstError as any).state).toMatchObject({ errLock: 8 });
   });

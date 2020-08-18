@@ -24,3 +24,30 @@ describe('utils.pathToKey tests', () => {
     expect(utils.pathToKey(['foo', 2, 'bar', 3])).toEqual('/foo/2/bar/3');
   });
 });
+
+describe('utils.withTrailingSlash tests', () => {
+  it('should get a string with one trailing slash at the end', () => {
+    expect(utils.withTrailingSlash('/path')).toEqual('/path/');
+    expect(utils.withTrailingSlash('/path/')).toEqual('/path/');
+    expect(utils.withTrailingSlash('/path///')).toEqual('/path/');
+    expect(utils.withTrailingSlash('/path/to')).toEqual('/path/to/');
+    expect(utils.withTrailingSlash('')).toEqual('/');
+    expect(utils.withTrailingSlash('/')).toEqual('/');
+    expect(utils.withTrailingSlash('///')).toEqual('/');
+  });
+});
+
+describe('utils.injectVarsToString tests', () => {
+  it('should get a string with injected variables', () => {
+    expect(utils.injectVarsToString('{foo}', { foo: 'bar' })).toEqual('bar');
+    expect(utils.injectVarsToString('{{foo}}', { foo: 'bar' })).toEqual('{bar}');
+    expect(utils.injectVarsToString(
+      '{a}, {b}, {c}',
+      { a: 'A', b: 'B', c: 'C' },
+    )).toEqual('A, B, C');
+    expect(utils.injectVarsToString(
+      '{a}, {undefinedVariable}',
+      { a: 'A' },
+    )).toEqual('A, {undefinedVariable}');
+  });
+});

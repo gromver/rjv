@@ -80,7 +80,7 @@ describe('format keyword', () => {
     expect(ref.state).toMatchObject({
       format: 'email',
       message: {
-        description: 'Should match format "email"',
+        description: 'Should match format "{format}"',
         bindings: {
           format: 'email',
         },

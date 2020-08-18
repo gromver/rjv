@@ -2,18 +2,28 @@
 import { Subject } from 'rxjs/Subject';
 import Ref from './Ref';
 import Event from './events/Event';
-import ChangeRefStateEvent from './events/ChangeRefStateEvent';
+import ChangeRefValidationStateEvent from './events/ChangeRefValidationStateEvent';
 import ChangeRefValueEvent from './events/ChangeRefValueEvent';
-import LodashStorage from './storage/LodashStorage';
-import Validator, { IValidationOptionsPartial } from './Validator';
+import BeforeValidationEvent from './events/BeforeValidationEvent';
+import AfterValidationEvent from './events/AfterValidationEvent';
+import Storage from './storage/Storage';
+import Validator from './Validator';
 import {
-  ISchema, IStorage, IRule, ValidateRuleFn, IRuleValidationResult,
-  IModelValidationResult, IModelOptionsPartial,
+  ISchema,
+  IStorage,
+  IRule,
+  ValidateRuleFn,
+  IRuleValidationResult,
+  IModelOptions,
+  IModelOptionsPartial,
+  IValidationMessage,
+  IRuleValidationOptions,
 } from './types';
 import utils from './utils';
 
 const _ = {
   extend: require('lodash/extend'),
+  merge: require('lodash/merge'),
   assignIn: require('lodash/assignIn'),
   cloneDeep: require('lodash/cloneDeep'),
   memoize: require('lodash/memoize'),
@@ -21,20 +31,37 @@ const _ = {
   set: require('lodash/set'),
 };
 
-export interface IModelOptions extends IModelOptionsPartial {
-  // validation's process default opts
-  validation: IValidationOptionsPartial;
-  forceValidatedOnInit?: boolean; // при инициализации помечаем все рефы как "валидировано"
-  debug: boolean;
+/**
+ * A default function that resolves raw message to the readable description
+ * If the description of the message is a string, injects bindings to that string.
+ * For example:
+ * descriptionResolver(
+ *  { description: 'Should be a {typesAsString}', bindings: { typesAsString: 'string' } }
+ * ) => Should be a string
+ * @param message
+ */
+function descriptionResolver(message: IValidationMessage): string | any {
+  if (typeof message.description === 'string') {
+    return utils.injectVarsToString(message.description, message.bindings);
+  }
+
+  return message.description;
 }
 
-export interface IModelValidationOptions extends IValidationOptionsPartial {
-  forceValidated?: boolean;
+export interface IModelValidationResult extends IRuleValidationResult {
+  valLock: number;
+  errLock?: number;
+}
+
+export interface IModelValidationOptions extends IRuleValidationOptions {
+  markAsValidated?: boolean;
 }
 
 const DEFAULT_OPTIONS: IModelOptions = {
-  validation: {},
-  forceValidatedOnInit: false,
+  descriptionResolver,
+  validator: {
+    markAsValidated: true,
+  },
   debug: false,
 };
 
@@ -63,24 +90,24 @@ export default class Model {
    * @param initialValue
    * @param options
    */
-  constructor(schema: ISchema, initialValue: LodashStorage | any, options?: IModelOptionsPartial) {
+  constructor(schema: ISchema, initialValue: Storage | any, options?: IModelOptionsPartial) {
     this.refs = {};
-    this.options = _.extend({}, DEFAULT_OPTIONS, options);
+    this.options = _.merge({}, DEFAULT_OPTIONS, options);
     this.observable = new Subject();
     this.setSchema(schema);
 
-    if (initialValue instanceof LodashStorage) {
+    if (initialValue instanceof Storage) {
       this.dataStorage = initialValue;
-      this.initialDataStorage = new LodashStorage(_.cloneDeep(initialValue.get([])));
+      this.initialDataStorage = new Storage(_.cloneDeep(initialValue.get([])));
     } else {
-      this.dataStorage = new LodashStorage(_.cloneDeep(initialValue));
-      this.initialDataStorage = new LodashStorage(_.cloneDeep(initialValue));
+      this.dataStorage = new Storage(_.cloneDeep(initialValue));
+      this.initialDataStorage = new Storage(_.cloneDeep(initialValue));
     }
   }
 
   setSchema(schema: ISchema) {
     this.schema = schema;
-    this.validator = new Validator(schema, this.options.validation);
+    this.validator = new Validator(schema, this.options.validator);
   }
 
   getSchema(): ISchema {
@@ -117,7 +144,7 @@ export default class Model {
    * @param path - a relative or absolute path to the property
    * @param resolve - resolve given path to the root path
    */
-  safeRef(path = '/', resolve= true): Ref | undefined {
+  safeRef(path = '/', resolve = true): Ref | undefined {
     let resolvedPath = path;
 
     if (resolve) {
@@ -125,7 +152,7 @@ export default class Model {
     }
 
     if (this.options.debug) {
-      console.warn('Attention, you are trying to get a ref to a property that does not have a corresponding rule in the JSON schema');
+      console.warn('Attention, you are trying to get a ref to a property that might not have a corresponding rule in the JSON schema');
     }
 
     return this.refs[resolvedPath];
@@ -145,7 +172,7 @@ export default class Model {
 
     ref.state = state;
 
-    this.dispatch(new ChangeRefStateEvent(ref.path, state));
+    this.dispatch(new ChangeRefValidationStateEvent(ref.path, state));
   }
 
   /**
@@ -239,13 +266,27 @@ export default class Model {
     const valLock = this.validationLock;
     const results: { [path: string]: IRuleValidationResult } = {};
     const refs: RefMap = {};
-    let scopes = ref.route.length ? [ref.path] : [];
-    const targetScope = ref.route.length ? ref.path : '';
+    let validatingFromRoot = false;
+    // collect all validating scopes including ref's path and related to it
+    // "dependencies" and "dependsOn" annotation keywords
+    let validatingScopes: string[] = [];
+
+    // add path to the validationScopes if not already added and check if it is the root scope
+    function addValidationScope(path: string) {
+      if (path === '/') {
+        validatingFromRoot = true;
+      }
+
+      validatingScopes.indexOf(path) === -1 && validatingScopes.push(path);
+    }
+
+    addValidationScope(ref.path);
 
     if (ref.state.dependencies) {
       const resolvedDependencies = ref.state.dependencies
         .map((depPath) => utils.resolvePath(depPath, ref.path));
-      scopes = [...scopes, ...resolvedDependencies];
+
+      validatingScopes = [...validatingScopes, ...resolvedDependencies];
     }
 
     // validate attribute function
@@ -258,29 +299,32 @@ export default class Model {
         && curRef.state.dependsOn
           .find((depPath) => utils.resolvePath(depPath, curRef.path) === ref.path)
       ) {
-        scopes.push(curRef.path);
+        validatingScopes.push(curRef.path);
       }
 
-      const isRefInTargetScope = !targetScope
-        || curScope === targetScope || curScope.startsWith(`${targetScope}/`);
+      const isRefInValidatingScope = validatingFromRoot
+        || curScope === ref.path || curScope.startsWith(`${ref.path}/`);
 
-      const isRefInScope = !scopes.length
-        || !!scopes.find((scope) => curScope === scope || curScope.startsWith(`${scope}/`));
+      const isRefInPreparingScope = isRefInValidatingScope
+        || !!validatingScopes.find(
+          (scope) => curScope === scope || curScope.startsWith(utils.withTrailingSlash(scope)),
+        );
 
-      const isRefInParentScope = !isRefInScope
-        && !!scopes.find((scope) => scope.startsWith(curScope));
+      // Whether the ref is the parent of the validating and preparing scopes
+      const isRefInParentScope = !isRefInPreparingScope
+        && !!validatingScopes.find((scope) => scope.startsWith(curScope));
 
-      if (!rule.validate && !isRefInScope && !isRefInParentScope) {
+      if (!rule.validate && !isRefInPreparingScope && !isRefInParentScope) {
         return Promise.resolve(curRef.createUndefinedResult());
       }
 
-      if (isRefInScope) {
+      if (isRefInPreparingScope) {
         refs[curRef.path] = curRef;
 
         // validating state
         const curState = curRef.state;
 
-        if (options.forceValidated && isRefInTargetScope) {
+        if (options.markAsValidated && isRefInValidatingScope) {
           curRef.markAsValidated();
         }
 
@@ -293,7 +337,7 @@ export default class Model {
 
       return (rule as any).validate(curRef, validateRuleFn, validationOptions)
         .then((result: IRuleValidationResult) => {
-          if (isRefInScope) {
+          if (isRefInPreparingScope) {
             if (result.valid === false) {
               result.errLock = this.errorLock;
             }
@@ -311,6 +355,8 @@ export default class Model {
         });
     };
 
+    this.dispatch(new BeforeValidationEvent(validatingScopes));
+
     return this.validator.validate(this.ref(), validateRuleFn, options)
       .then((result) => {
         if (this.options.debug && result.valid === undefined) {
@@ -318,10 +364,10 @@ export default class Model {
         }
 
         // merge map
-        if (scopes.length) {
-          scopes.forEach((scope) => {
+        if (!validatingFromRoot) {
+          validatingScopes.forEach((scope) => {
             Object.keys(this.refs).forEach((refPath) => {
-              if (refPath === scope || refPath.startsWith(`${scope}/`)) {
+              if (refPath === scope || refPath.startsWith(utils.withTrailingSlash(scope))) {
                 delete this.refs[refPath];
               }
             });
@@ -332,7 +378,11 @@ export default class Model {
           this.refs = refs;
         }
 
-        return !!ref.state.valid;
+        const valid = !!ref.state.valid;
+
+        this.dispatch(new AfterValidationEvent(validatingScopes, valid));
+
+        return valid;
       });
   }
 
@@ -345,13 +395,13 @@ export default class Model {
   }
 
   /**
-   * Validates root ref, by default all validated refs will be marked as validated
+   * Validates root ref, all validated refs are not marked as validated
    * @param options - validation options
    */
   prepare(options: IModelValidationOptions = {}): Promise<boolean> {
-    const opts = {
+    const opts: IModelValidationOptions = {
       ...options,
-      forceValidated: false,
+      markAsValidated: false,
     };
 
     return this.ref().validate(opts);
@@ -360,14 +410,14 @@ export default class Model {
   /**
    * Function - Returns a cloned data of the model
    */
-  getAttributes(): any {
+  getData(): any {
     return _.cloneDeep(this.dataStorage.get([]));
   }
 
   /**
    * Getter - Returns a cloned data of the model
    */
-  get attributes(): any {
-    return this.getAttributes();
+  get data(): any {
+    return this.getData();
   }
 }

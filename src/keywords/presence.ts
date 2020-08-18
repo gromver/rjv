@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
 } from '../types';
@@ -32,14 +33,12 @@ const keyword: IKeyword = {
 
           if (value === undefined) {
             return ref.createErrorResult(
-              {
-                keyword: keyword.name,
-                description: 'Should not be blank',
-                bindings: { path: ref.path },
-              },
-              {
-                presence,
-              },
+              new ValidationMessage(
+                keyword.name,
+                'Should not be blank',
+                { path: ref.path },
+              ),
+              { presence },
             );
           }
 
@@ -53,14 +52,12 @@ const keyword: IKeyword = {
 
             if (!stringValue.length) {
               return ref.createErrorResult(
-                {
-                  keyword: keyword.name,
-                  description: 'Should not be blank',
-                  bindings: { path: ref.path },
-                },
-                {
-                  presence,
-                },
+                new ValidationMessage(
+                  keyword.name,
+                  'Should not be blank',
+                  { path: ref.path },
+                ),
+                { presence },
               );
             }
           }

@@ -23,7 +23,8 @@ describe('minimum keyword', () => {
     expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'minimum',
-      description: 'Should be greater than or equal 5',
+      description: 'Should be greater than or equal {limit}',
+      bindings: { limit: 5, exclusive: false },
     });
 
     ref.setValue(null);
@@ -50,7 +51,8 @@ describe('minimum keyword', () => {
     expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'minimum_exclusive',
-      description: 'Should be greater than 5',
+      description: 'Should be greater than {limit}',
+      bindings: { limit: 5, exclusive: true },
     });
   });
 

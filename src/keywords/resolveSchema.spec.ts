@@ -6,7 +6,7 @@ import Model from '../Model';
 import Ref from '../Ref';
 
 describe('resolveSchema keyword', () => {
-  it('Some integration tests', async () => {
+  it('Async integration tests', async () => {
     const model = new Model(
       {
         properties: {
@@ -20,6 +20,51 @@ describe('resolveSchema keyword', () => {
               return Promise.resolve({
                 type: expect,
               });
+            },
+          },
+        },
+      },
+      {
+        expect: 'number',
+        value: 1,
+      },
+    );
+    await model.prepare();
+
+    const ref = model.ref();
+    const expectRef = model.ref('expect');
+    const valueRef = model.ref('value');
+
+    await ref.validate();
+    expect(ref.state.valid).toBe(true);
+
+    valueRef.setValue('foo');
+    await ref.validate();
+    expect(ref.state.valid).toBe(false);
+
+    expectRef.setValue('string');
+    await ref.validate();
+    expect(ref.state.valid).toBe(true);
+
+    valueRef.setValue(1);
+    await ref.validate();
+    expect(ref.state.valid).toBe(false);
+  });
+
+  it('Sync integration tests', async () => {
+    const model = new Model(
+      {
+        properties: {
+          expect: {
+            enum: ['string', 'number'],
+          },
+          value: {
+            resolveSchema: (ref) => {
+              const expect = ref.ref('/expect').getValue();
+
+              return {
+                type: expect,
+              };
             },
           },
         },

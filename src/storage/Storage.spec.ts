@@ -2,11 +2,11 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import LodashStorage from './LodashStorage';
+import Storage from './Storage';
 
 describe('Storage tests', () => {
   it('should set and get value properly, scalar value case', () => {
-    const storage = new LodashStorage();
+    const storage = new Storage();
 
     expect(storage.get([])).toBeUndefined();
     storage.set([], 123);
@@ -16,7 +16,7 @@ describe('Storage tests', () => {
   });
 
   it('should set and get value properly, object value case', () => {
-    const storage = new LodashStorage({});
+    const storage = new Storage({});
 
     expect(storage.get([])).toMatchObject({});
     storage.set(['foo'], 'bar');

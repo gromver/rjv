@@ -1,6 +1,8 @@
-import Model, { IModelValidationOptions } from './Model';
+import Model, { IModelValidationOptions, IModelValidationResult } from './Model';
+import ValidationMessage from './ValidationMessage';
+import ChangeRefUIStateEvent from './events/ChangeRefUIStateEvent';
 import {
-  Path, Route, IRuleValidationResult, IModelValidationResult, IValidationMessage,
+  Path, Route, ValueType, IRuleValidationResult, IValidationMessage,
 } from './types';
 import utils from './utils';
 
@@ -8,12 +10,6 @@ const _ = {
   isEqual: require('lodash/isEqual'),
   extend: require('lodash/extend'),
 };
-
-const DEFAULT_VALIDATION_OPTIONS: IModelValidationOptions = {
-  forceValidated: true,
-};
-
-export type DataType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean';
 
 export default class Ref {
   private validated = false;
@@ -57,41 +53,28 @@ export default class Ref {
    * @param options
    */
   validate(options: IModelValidationOptions = {}): Promise<boolean> {
-    const normalizedOptions = _.extend({}, DEFAULT_VALIDATION_OPTIONS, options);
+    const normalizedOptions = _.extend(
+      {}, this.model.options.validator, options,
+    );
 
     return this.model.validateRef(this, normalizedOptions);
   }
 
   /**
-   * Shortcut method for populating initial state of the ref.
+   * Shortcut method for populating initial state of the whole model or the current ref.
    * Useful if ref's value has an array or an object types.
    * Should be called when new props or items added to the ref's value.
+   * @param onlyRef
    */
-  prepare(): Promise<boolean> {
-    return this.validate({ forceValidated: false });
+  prepare(onlyRef = false): Promise<boolean> {
+    return onlyRef
+      ? this.validate({ markAsValidated: false })
+      : this.model.prepare();
   }
 
   /**
    * Getters and setters
    */
-
-  /**
-   * Get the error that occurred first
-   * @returns {Ref | void}
-   */
-  get firstError(): Ref | void {
-    return this.model.getRefErrors(this).sort((a, b) => {
-      if ((a.state as any).errLock > (b.state as any).errLock) {
-        return 1;
-      }
-
-      if ((a.state as any).errLock < (b.state as any).errLock) {
-        return -1;
-      }
-
-      return 0;
-    })[0];
-  }
 
   /**
    * Set value as method
@@ -141,37 +124,49 @@ export default class Ref {
   }
 
   /**
-   * Mark ref as dirty
+   * Mark ref as dirty and emit ChangeRefUIStateEvent if the ref has not been dirty yet
    * @return this
    */
   markAsDirty(): this {
+    const dispatch = !this.dirty;
+
     this.dirty = true;
+
+    dispatch && this.model.dispatch(new ChangeRefUIStateEvent(this.path, 'dirty'));
 
     return this;
   }
 
   /**
-   * Mark ref as touched
+   * Mark ref as touched and emit ChangeRefUIStateEvent if the ref has not been touched yet
    * @return this
    */
   markAsTouched(): this {
+    const dispatch = !this.touched;
+
     this.touched = true;
+
+    dispatch && this.model.dispatch(new ChangeRefUIStateEvent(this.path, 'touched'));
 
     return this;
   }
 
   /**
-   * Mark ref as validated
+   * Mark ref as validated and emit ChangeRefUIStateEvent if the ref has not been validated yet
    * @return this
    */
   markAsValidated(): this {
+    const dispatch = !this.validated;
+
     this.validated = true;
+
+    dispatch && this.model.dispatch(new ChangeRefUIStateEvent(this.path, 'validated'));
 
     return this;
   }
 
   /**
-   * Mark ref as pristine
+   * Mark ref as pristine and emit ChangeRefUIStateEvent
    * @return this
    */
   markAsPristine(): this {
@@ -180,6 +175,8 @@ export default class Ref {
     this.validated = false;
     delete this.state.valid;
     delete this.state.message;
+
+    this.model.dispatch(new ChangeRefUIStateEvent(this.path, 'pristine'));
 
     return this;
   }
@@ -208,10 +205,53 @@ export default class Ref {
   }
 
   /**
-   * Returns error refs related to this ref if exists
+   * Returns error refs related to this ref if exist
    */
   get errors(): Ref[] {
     return this.model.getRefErrors(this);
+  }
+
+  /**
+   * Returns error refs related to this ref if they exist and are marked as validated
+   */
+  get validatedErrors(): Ref[] {
+    return this.model.getRefErrors(this).filter((ref) => ref.isValidated);
+  }
+
+  /**
+   * Get the error ref that occurred first
+   * @returns {Ref | undefined}
+   */
+  get firstError(): Ref | undefined {
+    return this.errors.sort((a, b) => {
+      if ((a.state as any).errLock > (b.state as any).errLock) {
+        return 1;
+      }
+
+      if ((a.state as any).errLock < (b.state as any).errLock) {
+        return -1;
+      }
+
+      return 0;
+    })[0];
+  }
+
+  /**
+   * Get the error ref that occurred first and was marked as validated
+   * @returns {Ref | undefined}
+   */
+  get validatedFirstError(): Ref | undefined {
+    return this.validatedErrors.sort((a, b) => {
+      if ((a.state as any).errLock > (b.state as any).errLock) {
+        return 1;
+      }
+
+      if ((a.state as any).errLock < (b.state as any).errLock) {
+        return -1;
+      }
+
+      return 0;
+    })[0];
   }
 
   /**
@@ -219,6 +259,15 @@ export default class Ref {
    */
   get message(): IValidationMessage | undefined {
     return this.state.message;
+  }
+
+  /**
+   * Returns normalized description of the validation message if exists
+   */
+  get messageDescription(): string | any | undefined {
+    const message = this.state.message;
+
+    return message && this.model.options.descriptionResolver(message);
   }
 
   /**
@@ -326,21 +375,10 @@ export default class Ref {
    * Checks if the ref's value has desired type
    * @param dataType
    */
-  checkDataType(dataType: DataType): boolean {
+  checkDataType(dataType: ValueType): boolean {
     const value = this.getValue();
 
-    switch (dataType) {
-      case 'null':
-        return value === null;
-      case 'array':
-        return Array.isArray(value);
-      case 'object':
-        return value && typeof value === 'object' && !Array.isArray(value);
-      case 'integer':
-        return typeof value === 'number' && !(value % 1);
-      default:
-        return typeof value === dataType;
-    }
+    return utils.checkDataType(dataType, value);
   }
 
   /**
@@ -364,11 +402,11 @@ export default class Ref {
    * @param message
    * @param metadata
    */
-  createSuccessResult(message?: IValidationMessage, metadata: IRuleValidationResult = {})
+  createSuccessResult(message?: ValidationMessage | any, metadata: IRuleValidationResult = {})
     : IRuleValidationResult {
     return {
       ...metadata,
-      message,
+      message: this.toValidationMessage(message),
       valid: true,
     };
   }
@@ -378,12 +416,29 @@ export default class Ref {
    * @param message
    * @param metadata
    */
-  createErrorResult(message: IValidationMessage, metadata: IRuleValidationResult = {})
+  createErrorResult(message: ValidationMessage | any, metadata: IRuleValidationResult = {})
     : IRuleValidationResult {
     return {
       ...metadata,
-      message,
+      message: this.toValidationMessage(message),
       valid: false,
     };
+  }
+
+  /**
+   * A helper for the create*Result functions
+   * If the provided message is not an instance of ValidationMessage, creates and returns
+   * a new ValidationMessage object using the message as the description of the "inline" keyword
+   * @param message
+   * @private
+   */
+  private toValidationMessage(message: ValidationMessage | any) {
+    return message instanceof ValidationMessage || message === undefined
+      ? message
+      : new ValidationMessage(
+        'inline',
+        message,
+        {},
+      );
   }
 }

@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
 } from '../types';
@@ -54,10 +55,10 @@ const keyword: IKeyword = {
             return validateRuleFn(ref, validRules[0], options);
           }
 
-          return ref.createErrorResult({
-            keyword: keyword.name,
-            description: 'Should match exactly one schema in oneOf',
-          });
+          return ref.createErrorResult(new ValidationMessage(
+            keyword.name,
+            'Should match exactly one schema in oneOf',
+          ));
         });
       },
     };

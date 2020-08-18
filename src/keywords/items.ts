@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
 } from '../types';
@@ -35,6 +36,8 @@ const keyword: IKeyword = {
       additionalRule = compile(parentSchema.additionalItems, parentSchema);
     }
 
+    const removeAdditional = !!parentSchema.removeAdditional;
+
     const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
       : Promise<IRuleValidationResult> => {
       const results: IRuleValidationResult[] = [];
@@ -60,16 +63,26 @@ const keyword: IKeyword = {
 
           // check additional items
           if (value.length > rule.length) {
-            if (noAdditional) {
+            if (noAdditional && !removeAdditional && !options.removeAdditional) {
               hasItemsOverflow = true;
             } else if (additionalRule) {
-              for (let i = value.length - 1; i < value.length; i += 1) {
+              const removeIndices: number[] = [];
+
+              for (let i = rule.length; i < value.length; i += 1) {
                 const res = await validateRuleFn(
                   ref.ref(`${i}`), additionalRule, options,
                 ) as IRuleValidationResult;
 
-                results.push(res);
+                if (res.valid === false && removeAdditional) {
+                  removeIndices.push(i);
+                } else {
+                  results.push(res);
+                }
               }
+
+              ref.setValue(value.filter((v, i) => removeIndices.indexOf(i) === -1));
+            } else if (removeAdditional || options.removeAdditional) {
+              ref.setValue(value.slice(0, rule.length));
             }
           }
         } else {
@@ -94,21 +107,21 @@ const keyword: IKeyword = {
         });
 
         if (hasInvalidProps) {
-          return ref.createErrorResult({
-            keyword: keyword.name,
-            description: 'Should have valid items',
-            bindings: { invalidIndexes },
-          });
+          return ref.createErrorResult(new ValidationMessage(
+            keyword.name,
+            'Should have valid items',
+            { invalidIndexes },
+          ));
         }
 
         if (hasItemsOverflow) {
           const limit = (rule as IRule[]).length;
 
-          return ref.createErrorResult({
-            keyword: `${keyword.name}_overflow`,
-            description: `Should not have more than ${limit} items`,
-            bindings: { limit },
-          });
+          return ref.createErrorResult(new ValidationMessage(
+            `${keyword.name}_overflow`,
+            'Should not have more than {limit} items',
+            { limit },
+          ));
         }
 
         if (hasValidProps) {

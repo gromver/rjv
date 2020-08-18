@@ -21,6 +21,11 @@ describe('maxLength keyword', () => {
     ref.setValue('abcd');
     await ref.validate();
     expect(ref.state.valid).toBe(false);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'maxLength',
+      description: 'Should not be longer than {limit} characters',
+      bindings: { limit: 3 },
+    });
 
     ref.setValue(null);
     await ref.validate();

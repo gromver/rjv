@@ -26,9 +26,14 @@ describe('properties keyword', () => {
     await ref.validate();
     expect(ref.state.valid).toBe(true);
 
-    ref.ref('foo').setValue('test');
+    ref.ref('foo').setValue('invalid value');
     await ref.validate();
     expect(ref.state.valid).toBe(false);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'properties',
+      description: 'Should have valid properties',
+      bindings: { invalidProperties: ['foo'] },
+    });
 
     ref.setValue(null);
     await ref.validate();
@@ -257,7 +262,7 @@ describe('properties keyword', () => {
         },
       },
       {
-        validation: { removeAdditional: true },
+        validator: { removeAdditional: true },
       },
     );
     await model.prepare();

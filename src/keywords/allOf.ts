@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
 } from '../types';
@@ -36,10 +37,10 @@ const keyword: IKeyword = {
         return ref.createSuccessResult();
       }
 
-      return ref.createErrorResult({
-        keyword: keyword.name,
-        description: 'Should match all schema in allOf',
-      });
+      return ref.createErrorResult(new ValidationMessage(
+        keyword.name,
+        'Should match all schema in allOf',
+      ));
     };
 
     return {

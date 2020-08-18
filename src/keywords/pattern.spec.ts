@@ -29,6 +29,11 @@ describe('pattern keyword', () => {
     ref.setValue('');
     await ref.validate();
     expect(ref.state.valid).toBe(false);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'pattern',
+      description: 'Should match pattern {pattern}',
+      bindings: { pattern: '[abc]+' },
+    });
 
     ref.setValue('def');
     await ref.validate();

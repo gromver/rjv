@@ -235,12 +235,12 @@ describe('items keyword', () => {
     await ref.validate();
     expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
-      description: 'Should not have more than 2 items',
+      description: 'Should not have more than {limit} items',
       bindings: { limit: 2 },
     });
   });
 
-  it('additionalItems test #1', async () => {
+  it('additionalItems async test #1', async () => {
     const model = new Model(
       {
         items: { type: 'integer' },
@@ -263,7 +263,7 @@ describe('items keyword', () => {
     expect(ref.state.valid).toBe(false);
   });
 
-  it('additionalItems test #2', async () => {
+  it('additionalItems async test #2', async () => {
     const model = new Model(
       {
         items: [
@@ -297,7 +297,7 @@ describe('items keyword', () => {
     expect(ref.state.valid).toBe(false);
   });
 
-  it('additionalItems test #3', async () => {
+  it('additionalItems async test #3', async () => {
     const model = new Model(
       {
         items: [
@@ -327,7 +327,7 @@ describe('items keyword', () => {
     expect(ref.state.valid).toBe(false);
   });
 
-  it('additionalItems test #4', async () => {
+  it('additionalItems async test #4', async () => {
     const model = new Model(
       {
         items: [
@@ -357,7 +357,7 @@ describe('items keyword', () => {
     expect(ref.state.valid).toBe(false);
   });
 
-  it('additionalItems test #5', async () => {
+  it('additionalItems async test #5', async () => {
     const model = new Model(
       {
         items: [
@@ -383,8 +383,65 @@ describe('items keyword', () => {
     expect(ref.state.valid).toBe(false);
     expect(ref.state.message).toMatchObject({
       keyword: 'items_overflow',
-      description: 'Should not have more than 2 items',
+      description: 'Should not have more than {limit} items',
       bindings: { limit: 2 },
     });
+  });
+
+  it('removeAdditional test #1', async () => {
+    const model = new Model(
+      {
+        items: [
+          { type: 'integer' },
+          { type: 'integer' },
+        ],
+        additionalItems: { type: 'string' },
+        removeAdditional: true,
+      },
+      [],
+    );
+
+    const ref = model.ref();
+    await ref.validate();
+    expect(ref.state.valid).toBeUndefined();
+
+    ref.setValue([1, 2]);
+    await ref.validate();
+    expect(ref.state.valid).toBe(true);
+
+    ref.setValue([1, 2, 'abc']);
+    await ref.validate();
+    expect(ref.state.valid).toBe(true);
+
+    ref.setValue([1, 2, 3, 'abc', 4]);
+    await ref.validate();
+    expect(ref.state.valid).toBe(true);
+    expect(ref.value).toMatchObject([1, 2, 'abc']);
+  });
+
+  it('removeAdditional test #2', async () => {
+    const model = new Model(
+      {
+        items: [
+          { type: 'integer' },
+          { type: 'integer' },
+        ],
+        removeAdditional: true,
+      },
+      [],
+    );
+
+    const ref = model.ref();
+    await ref.validate();
+    expect(ref.state.valid).toBeUndefined();
+
+    ref.setValue([1, 2]);
+    await ref.validate();
+    expect(ref.state.valid).toBe(true);
+
+    ref.setValue([1, 2, 'abc', 3, 5, true]);
+    await ref.validate();
+    expect(ref.state.valid).toBe(true);
+    expect(ref.value).toMatchObject([1, 2]);
   });
 });

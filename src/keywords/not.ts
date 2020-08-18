@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
 } from '../types';
@@ -34,10 +35,10 @@ const keyword: IKeyword = {
               return ref.createSuccessResult();
             }
 
-            return ref.createErrorResult({
-              keyword: keyword.name,
-              description: 'Should not be valid',
-            });
+            return ref.createErrorResult(new ValidationMessage(
+              keyword.name,
+              'Should not be valid',
+            ));
           });
       },
     };

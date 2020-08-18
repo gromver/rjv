@@ -1,17 +1,38 @@
 import Ref from './Ref';
-import { IValidationOptionsPartial } from './Validator';
+import { IModelValidationOptions } from './Model';
 
 export type Path = string;
 export type Route = (string | number)[];
 
-// validation
+export type ValueType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean';
+
+// Model
+export interface IModelOptionsPartial {
+  // utilized by Ref::messageDescription to make messages readable
+  descriptionResolver?: (message: IValidationMessage) => string | any;
+  // default validator options
+  validator?: IValidatorOptionsPartial;
+  // additional keywords
+  keywords?: IKeyword[];
+  // mode
+  debug?: boolean;
+}
+
+export interface IModelOptions extends IModelOptionsPartial {
+  // validation's process default opts
+  validator: IModelValidationOptions;
+  descriptionResolver: (message: IValidationMessage) => string | any;
+  debug: boolean;
+}
+
+// Validator
 export interface IValidationMessage {
   keyword: string;
   description: any;
-  bindings?: {};
+  bindings: {};
 }
 
-export default interface IValidationOptions {
+export interface IValidatorOptionsPartial {
   coerceTypes?: boolean;
   removeAdditional?: boolean;
   errors?: { [keywordName: string]: any };
@@ -19,6 +40,33 @@ export default interface IValidationOptions {
   keywords?: IKeyword[];
 }
 
+export interface IValidatorOptions extends IValidatorOptionsPartial {
+  coerceTypes: boolean;
+  removeAdditional: boolean;
+  errors: { [keywordName: string]: any };
+  warnings: { [keywordName: string]: any };
+  keywords: IKeyword[];
+}
+
+// schema
+export interface ISchema {
+  title?: string;
+  description?: string;
+  default?: any;
+  filter?: (value: any) => any;
+  readOnly?: boolean;
+  writeOnly?: boolean;
+  examples?: any[];
+  error?: any;
+  warning?: any;
+  errors?: { [keywordName: string]: any };
+  warnings?: { [keywordName: string]: any };
+  dependencies?: string[];
+  dependsOn?: string[];
+  removeAdditional?: boolean;
+}
+
+// rules
 export interface IRuleValidationOptions {
   coerceTypes?: boolean;
   removeAdditional?: boolean;
@@ -49,37 +97,6 @@ export interface IRuleValidationResult {
   dependencies?: string[];
   dependsOn?: string[];
   [additionalMetadata: string]: any;
-}
-
-export interface IModelValidationResult extends IRuleValidationResult {
-  valLock: number;
-  errLock?: number;
-}
-
-export interface IModelOptionsPartial {
-  // default validate options
-  validation?: IValidationOptionsPartial;
-  // validator settings
-  keywords?: IKeyword[];
-  // mode
-  debug?: boolean;
-}
-
-// schema
-export interface ISchema {
-  title?: string;
-  description?: string;
-  default?: any;
-  filter?: (value: any) => any;
-  readOnly?: boolean;
-  writeOnly?: boolean;
-  examples?: any[];
-  error?: any;
-  warning?: any;
-  errors?: { [keywordName: string]: any };
-  warnings?: { [keywordName: string]: any };
-  dependencies?: string[];
-  dependsOn?: string[];
 }
 
 // keywords

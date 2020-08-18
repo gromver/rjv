@@ -1,6 +1,6 @@
 {
   "name": "rjv",
-  "version": "4.0.0",
+  "version": "4.5.0",
   "description": "Reactive JSON Schema Validator",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -67,6 +67,11 @@
       "pre-push": "npm test -- --bail --onlyChanged"
     }
   },
+  "standard-version": {
+    "skip": {
+      "changelog": true
+    }
+  },
   "jest": {
     "rootDir": "src",
     "coverageDirectory": "../coverage",
@@ -82,6 +87,7 @@
       "json"
     ]
   },
+  "dependencies": {},
   "devDependencies": {
     "@types/es6-promise": "^0.0.33",
     "@types/invariant": "^2.2.29",
@@ -101,6 +107,7 @@
     "lodash": "^4.17.15",
     "merge2": "^1.2.3",
     "npm-scripts-info": "^0.3.6",
+    "path": "^0.12.7",
     "rollup": "^1.8.0",
     "rollup-plugin-commonjs": "^9.3.4",
     "rollup-plugin-json": "^4.0.0",
@@ -110,19 +117,18 @@
     "rxjs": "^6.4.0",
     "rxjs-compat": "^6.4.0",
     "shx": "^0.3.2",
-    "standard-version": "^4.0.0",
+    "standard-version": "^8.0.2",
     "ts-jest": "^24.0.1",
+    "tslib": "^1.6.0",
     "tslint": "^5.4.3",
     "tslint-config-airbnb": "^5.3.0",
     "tslint-config-standard": "^6.0.1",
     "typescript": "^3.4.2",
     "validate-commit-msg": "^2.14.0"
   },
-  "dependencies": {
-    "tslib": "^1.6.0"
-  },
   "peerDependencies": {
     "lodash": "^4.0.0",
+    "path": "^0.12.7",
     "rxjs": "^6.4.0",
     "rxjs-compat": "^6.4.0"
   }

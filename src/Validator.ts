@@ -1,6 +1,13 @@
 import Ref from './Ref';
 import {
-  ISchema, IKeyword, IKeywordMap, IRuleCompiled, ValidateRuleFn, IRuleValidationResult,
+  ISchema,
+  IKeyword,
+  IKeywordMap,
+  IRuleCompiled,
+  ValidateRuleFn,
+  IRuleValidationResult,
+  IValidatorOptions,
+  IValidatorOptionsPartial,
 } from './types';
 import defaultKeywords, { addKeyword } from './defaultKeywords';
 import utils from './utils';
@@ -13,7 +20,7 @@ const _ = {
   set: require('lodash/set'),
 };
 
-const DEFAULT_OPTIONS: IValidationOptions = {
+const DEFAULT_OPTIONS: IValidatorOptions = {
   coerceTypes: false,
   removeAdditional: false,
   errors: {},
@@ -35,30 +42,18 @@ const SCHEMA_ANNOTATIONS = [
   'warnings',
   'dependencies',
   'dependsOn',
+  'removeAdditional',
 ];
 
-export interface IValidationOptionsPartial {
-  coerceTypes?: boolean;
-  removeAdditional?: boolean;
-  errors?: { [keywordName: string]: any };
-  warnings?: { [keywordName: string]: any };
-  keywords?: IKeyword[];
-}
-
-export interface IValidationOptions extends IValidationOptionsPartial {
-  coerceTypes: boolean;
-  removeAdditional: boolean;
-  errors: { [keywordName: string]: any };
-  warnings: { [keywordName: string]: any };
-  keywords: IKeyword[];
-}
-
+/**
+ * Compiles given schema to a validation rule and gives an ability to validate ref using this schema
+ */
 export default class Validator {
-  private readonly options: IValidationOptions;
+  private readonly options: IValidatorOptions;
   private readonly keywords: IKeywordMap;
   private readonly rule: IRuleCompiled;
 
-  constructor(schema: {}, options: IValidationOptionsPartial = {}) {
+  constructor(schema: {}, options: IValidatorOptionsPartial = {}) {
     this.options = _.extend({}, DEFAULT_OPTIONS, options);
     this.keywords = { ...defaultKeywords };
 
@@ -148,7 +143,7 @@ export default class Validator {
       const keyword: IKeyword = this.keywords[keywordName];
 
       if (!keyword) {
-        throw new Error(`Keyword "${keywordName}" does't exists.`);
+        throw new Error(`Keyword "${keywordName}" doesn't exists.`);
       }
 
       const rule = keyword.compile(this.compile, keywordSchema, schema) as IRuleCompiled;

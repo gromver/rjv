@@ -1,5 +1,5 @@
 import * as pth from 'path';
-import { Path, Route, IRuleValidationResult } from './types';
+import { Path, Route, ValueType, IRuleValidationResult } from './types';
 
 const _ = {
   extend: require('lodash/extend'),
@@ -20,6 +20,8 @@ function normalizeSlug(slug): string | number {
 
   return slug;
 }
+
+const removeTrailingSlash = /\/+$/;
 
 const utils = {
   promiseAny,
@@ -66,6 +68,30 @@ const utils = {
     });
 
     return result;
+  },
+  withTrailingSlash(string: string): string {
+    return `${string.replace(removeTrailingSlash, '')}/`;
+  },
+  checkDataType(dataType: ValueType, value: any): boolean {
+    switch (dataType) {
+      case 'null':
+        return value === null;
+      case 'array':
+        return Array.isArray(value);
+      case 'object':
+        return value && typeof value === 'object' && !Array.isArray(value);
+      case 'integer':
+        return typeof value === 'number' && !(value % 1);
+      default:
+        return typeof value === dataType;
+    }
+  },
+  injectVarsToString(str: string, variables: {}): string {
+    if (Object.keys(variables).length === 0) {
+      return str;
+    }
+
+    return str.replace(/{([^{}]+)}/g, (match, name) => variables[name] || `{${name}}`);
   },
 };
 

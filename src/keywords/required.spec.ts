@@ -21,6 +21,11 @@ describe('required keyword', () => {
     const barRef = ref.ref('bar');
     const carRef = ref.ref('car');
     expect(ref.state.valid).toBe(false);
+    expect(ref.state.message).toMatchObject({
+      keyword: 'required',
+      description: 'Should have all required properties',
+      bindings: { invalidProperties: ['foo'] },
+    });
     expect(fooRef.state.valid).toBeUndefined();
     expect(barRef.state.valid).toBeUndefined();
     expect(carRef.state.valid).toBeUndefined();

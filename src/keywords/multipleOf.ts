@@ -1,4 +1,5 @@
 import Ref from '../Ref';
+import ValidationMessage from '../ValidationMessage';
 import {
   ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
 } from '../types';
@@ -22,11 +23,11 @@ const keyword: IKeyword = {
           const value = ref.getValue();
 
           if ((value / multiplier) % 1 !== 0) {
-            return ref.createErrorResult({
-              keyword: keyword.name,
-              description: `Should be multiple of ${multiplier}`,
-              bindings: { multiplier },
-            });
+            return ref.createErrorResult(new ValidationMessage(
+              keyword.name,
+              'Should be multiple of {multiplier}',
+              { multiplier },
+            ));
           }
 
           return ref.createSuccessResult();
