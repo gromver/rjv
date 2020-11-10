@@ -46,6 +46,10 @@ describe('utils.injectVarsToString tests', () => {
       { a: 'A', b: 'B', c: 'C' },
     )).toEqual('A, B, C');
     expect(utils.injectVarsToString(
+      '{a}, {b}, {c}, {d}, {e}, {f}',
+      { a: 0, b: '', c: null, d: false, e: undefined },
+    )).toEqual('0, , null, false, undefined, {f}');
+    expect(utils.injectVarsToString(
       '{a}, {undefinedVariable}',
       { a: 'A' },
     )).toEqual('A, {undefinedVariable}');

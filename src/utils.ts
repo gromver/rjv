@@ -91,7 +91,10 @@ const utils = {
       return str;
     }
 
-    return str.replace(/{([^{}]+)}/g, (match, name) => variables[name] || `{${name}}`);
+    return str.replace(
+      /{([^{}]+)}/g,
+      (match, name) => variables.hasOwnProperty(name) ? variables[name] : `{${name}}`,
+    );
   },
 };
 

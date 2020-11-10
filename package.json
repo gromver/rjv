@@ -32,7 +32,7 @@
     "prerelease": "npm run test",
     "release": "standard-version",
     "postrelease": "npm run build && npm run release:github && npm run release:npm",
-    "release:github": "git push --no-verify --follow-tags origin master",
+    "release:github": "git push --no-verify --follow-tags origin develop",
     "release:npm": "npm publish",
     "reset": "git clean -dfx && git reset --hard && yarn",
     "size": "shx echo \"Gzipped IIEF bundle Size: $(ls -lah \"./bundles/rjv.js.gz\" | awk -F \" \" {'print $5'})\""
@@ -87,7 +87,9 @@
       "json"
     ]
   },
-  "dependencies": {},
+  "dependencies": {
+    "path": "^0.12.7"
+  },
   "devDependencies": {
     "@types/es6-promise": "^0.0.33",
     "@types/invariant": "^2.2.29",
@@ -107,7 +109,6 @@
     "lodash": "^4.17.15",
     "merge2": "^1.2.3",
     "npm-scripts-info": "^0.3.6",
-    "path": "^0.12.7",
     "rollup": "^1.8.0",
     "rollup-plugin-commonjs": "^9.3.4",
     "rollup-plugin-json": "^4.0.0",
@@ -128,7 +129,6 @@
   },
   "peerDependencies": {
     "lodash": "^4.0.0",
-    "path": "^0.12.7",
     "rxjs": "^6.4.0",
     "rxjs-compat": "^6.4.0"
   }
