@@ -1,20 +1,20 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
 } from '../types';
 import utils from '../utils';
 
-const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+const validateFn: ValidateRuleFn = async (ref: IRef, rule: IRule)
+  : Promise<RuleValidationResult> => {
   return rule.validate
     ? rule.validate(ref, validateFn, {
       coerceTypes: false,
       removeAdditional: false,
     })
-    : Promise.resolve({});
+    : undefined;
 };
 
-async function findValidSchemaRule(rules: IRule[], ref: Ref) {
+async function findValidSchemaRule(rules: IRule[], ref: IRef) {
   for (let i = 0; i < rules.length; i += 1) {
     const rule = rules[i] as any;
 
@@ -47,14 +47,16 @@ const keyword: IKeyword = {
     });
 
     return {
-      validate(ref: Ref, validateRuleFn: ValidateRuleFn, options): Promise<IRuleValidationResult> {
+      validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
+        : Promise<RuleValidationResult> {
         return findValidSchemaRule(rules, ref)
           .then((rule) => {
             if (rule) {
               return validateRuleFn(ref, rule, options);
             }
 
-            return ref.createErrorResult(new ValidationMessage(
+            return utils.createErrorResult(new ValidationMessage(
+              false,
               keyword.name,
               'Should match some schema in anyOf',
             ));

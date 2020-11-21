@@ -1,7 +1,6 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
 } from '../types';
 import utils from '../utils';
 
@@ -27,49 +26,45 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
+      async validate(ref: IRef): Promise<RuleValidationResult> {
         if (presence) {
-          const value = ref.getValue();
+          const value = ref.value;
 
           if (value === undefined) {
-            return ref.createErrorResult(
+            return utils.createErrorResult(
               new ValidationMessage(
+                false,
                 keyword.name,
                 'Should not be blank',
                 { path: ref.path },
               ),
-              { presence },
             );
           }
 
-          if (ref.checkDataType('string')) {
+          if (utils.checkDataType('string', ref.value)) {
             let stringValue: string = value;
 
             if (trim) {
               stringValue = (value as string).trim();
-              ref.setValue(stringValue);
+              ref.value = stringValue;
             }
 
             if (!stringValue.length) {
-              return ref.createErrorResult(
+              return utils.createErrorResult(
                 new ValidationMessage(
+                  false,
                   keyword.name,
                   'Should not be blank',
                   { path: ref.path },
                 ),
-                { presence },
               );
             }
           }
 
-          return ref.createSuccessResult(undefined, {
-            presence,
-          });
+          return utils.createSuccessResult();
         }
 
-        return ref.createUndefinedResult({
-          presence,
-        });
+        return undefined;
       },
     };
   },
@@ -80,9 +75,5 @@ export default keyword;
 declare module '../types' {
   export interface ISchema {
     presence?: boolean | IPresenceSchema;
-  }
-
-  export interface IRuleValidationResult {
-    presence?: boolean;
   }
 }

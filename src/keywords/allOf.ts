@@ -1,7 +1,6 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
 } from '../types';
 import utils from '../utils';
 
@@ -22,22 +21,23 @@ const keyword: IKeyword = {
       rules.push(compile(item, parentSchema));  // all rules have validate() fn
     });
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<IRuleValidationResult> => {
-      const results: IRuleValidationResult[] = [];
+    const validate = async (ref: IRef, validateRuleFn: ValidateRuleFn, options)
+      : Promise<RuleValidationResult> => {
+      const results: (RuleValidationResult)[] = [];
 
       for (const rule of rules) {
         const res = await validateRuleFn(ref, rule, options);
         results.push(res);
       }
 
-      const validRules = results.filter((result) => result.valid === true).length;
+      const validRules = results.filter((result) => result && result.valid).length;
 
       if (validRules === results.length) {
-        return ref.createSuccessResult();
+        return utils.createSuccessResult();
       }
 
-      return ref.createErrorResult(new ValidationMessage(
+      return utils.createErrorResult(new ValidationMessage(
+        false,
         keyword.name,
         'Should match all schema in allOf',
       ));

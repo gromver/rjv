@@ -1,6 +1,6 @@
 {
   "name": "rjv",
-  "version": "4.5.1",
+  "version": "5.0.0-alpha.5",
   "description": "Reactive JSON Schema Validator",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -9,14 +9,11 @@
   "author": "Gayazov Roman <gromver5@gmail.com>",
   "license": "MIT",
   "keywords": [
-    "model",
     "validation",
     "validator",
     "json",
     "schema",
-    "json-schema",
-    "react",
-    "rx"
+    "json-schema"
   ],
   "scripts": {
     "info": "npm-scripts-info",
@@ -88,6 +85,7 @@
     ]
   },
   "dependencies": {
+    "lodash": "^4.17.20",
     "path": "^0.12.7"
   },
   "devDependencies": {
@@ -126,10 +124,5 @@
     "tslint-config-standard": "^6.0.1",
     "typescript": "^3.4.2",
     "validate-commit-msg": "^2.14.0"
-  },
-  "peerDependencies": {
-    "lodash": "^4.0.0",
-    "rxjs": "^6.4.0",
-    "rxjs-compat": "^6.4.0"
   }
 }

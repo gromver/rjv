@@ -1,17 +1,17 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
 } from '../types';
 import utils from '../utils';
 
-const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+const validateFn: ValidateRuleFn = async (ref: IRef, rule: IRule)
+  : Promise<RuleValidationResult> => {
   return rule.validate
     ? rule.validate(ref, validateFn, {
       coerceTypes: false,
       removeAdditional: false,
     })
-    : Promise.resolve({});
+    : undefined;
 };
 
 const keyword: IKeyword = {
@@ -32,21 +32,22 @@ const keyword: IKeyword = {
     });
 
     return {
-      validate(ref: Ref, validateRuleFn: ValidateRuleFn, options): Promise<IRuleValidationResult> {
-        const jobs: Promise<IRuleValidationResult>[] = rules
+      validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
+        : Promise<RuleValidationResult> {
+        const jobs: Promise<RuleValidationResult>[] = rules
           .map(
             (rule) => (rule as any)
               .validate(ref, validateFn, {
                 coerceTypes: false,
                 removeAdditional: false,
-              }) as Promise<IRuleValidationResult>,
+              }) as Promise<RuleValidationResult>,
           );
 
         return Promise.all(jobs).then((results) => {
           const validRules: IRule[] = [];
 
           results.forEach((result, index) => {
-            if (result.valid === true) {
+            if (result && result.valid) {
               validRules.push(rules[index]);
             }
           });
@@ -55,7 +56,8 @@ const keyword: IKeyword = {
             return validateRuleFn(ref, validRules[0], options);
           }
 
-          return ref.createErrorResult(new ValidationMessage(
+          return utils.createErrorResult(new ValidationMessage(
+            false,
             keyword.name,
             'Should match exactly one schema in oneOf',
           ));

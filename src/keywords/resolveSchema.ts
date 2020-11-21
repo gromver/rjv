@@ -1,11 +1,10 @@
-import Ref from '../Ref';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
 } from '../types';
 
-type SchemaResolver = (ref: Ref) => ISchema | Promise<ISchema>;
+type SchemaResolver = (ref: IRef) => ISchema | Promise<ISchema>;
 
-async function resolveSchema(schema: SchemaResolver, ref: Ref): Promise<ISchema> {
+async function resolveSchema(schema: SchemaResolver, ref: IRef): Promise<ISchema> {
   return schema(ref);
 }
 
@@ -19,8 +18,8 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
-        : Promise<IRuleValidationResult> {
+      async validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
+        : Promise<RuleValidationResult> {
         const resolvedSchema = await resolveSchema(schema, ref);
         const rule = compile(resolvedSchema, parentSchema);
 
@@ -28,7 +27,7 @@ const keyword: IKeyword = {
           return rule.validate(ref, validateRuleFn, options);
         }
 
-        return Promise.resolve(ref.createUndefinedResult());
+        return undefined;
       },
     };
   },

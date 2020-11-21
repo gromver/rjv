@@ -1,7 +1,8 @@
-import Ref from '../Ref';
+import utils from '../utils';
+import Ref from '../utils/Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult, ValueType,
+  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, RuleValidationResult, ValueType,
 } from '../types';
 
 /**
@@ -36,22 +37,22 @@ const keyword: IKeyword = {
 
     return {
       async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
-        : Promise<IRuleValidationResult> {
-        const curValue = ref.getValue();
+        : Promise<RuleValidationResult> {
+        const curValue = ref.value;
         const curType = getValueType(curValue);
 
         if (curValue === undefined) {
-          return Promise.resolve(ref.createUndefinedResult());
+          return Promise.resolve(undefined);
         }
 
         const valid = types.some((type) => {
-          if (!ref.checkDataType(type)) {
+          if (!utils.checkDataType(type, curValue)) {
             // try to coerce type
             if (coerceTypes || options.coerceTypes) {
               switch (type) {
                 case 'string':
                   if (curType === 'number' || curType === 'boolean') {
-                    ref.setValue(`${curValue}`);
+                    ref.value = `${curValue}`;
                   }
                   break;
 
@@ -61,7 +62,7 @@ const keyword: IKeyword = {
                     // tslint:disable-next-line:triple-equals
                     || (curType === 'string' && curValue && curValue == +curValue)
                   ) {
-                    ref.setValue(+curValue);
+                    ref.value = +curValue;
                   }
                   break;
 
@@ -73,27 +74,27 @@ const keyword: IKeyword = {
                       curType === 'string' && curValue && curValue == +curValue && !(curValue % 1)
                     )
                   ) {
-                    ref.setValue(+curValue);
+                    ref.value = +curValue;
                   }
                   break;
 
                 case 'boolean':
                   if (curValue === 'false' || curValue === 0 || curValue === null) {
-                    ref.setValue(false);
+                    ref.value = false;
                   } else if (curValue === 'true' || curValue === 1) {
-                    ref.setValue(true);
+                    ref.value = true;
                   }
                   break;
 
                 case 'null':
                   if (curValue === '' || curValue === 0 || curValue === false) {
-                    ref.setValue(null);
+                    ref.value = null;
                   }
                   break;
               }
 
               // check type again
-              return ref.checkDataType(type);
+              return utils.checkDataType(type, ref.value);
             }
 
             return false;
@@ -105,8 +106,9 @@ const keyword: IKeyword = {
         const typesAsString = types.join(', ');
 
         return valid
-          ? ref.createSuccessResult()
-          : ref.createErrorResult(new ValidationMessage(
+          ? utils.createSuccessResult()
+          : utils.createErrorResult(new ValidationMessage(
+            false,
             keyword.name,
             'Should be {typesAsString}',
             { types, typesAsString },

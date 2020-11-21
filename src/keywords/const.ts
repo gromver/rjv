@@ -1,8 +1,8 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
 } from '../types';
+import utils from '../utils';
 
 const _ = {
   isEqual: require('lodash/isEqual'),
@@ -11,7 +11,7 @@ const _ = {
 const keyword: IKeyword = {
   name: 'const',
   compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
-    let resolve: (ref: Ref) => any;
+    let resolve: (ref: IRef) => any;
 
     if (typeof schema === 'function') {
       resolve = schema;
@@ -20,23 +20,19 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        const value = ref.getValue();
+      async validate(ref: IRef): Promise<RuleValidationResult> {
+        const value = ref.value;
         const allowedValue = resolve(ref);
 
-        const metadata: IRuleValidationResult = {
-          const: allowedValue,
-        };
-
         return _.isEqual(value, allowedValue)
-          ? ref.createSuccessResult(undefined, metadata)
-          : ref.createErrorResult(
+          ? utils.createSuccessResult()
+          : utils.createErrorResult(
             new ValidationMessage(
+              false,
               keyword.name,
               'Should be equal to constant',
               { allowedValue },
             ),
-            metadata,
           );
       },
     };
@@ -49,10 +45,6 @@ type ConstValue = number | string | null | {} | [];
 
 declare module '../types' {
   export interface ISchema {
-    const?: ((ref: Ref) => ConstValue) | ConstValue;
-  }
-
-  export interface IRuleValidationResult {
-    const?: ConstValue;
+    const?: ((ref: IRef) => ConstValue) | ConstValue;
   }
 }

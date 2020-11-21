@@ -1,8 +1,8 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
 } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'minimum',
@@ -16,32 +16,27 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('number')) {
-          const value = ref.getValue();
+      async validate(ref: IRef): Promise<RuleValidationResult> {
+        const value = ref.value;
 
-          const metadata: IRuleValidationResult = {
-            minimum: limit,
-            exclusiveMinimum: exclusive,
-          };
-
+        if (utils.checkDataType('number', value)) {
           if (exclusive ? value <= limit : value < limit) {
-            return ref.createErrorResult(
+            return utils.createErrorResult(
               new ValidationMessage(
+                false,
                 exclusive ? `${keyword.name}_exclusive` : keyword.name,
                 exclusive
                   ? 'Should be greater than {limit}'
                   : 'Should be greater than or equal {limit}',
                 { limit, exclusive },
               ),
-              metadata,
             );
           }
 
-          return ref.createSuccessResult(undefined, metadata);
+          return utils.createSuccessResult();
         }
 
-        return ref.createUndefinedResult();
+        return undefined;
       },
     };
   },
@@ -51,11 +46,6 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    minimum?: number;
-    exclusiveMinimum?: boolean;
-  }
-
-  export interface IRuleValidationResult {
     minimum?: number;
     exclusiveMinimum?: boolean;
   }

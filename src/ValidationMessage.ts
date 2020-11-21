@@ -1,5 +1,10 @@
 import { IValidationMessage } from './types';
 
 export default class ValidationMessage implements IValidationMessage {
-  constructor(public keyword: string, public description: any, public bindings = {}) {}
+  constructor(
+    public readonly success: boolean,
+    public readonly keyword: string,
+    public description: any,
+    public readonly bindings = {},
+  ) {}
 }

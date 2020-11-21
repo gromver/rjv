@@ -1,8 +1,8 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
 } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'minProperties',
@@ -18,29 +18,25 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('object')) {
-          const value = ref.getValue();
+      async validate(ref: IRef): Promise<RuleValidationResult> {
+        const value = ref.value;
 
-          const metadata: IRuleValidationResult = {
-            minProperties: limit,
-          };
-
+        if (utils.checkDataType('object', value)) {
           if (Object.values(value).length < limit) {
-            return ref.createErrorResult(
+            return utils.createErrorResult(
               new ValidationMessage(
+                false,
                 keyword.name,
                 'Should not have fewer than {limit} properties',
                 { limit },
               ),
-              metadata,
             );
           }
 
-          return ref.createSuccessResult(undefined, metadata);
+          return utils.createSuccessResult();
         }
 
-        return ref.createUndefinedResult();
+        return undefined;
       },
     };
   },
@@ -50,10 +46,6 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    minProperties?: number;
-  }
-
-  export interface IRuleValidationResult {
     minProperties?: number;
   }
 }

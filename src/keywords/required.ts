@@ -1,8 +1,8 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
 } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'required',
@@ -13,43 +13,32 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "required" keyword should be an array.');
     }
 
-    const propRequiredRule: IRule = {
-      validate(ref: Ref): Promise<IRuleValidationResult> {
-        return Promise.resolve(ref.createUndefinedResult({
-          required: true,
-        }));
-      },
-    };
-
     return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
-        : Promise<IRuleValidationResult> {
-        if (ref.checkDataType('object')) {
-          const value = ref.getValue();
+      async validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
+        : Promise<RuleValidationResult> {
+        if (utils.checkDataType('object', ref.value)) {
+          const value = ref.value;
           const invalidProperties: string[] = [];
 
           for (const propName of required) {
-            const propRef = ref.ref(propName);
-
-            await validateRuleFn(propRef, propRequiredRule, options);
-
             if (!Object.prototype.hasOwnProperty.call(value, propName)) {
               invalidProperties.push(propName);
             }
           }
 
           if (invalidProperties.length) {
-            return ref.createErrorResult(new ValidationMessage(
+            return utils.createErrorResult(new ValidationMessage(
+              false,
               keyword.name,
               'Should have all required properties',
               { invalidProperties },
             ));
           }
 
-          return ref.createSuccessResult();
+          return utils.createSuccessResult();
         }
 
-        return ref.createUndefinedResult();
+        return undefined;
       },
     };
   },

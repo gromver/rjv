@@ -1,16 +1,16 @@
-import Ref from '../Ref';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
 } from '../types';
 import utils from '../utils';
 
-const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+const validateFn: ValidateRuleFn = async (ref: IRef, rule: IRule)
+  : Promise<RuleValidationResult> => {
   return rule.validate
     ? rule.validate(ref, validateFn, {
       coerceTypes: false,
       removeAdditional: false,
     })
-    : Promise.resolve({});
+    : undefined;
 };
 
 const keyword: IKeyword = {
@@ -33,26 +33,28 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
-        : Promise<IRuleValidationResult> {
+      async validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
+        : Promise<RuleValidationResult> {
         return (
           (ifRule as any).validate(ref, validateFn, {
             coerceTypes: false,
             removeAdditional: false,
-          }) as Promise<IRuleValidationResult>
+          }) as Promise<RuleValidationResult>
         )
           .then((result) => {
-            if (result.valid === false) {
-              if (elseRule) {
-                return (elseRule as any).validate(ref, validateRuleFn, options);
-              }
-            } else if (result.valid === true) {
-              if (thenRule) {
-                return (thenRule as any).validate(ref, validateRuleFn, options);
+            if (result) {
+              if (!result.valid) {
+                if (elseRule) {
+                  return (elseRule as any).validate(ref, validateRuleFn, options);
+                }
+              } else {
+                if (thenRule) {
+                  return (thenRule as any).validate(ref, validateRuleFn, options);
+                }
               }
             }
 
-            return ref.createUndefinedResult();
+            return undefined;
           });
       },
     };

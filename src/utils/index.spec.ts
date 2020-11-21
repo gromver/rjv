@@ -2,7 +2,7 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import utils from './utils';
+import utils from './index';
 
 describe('utils.resolvePath tests', () => {
   it('should get path as array properly', () => {
@@ -53,5 +53,41 @@ describe('utils.injectVarsToString tests', () => {
       '{a}, {undefinedVariable}',
       { a: 'A' },
     )).toEqual('A, {undefinedVariable}');
+  });
+});
+
+describe('utils.mergeResults tests', () => {
+  it('should get merged result #1', () => {
+    const merged = utils.mergeResults([
+      { valid: true, messages: [{ valid: true, keyword: 'a' } as any] },
+      { valid: false, messages: [{ valid: false, keyword: 'b' } as any] },
+    ]);
+    expect(merged).toMatchObject({
+      valid: false,
+      messages: [
+        { valid: true, keyword: 'a' },
+        { valid: false, keyword: 'b' },
+      ],
+    });
+  });
+  it('should get merged result #2', () => {
+    const merged = utils.mergeResults([
+      { valid: true, messages: [{ valid: true, keyword: 'a' } as any] },
+      { valid: true, messages: [{ valid: true, keyword: 'b' } as any] },
+    ]);
+    expect(merged).toMatchObject({
+      valid: true,
+      messages: [
+        { valid: true, keyword: 'a' },
+        { valid: true, keyword: 'b' },
+      ],
+    });
+  });
+  it('should get merged result #3', () => {
+    const merged = utils.mergeResults([]);
+    expect(merged).toMatchObject({
+      valid: false,
+      messages: [],
+    });
   });
 });

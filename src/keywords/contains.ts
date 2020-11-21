@@ -1,7 +1,6 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
 } from '../types';
 import utils from '../utils';
 
@@ -14,35 +13,36 @@ const keyword: IKeyword = {
 
     const rule: IRule = compile(schema, parentSchema);
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<IRuleValidationResult> => {
-      const value = ref.getValue() as [];
+    const validate = async (ref: IRef, validateRuleFn: ValidateRuleFn, options)
+      : Promise<RuleValidationResult> => {
+      const value = ref.value as [];
       let hasValidItem = false;
 
-      if (ref.checkDataType('array')) {
+      if (utils.checkDataType('array', value)) {
         for (const index in value) {
           if (rule.validate) {
             const res = await validateRuleFn(
               ref.ref(`${index}`), rule as IRule, options,
-            ) as IRuleValidationResult;
+            );
 
-            if (res.valid) {
+            if (res && res.valid) {
               hasValidItem = true;
             }
           }
         }
 
         if (!hasValidItem) {
-          return ref.createErrorResult(new ValidationMessage(
+          return utils.createErrorResult(new ValidationMessage(
+            false,
             keyword.name,
             'Should contain a valid item',
           ));
         }
 
-        return ref.createSuccessResult();
+        return utils.createSuccessResult();
       }
 
-      return ref.createUndefinedResult();
+      return undefined;
     };
 
     return {

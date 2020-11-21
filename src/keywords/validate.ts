@@ -1,21 +1,21 @@
-import Ref from '../Ref';
 import {
   ISchema,
   IKeyword,
   CompileFn,
   IRule,
+  IRef,
   ValidateRuleFn,
-  IRuleValidationResult,
-  IRuleValidationOptions,
+  RuleValidationResult,
+  IRuleValidationOptions, IInlineValidationResult,
 } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'validate',
   compile(
     compile: CompileFn,
-    schema: (ref: Ref, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
-      => IRuleValidationResult | Promise<IRuleValidationResult>,
-    parentSchema: ISchema,
+    schema: (ref: IRef, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
+      => IInlineValidationResult | Promise<IInlineValidationResult>,
   ): IRule {
     if (typeof schema !== 'function') {
       throw new Error(
@@ -24,8 +24,11 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref, validateRuleFn, options): Promise<IRuleValidationResult> {
-        return schema(ref, validateRuleFn, options);
+      async validate(ref, validateRuleFn, options)
+        : Promise<RuleValidationResult> {
+        const result = await schema(ref, validateRuleFn, options);
+
+        return result !== undefined ? utils.toValidationResult(result) : undefined;
       },
     };
   },
@@ -35,7 +38,7 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    validate?: (ref: Ref, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
-      => IRuleValidationResult | Promise<IRuleValidationResult>;
+    validate?: (ref: IRef, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
+      => IInlineValidationResult | Promise<IInlineValidationResult>;
   }
 }

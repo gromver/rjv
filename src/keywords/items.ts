@@ -1,9 +1,18 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
 } from '../types';
 import utils from '../utils';
+
+const silentValidateFn: ValidateRuleFn = async (ref: IRef, rule: IRule)
+  : Promise<RuleValidationResult> => {
+  return rule.validate
+    ? rule.validate(ref, silentValidateFn, {
+      coerceTypes: false,
+      removeAdditional: false,
+    })
+    : undefined;
+};
 
 const keyword: IKeyword = {
   name: 'items',
@@ -38,16 +47,16 @@ const keyword: IKeyword = {
 
     const removeAdditional = !!parentSchema.removeAdditional;
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<IRuleValidationResult> => {
-      const results: IRuleValidationResult[] = [];
+    const validate = async (ref: IRef, validateRuleFn: ValidateRuleFn, options)
+      : Promise<RuleValidationResult> => {
+      const results: (RuleValidationResult)[] = [];
       const invalidIndexes: number[] = [];
-      const value = ref.getValue() as [];
+      const value = ref.value as [];
       let hasValidProps = false;
       let hasInvalidProps = false;
       let hasItemsOverflow = false;
 
-      if (ref.checkDataType('array')) {
+      if (utils.checkDataType('array', value)) {
         if (Array.isArray(rule)) {
           for (const index in rule) {
             const itemRule = rule[index];
@@ -55,7 +64,7 @@ const keyword: IKeyword = {
             if (itemRule.validate) {
               const res = await validateRuleFn(
                 ref.ref(index), itemRule, options,
-              ) as IRuleValidationResult;
+              );
 
               results.push(res);
             }
@@ -66,23 +75,33 @@ const keyword: IKeyword = {
             if (noAdditional && !removeAdditional && !options.removeAdditional) {
               hasItemsOverflow = true;
             } else if (additionalRule) {
-              const removeIndices: number[] = [];
+              if (removeAdditional) {
+                const removeIndices: number[] = [];
 
+                for (let i = rule.length; i < value.length; i += 1) {
+                  // just need to know is value valid
+                  const preValidationRes = await silentValidateFn(
+                    ref.ref(`${i}`), additionalRule, options,
+                  );
+
+                  if (preValidationRes === undefined || !preValidationRes.valid) {
+                    removeIndices.push(i);
+                  }
+                }
+
+                ref.value = value.filter((v, i) => !removeIndices.includes(i));
+              }
+
+              // now check items without wrong additional items
               for (let i = rule.length; i < value.length; i += 1) {
                 const res = await validateRuleFn(
                   ref.ref(`${i}`), additionalRule, options,
-                ) as IRuleValidationResult;
+                );
 
-                if (res.valid === false && removeAdditional) {
-                  removeIndices.push(i);
-                } else {
-                  results.push(res);
-                }
+                results.push(res);
               }
-
-              ref.setValue(value.filter((v, i) => removeIndices.indexOf(i) === -1));
             } else if (removeAdditional || options.removeAdditional) {
-              ref.setValue(value.slice(0, rule.length));
+              ref.value = value.slice(0, rule.length);
             }
           }
         } else {
@@ -90,7 +109,7 @@ const keyword: IKeyword = {
             if (rule.validate) {
               const res = await validateRuleFn(
                 ref.ref(`${index}`), rule as IRule, options,
-              ) as IRuleValidationResult;
+              );
 
               results.push(res);
             }
@@ -98,16 +117,19 @@ const keyword: IKeyword = {
         }
 
         results.forEach((result, index) => {
-          if (result.valid === true) {
-            hasValidProps = true;
-          } else if (result.valid === false) {
-            hasInvalidProps = true;
-            invalidIndexes.push(index);
+          if (result) {
+            if (result.valid) {
+              hasValidProps = true;
+            } else {
+              hasInvalidProps = true;
+              invalidIndexes.push(index);
+            }
           }
         });
 
         if (hasInvalidProps) {
-          return ref.createErrorResult(new ValidationMessage(
+          return utils.createErrorResult(new ValidationMessage(
+            false,
             keyword.name,
             'Should have valid items',
             { invalidIndexes },
@@ -117,7 +139,8 @@ const keyword: IKeyword = {
         if (hasItemsOverflow) {
           const limit = (rule as IRule[]).length;
 
-          return ref.createErrorResult(new ValidationMessage(
+          return utils.createErrorResult(new ValidationMessage(
+            false,
             `${keyword.name}_overflow`,
             'Should not have more than {limit} items',
             { limit },
@@ -125,11 +148,11 @@ const keyword: IKeyword = {
         }
 
         if (hasValidProps) {
-          return ref.createSuccessResult();
+          return utils.createSuccessResult();
         }
       }
 
-      return ref.createUndefinedResult();
+      return undefined;
     };
 
     return {

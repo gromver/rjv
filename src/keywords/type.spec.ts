@@ -2,223 +2,215 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('type keyword', () => {
   it('Test string', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'string',
       },
-      'abc',
     );
-    await model.prepare();
+    await expect(validator.validateData('abc')).resolves.toMatchObject({
+      valid: true,
+    });
 
-    const ref = model.ref();
-    const isValid = await ref.validate();
-
-    expect(isValid).toBe(true);
-    expect(ref.isValid).toBe(true);
-
-    ref.setValue({});
-    await ref.validate();
-    expect(ref.isValid).toBe(false);
-    expect(ref.state.message).toMatchObject({
-      keyword: 'type',
-      description: 'Should be {typesAsString}',
-      bindings: {
-        types: ['string'],
-        typesAsString: 'string',
+    await expect(validator.validateData({})).resolves.toMatchObject({
+      valid: false,
+      results: {
+        '/': {
+          valid: false,
+          messages: [
+            {
+              success: false,
+              keyword: 'type',
+              description: 'Should be {typesAsString}',
+              bindings: {
+                types: ['string'],
+                typesAsString: 'string',
+              },
+            },
+          ],
+        },
       },
     });
 
-    ref.setValue(1);
-    await ref.validate();
-    expect(ref.isValid).toBe(false);
+    await expect(validator.validateData(1)).resolves.toMatchObject({
+      valid: false,
+    });
 
-    ref.setValue(undefined);
-    await ref.validate();
-    expect(ref.isValid).toBe(false);
-    expect(ref.state.valid).toBeUndefined();
+    await expect(validator.validateData(undefined)).resolves.toMatchObject({
+      valid: false,
+    });
   });
 
   it('Test number', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'number',
       },
-      1,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.isValid).toBe(true);
+    const ref = new Ref(new Storage(1));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(1.5);
-    await ref.validate();
-    expect(ref.isValid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue({});
-    await ref.validate();
-    expect(ref.isValid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('1');
-    await ref.validate();
-    expect(ref.isValid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(undefined);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Test integer', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'integer',
       },
-      1,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage(1));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(1.5);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue({});
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('1');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(undefined);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Test boolean', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'boolean',
       },
-      false,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage(false));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(true);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue({});
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('1');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(undefined);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Test array', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'array',
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue({});
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('1');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(undefined);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Test object', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'object',
       },
-      {},
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage({}));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue([]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('1');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(undefined);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Test multiple types', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: ['array', 'integer'],
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue({});
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-    expect(ref.state.message).toMatchObject({
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/'].messages[0]).toMatchObject({
       keyword: 'type',
       description: 'Should be {typesAsString}',
       bindings: {
@@ -228,253 +220,242 @@ describe('type keyword', () => {
     });
 
     ref.setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(1.23);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(undefined);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Coerce to number', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'number',
         coerceTypes: true,
       },
-      '123',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    let isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(123);
+    const ref = new Ref(new Storage('123'));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(123);
 
     ref.setValue(true);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(1);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(1);
 
     ref.setValue(false);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(0);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(0);
 
     ref.setValue('a123');
-    isValid = await ref.validate();
-    expect(isValid).toBe(false);
-    expect(ref.getValue()).toBe('a123');
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(ref.value).toBe('a123');
   });
 
   it('Coerce to integer', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'integer',
         coerceTypes: true,
       },
-      '123',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    let isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(123);
+    const ref = new Ref(new Storage('123'));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(123);
 
     ref.setValue(true);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(1);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(1);
 
     ref.setValue(false);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(0);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(0);
 
     ref.setValue('a123');
-    isValid = await ref.validate();
-    expect(isValid).toBe(false);
-    expect(ref.getValue()).toBe('a123');
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(ref.value).toBe('a123');
 
     ref.setValue('123.45');
-    isValid = await ref.validate();
-    expect(isValid).toBe(false);
-    expect(ref.getValue()).toBe('123.45');
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(ref.value).toBe('123.45');
   });
 
   it('Coerce to number or integer', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: ['number', 'integer'],
         coerceTypes: true,
       },
-      '123',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    let isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(123);
+    const ref = new Ref(new Storage('123'));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(123);
 
     ref.setValue('123.45');
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(123.45);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(123.45);
 
     ref.setValue('a123');
-    isValid = await ref.validate();
-    expect(isValid).toBe(false);
-    expect(ref.getValue()).toBe('a123');
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(ref.value).toBe('a123');
   });
 
   it('Coerce to string', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'string',
         coerceTypes: true,
       },
-      123,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    let isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe('123');
+    const ref = new Ref(new Storage(123));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe('123');
 
     ref.setValue(123.45);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe('123.45');
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe('123.45');
 
     ref.setValue(true);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe('true');
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe('true');
 
     ref.setValue(false);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe('false');
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe('false');
 
     const arr = [];
     ref.setValue(arr);
-    isValid = await ref.validate();
-    expect(isValid).toBe(false);
-    expect(ref.getValue()).toBe(arr);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(ref.value).toBe(arr);
   });
 
   it('Coerce to boolean', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'boolean',
         coerceTypes: true,
       },
-      null,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    let isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(false);
+    const ref = new Ref(new Storage(null));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(false);
 
     ref.setValue('false');
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(false);
 
     ref.setValue(0);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(false);
 
     ref.setValue('true');
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(true);
 
     ref.setValue(1);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(true);
 
     ref.setValue('');
-    isValid = await ref.validate();
-    expect(isValid).toBe(false);
-    expect(ref.getValue()).toBe('');
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(ref.value).toBe('');
   });
 
   it('Coerce to null', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'null',
         coerceTypes: true,
       },
-      0,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    let isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(null);
+    const ref = new Ref(new Storage(0));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(null);
 
     ref.setValue('');
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(null);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(null);
 
     ref.setValue(false);
-    isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(null);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(null);
 
     ref.setValue(123);
-    isValid = await ref.validate();
-    expect(isValid).toBe(false);
-    expect(ref.getValue()).toBe(123);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(ref.value).toBe(123);
   });
 
   it('Test model\'s coerceTypes option', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'number',
       },
-      '123',
       {
-        validator: {
-          coerceTypes: true,
-        },
+        coerceTypes: true,
       },
     );
-    await model.prepare();
-    const ref = model.ref();
-    const isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(123);
+
+    const ref = new Ref(new Storage('123'));
+
+    const res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(123);
   });
 
   it('Test validation\'s process coerceTypes option', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         type: 'number',
       },
-      '123',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const isValid = await ref.validate({
-      coerceTypes: true,
-    });
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toBe(123);
+    const ref = new Ref(new Storage('123'));
+
+    const res = await validator.validateRef(ref, undefined, { coerceTypes: true });
+    expect(res.valid).toBe(true);
+    expect(ref.value).toBe(123);
   });
 });

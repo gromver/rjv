@@ -1,6 +1,6 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult } from '../types';
+import { ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'maxItems',
@@ -16,29 +16,25 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('array')) {
-          const value = ref.getValue();
+      async validate(ref: IRef): Promise<RuleValidationResult> {
+        const value = ref.value;
 
-          const metadata: IRuleValidationResult = {
-            maxItems: limit,
-          };
-
+        if (utils.checkDataType('array', value)) {
           if (value.length > limit) {
-            return ref.createErrorResult(
+            return utils.createErrorResult(
               new ValidationMessage(
+                false,
                 keyword.name,
                 'Should not have more than {limit} items',
                 { limit },
               ),
-              metadata,
             );
           }
 
-          return ref.createSuccessResult(undefined, metadata);
+          return utils.createSuccessResult();
         }
 
-        return ref.createUndefinedResult();
+        return undefined;
       },
     };
   },
@@ -48,10 +44,6 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    maxItems?: number;
-  }
-
-  export interface IRuleValidationResult {
     maxItems?: number;
   }
 }

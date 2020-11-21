@@ -2,11 +2,13 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('properties keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           car: { properties: { a: { type: 'boolean' } } },
@@ -14,97 +16,106 @@ describe('properties keyword', () => {
           bar: { type: 'string' },
         },
       },
-      {
+    );
+
+    const ref = new Ref(
+      new Storage({
         car: { a: true },
         foo: 1,
         bar: 'test',
-      },
+      }),
+      '/',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.ref('foo').setValue('invalid value');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-    expect(ref.state.message).toMatchObject({
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/'].messages[0]).toMatchObject({
       keyword: 'properties',
       description: 'Should have valid properties',
       bindings: { invalidProperties: ['foo'] },
     });
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('Test additionalProperties=undefined', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           foo: { type: 'number' },
         },
       },
-      {
+    );
+
+    const ref = new Ref(
+      new Storage({
         foo: 1,
         bar: 'bar',
         car: 'car',
-      },
+      }),
+      '/',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
   });
 
   it('Test additionalProperties=true', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           foo: { type: 'number' },
         },
         additionalProperties: true,
       },
-      {
+    );
+
+    const ref = new Ref(
+      new Storage({
         foo: 1,
         bar: 'bar',
         car: 'car',
-      },
+      }),
+      '/',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
   });
 
   it('Test additionalProperties=false', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           foo: { type: 'number' },
         },
         additionalProperties: false,
       },
-      {
+    );
+
+    const ref = new Ref(
+      new Storage({
         foo: 1,
         bar: 1,
-      },
+      }),
+      '/',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    expect(ref.state.valid).toBe(false);
-    expect((ref.state as any).message.bindings).toMatchObject({
+    const res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/'].messages[0].bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
 
   it('Test additionalProperties=schema', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           foo: { type: 'number' },
@@ -113,29 +124,32 @@ describe('properties keyword', () => {
           type: 'string',
         },
       },
-      {
-        foo: 1,
-      },
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(
+      new Storage({
+        foo: 1,
+      }),
+      '/',
+    );
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.ref('bar').setValue('bar');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.ref('bar').setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-    expect((ref.state as any).message.bindings).toMatchObject({
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/'].messages[0].bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
 
   it('Async test with additionalProperties=sync schema', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         resolveSchema: () => Promise.resolve({
           properties: {
@@ -146,30 +160,32 @@ describe('properties keyword', () => {
           },
         }),
       },
-      {
-        foo: 1,
-      },
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(
+      new Storage({
+        foo: 1,
+      }),
+      '/',
+    );
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.ref('bar').setValue('bar');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.ref('bar').setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-    expect((ref.state as any).message.bindings).toMatchObject({
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/'].messages[0].bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
 
   it('Async test with additionalProperties=async schema', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         resolveSchema: () => Promise.resolve({
           properties: {
@@ -182,30 +198,32 @@ describe('properties keyword', () => {
           },
         }),
       },
-      {
-        foo: 1,
-      },
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(
+      new Storage({
+        foo: 1,
+      }),
+      '/',
+    );
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.ref('bar').setValue('bar');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.ref('bar').setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-    expect((ref.state as any).message.bindings).toMatchObject({
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/'].messages[0].bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
 
   it('Test removeAdditional keyword', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         additionalProperties: false,
         removeAdditional: true,
@@ -220,7 +238,10 @@ describe('properties keyword', () => {
           },
         },
       },
-      {
+    );
+
+    const ref = new Ref(
+      new Storage({
         car: { a: true },
         foo: 0,
         additional1: 1,
@@ -228,53 +249,17 @@ describe('properties keyword', () => {
           baz: 'abc',
           additional2: 2,
         },
-      },
+      }),
+      '/',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
-  });
-
-  it('Test removeAdditional model\'s option', async () => {
-    const model = new Model(
-      {
-        additionalProperties: false,
-        properties: {
-          foo: { type: 'number' },
-          bar: {
-            additionalProperties: { type: 'number' },
-            properties: {
-              baz: { type: 'string' },
-            },
-          },
-        },
-      },
-      {
-        car: { a: true },
-        foo: 0,
-        additional1: 1,
-        bar: {
-          baz: 'abc',
-          additional2: 2,
-        },
-      },
-      {
-        validator: { removeAdditional: true },
-      },
-    );
-    await model.prepare();
-
-    const ref = model.ref();
-    const isValid = await ref.validate();
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
+    const res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
   });
 
   it('Test removeAdditional validation\'s option', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         additionalProperties: false,
         properties: {
@@ -288,6 +273,12 @@ describe('properties keyword', () => {
         },
       },
       {
+        removeAdditional: true,
+      },
+    );
+
+    const ref = new Ref(
+      new Storage({
         car: { a: true },
         foo: 0,
         additional1: 1,
@@ -295,15 +286,46 @@ describe('properties keyword', () => {
           baz: 'abc',
           additional2: 2,
         },
+      }),
+      '/',
+    );
+
+    const res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
+  });
+
+  it('Test removeAdditional validate function\'s option', async () => {
+    const validator = new Validator(
+      {
+        additionalProperties: false,
+        properties: {
+          foo: { type: 'number' },
+          bar: {
+            additionalProperties: { type: 'number' },
+            properties: {
+              baz: { type: 'string' },
+            },
+          },
+        },
       },
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const isValid = await ref.validate({
-      removeAdditional: true,
-    });
-    expect(isValid).toBe(true);
-    expect(ref.getValue()).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
+    const ref = new Ref(
+      new Storage({
+        car: { a: true },
+        foo: 0,
+        additional1: 1,
+        bar: {
+          baz: 'abc',
+          additional2: 2,
+        },
+      }),
+      '/',
+    );
+
+    const res = await validator.validateRef(ref, undefined, { removeAdditional: true });
+    expect(res.valid).toBe(true);
+    expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
   });
 });

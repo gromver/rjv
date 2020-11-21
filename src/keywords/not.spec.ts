@@ -2,45 +2,45 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('not keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         not: {
           type: 'number',
           maximum: 5,
         },
       },
-      6,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage(6));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(4);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('abc');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
   });
 
   it('Should expose error', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         not: 1,
       },
-      '',
     ))
       .toThrow('The value of the "not" keyword should be a schema object.');
   });

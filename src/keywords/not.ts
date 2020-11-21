@@ -1,17 +1,17 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
 } from '../types';
 import utils from '../utils';
 
-const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
+const validateFn: ValidateRuleFn = async (ref: IRef, rule: IRule)
+  : Promise<RuleValidationResult> => {
   return rule.validate
     ? rule.validate(ref, validateFn, {
       coerceTypes: false,
       removeAdditional: false,
     })
-    : Promise.resolve({});
+    : undefined;
 };
 
 const keyword: IKeyword = {
@@ -24,18 +24,20 @@ const keyword: IKeyword = {
     const rule: IRule = compile(schema, parentSchema);  // all rules have validate() fn
 
     return {
-      validate(ref: Ref, validateRuleFn: ValidateRuleFn, options): Promise<IRuleValidationResult> {
+      validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
+        : Promise<RuleValidationResult> {
         return ((rule as any)
           .validate(ref, validateFn, {
             coerceTypes: false,
             removeAdditional: false,
-          }) as Promise<IRuleValidationResult>)
+          }) as Promise<RuleValidationResult>)
           .then((result) => {
-            if (result.valid === false) {
-              return ref.createSuccessResult();
+            if (result && !result.valid) {
+              return utils.createSuccessResult();
             }
 
-            return ref.createErrorResult(new ValidationMessage(
+            return utils.createErrorResult(new ValidationMessage(
+              false,
               keyword.name,
               'Should not be valid',
             ));

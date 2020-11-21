@@ -1,6 +1,12 @@
-import Ref from '../Ref';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema,
+  IKeyword,
+  CompileFn,
+  IRule,
+  IRef,
+  ValidateRuleFn,
+  RuleValidationResult,
+  IRuleValidationResult,
 } from '../types';
 import utils from '../utils';
 
@@ -21,13 +27,21 @@ const keyword: IKeyword = {
       rules.push(compile(item, parentSchema));  // all rules have validate() fn
     });
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<IRuleValidationResult> => {
+    const validate = async (ref: IRef, validateRuleFn: ValidateRuleFn, options)
+      : Promise<RuleValidationResult> => {
+      const results: IRuleValidationResult[] = [];
+
       for (const rule of rules) {
-        await validateRuleFn(ref, rule, options);
+        const res = await validateRuleFn(ref, rule, options);
+
+        res && results.push(res);
       }
 
-      return ref.createUndefinedResult();
+      if (results.length) {
+        return utils.mergeResults(results);
+      }
+
+      return undefined;
     };
 
     return {

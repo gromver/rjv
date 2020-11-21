@@ -1,8 +1,8 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
 } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'maxLength',
@@ -18,29 +18,25 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('string')) {
-          const value = ref.getValue();
+      async validate(ref: IRef): Promise<RuleValidationResult> {
+        const value = ref.value;
 
-          const metadata: IRuleValidationResult = {
-            maxLength: limit,
-          };
-
+        if (utils.checkDataType('string', value)) {
           if (value.length > limit) {
-            return ref.createErrorResult(
+            return utils.createErrorResult(
               new ValidationMessage(
+                false,
                 keyword.name,
                 'Should not be longer than {limit} characters',
                 { limit },
               ),
-              metadata,
             );
           }
 
-          return ref.createSuccessResult(undefined, metadata);
+          return utils.createSuccessResult();
         }
 
-        return ref.createUndefinedResult();
+        return undefined;
       },
     };
   },
@@ -50,10 +46,6 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    maxLength?: number;
-  }
-
-  export interface IRuleValidationResult {
     maxLength?: number;
   }
 }

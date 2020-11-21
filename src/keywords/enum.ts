@@ -1,12 +1,9 @@
-import Ref from '../Ref';
+import _isEqual from 'lodash/isEqual';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
 } from '../types';
-
-const _ = {
-  isEqual: require('lodash/isEqual'),
-};
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'enum',
@@ -18,23 +15,19 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        const value = ref.getValue();
-        const valid = allowedValues.some((item) => _.isEqual(value, item));
-
-        const metadata: IRuleValidationResult = {
-          enum: allowedValues,
-        };
+      async validate(ref: IRef): Promise<RuleValidationResult> {
+        const value = ref.value;
+        const valid = allowedValues.some((item) => _isEqual(value, item));
 
         return valid
-          ? ref.createSuccessResult(undefined, metadata)
-          : ref.createErrorResult(
+          ? utils.createSuccessResult()
+          : utils.createErrorResult(
             new ValidationMessage(
+              false,
               keyword.name,
               'Should be equal to one of the allowed values',
               { allowedValues },
             ),
-            metadata,
           );
       },
     };
@@ -45,10 +38,6 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    enum?: any[];
-  }
-
-  export interface IRuleValidationResult {
     enum?: any[];
   }
 }

@@ -1,9 +1,6 @@
 import * as pth from 'path';
-import { Path, Route, ValueType, IRuleValidationResult } from './types';
-
-const _ = {
-  extend: require('lodash/extend'),
-};
+import ValidationMessage from '../ValidationMessage';
+import { Path, Route, ValueType, IRuleValidationResult, IValidationMessage } from '../types';
 
 function reverse(promise: Promise<any>) {
   return new Promise((resolve, reject) => Promise.resolve(promise).then(reject, resolve));
@@ -39,35 +36,24 @@ const utils = {
     return relPath ? relPath.split('/').map(normalizeSlug) : [];
   },
   mergeResults(results: IRuleValidationResult[]): IRuleValidationResult {
-    const result: IRuleValidationResult = {
-      required: false,
-      readOnly: false,
-      writeOnly: false,
-    };
+    let valid: any = undefined;
+    let messages: IValidationMessage[] = [];
 
     results.forEach((item) => {
-      const { required, readOnly, writeOnly, dependsOn, valid, message, ...metadata } = item;
-
-      required && (result.required = true);
-      readOnly && (result.readOnly = true);
-      writeOnly && (result.writeOnly = true);
-      dependsOn && (result.dependsOn = [...(result.dependsOn || []), ...dependsOn]);
-
       if (
-        (valid === true && result.valid === undefined)
+        (item.valid && valid === undefined)
         ||
-        (valid === false && result.valid !== false)
+        (!item.valid && valid !== false)
       ) {
-        result.valid = valid;
-        result.message = message;
-      } else if (valid === true && result.valid === true && result.message === undefined) {
-        result.message = message;
+        valid = item.valid;
       }
-
-      _.extend(result, metadata);
+      messages = messages.concat(item.messages);
     });
 
-    return result;
+    return {
+      messages,
+      valid: !!valid,
+    };
   },
   withTrailingSlash(string: string): string {
     return `${string.replace(removeTrailingSlash, '')}/`;
@@ -96,6 +82,59 @@ const utils = {
       (match, name) => variables.hasOwnProperty(name) ? variables[name] : `{${name}}`,
     );
   },
+  // helpers
+  /**
+   * Helper - creates success validation result
+   * @param message
+   */
+  createSuccessResult(message?: ValidationMessage)
+    : IRuleValidationResult {
+    return {
+      messages: message ? [message] : [],
+      valid: true,
+    };
+  },
+
+  /**
+   * Helper - creates error validation result
+   * @param message
+   */
+  createErrorResult(message: ValidationMessage)
+    : IRuleValidationResult {
+    return {
+      messages: [message],
+      valid: false,
+    };
+  },
+
+  toValidationResult(message: ValidationMessage | boolean | string): IRuleValidationResult {
+    if (message instanceof ValidationMessage) {
+      return {
+        valid: message.success,
+        messages: [message],
+      };
+    }
+
+    if (typeof message === 'string') {
+      return {
+        valid: false,
+        messages: [new ValidationMessage(false, 'inline', message)],
+      };
+    }
+
+    if (message) {
+      return {
+        valid: true,
+        messages: [],
+      };
+    }
+
+    return {
+      valid: false,
+      messages: [new ValidationMessage(false, 'inline', 'Incorrect value')],
+    };
+  },
+
 };
 
 export default utils;

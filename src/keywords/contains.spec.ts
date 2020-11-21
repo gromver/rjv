@@ -2,67 +2,75 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('contains keyword', () => {
   it('sync test', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         contains: {
           type: 'number',
         },
       },
-      [1, 'a', null],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage([1, 'a', null]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([null, 'test']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/'].messages[0]).toMatchObject({
+      keyword: 'contains',
+      description: 'Should contain a valid item',
+    });
 
     ref.setValue([]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('async test', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         contains: {
           resolveSchema: () => Promise.resolve({ type: 'number' }),
         },
       },
-      [1, 'a', null],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage([1, 'a', null]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([null, 'test']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/'].messages[0]).toMatchObject({
+      keyword: 'contains',
+      description: 'Should contain a valid item',
+    });
 
     ref.setValue([]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('schema test', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         not: {
           type: 'array',
@@ -71,34 +79,32 @@ describe('contains keyword', () => {
           },
         },
       },
-      [1, 'a', null],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage([1, 'a', null]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([null, 'test']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue([]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
   });
 
   it('Should expose error', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         contains: 1,
       },
-      '',
     ))
       .toThrow('The schema of the "contains" keyword should be a schema object.');
   });

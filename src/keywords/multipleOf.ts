@@ -1,8 +1,8 @@
-import Ref from '../Ref';
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
+  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
 } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'multipleOf',
@@ -18,22 +18,23 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('number')) {
-          const value = ref.getValue();
+      async validate(ref: IRef): Promise<RuleValidationResult> {
+        const value = ref.value;
 
+        if (utils.checkDataType('number', value)) {
           if ((value / multiplier) % 1 !== 0) {
-            return ref.createErrorResult(new ValidationMessage(
+            return utils.createErrorResult(new ValidationMessage(
+              false,
               keyword.name,
               'Should be multiple of {multiplier}',
               { multiplier },
             ));
           }
 
-          return ref.createSuccessResult();
+          return utils.createSuccessResult();
         }
 
-        return ref.createUndefinedResult();
+        return undefined;
       },
     };
   },

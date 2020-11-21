@@ -1,46 +1,35 @@
-import Ref from './Ref';
-import { IModelValidationOptions } from './Model';
+import ValidationMessage from './ValidationMessage';
 
 export type Path = string;
 export type Route = (string | number)[];
 
 export type ValueType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean';
 
-// Model
-export interface IModelOptionsPartial {
-  // utilized by Ref::messageDescription to make messages readable
-  descriptionResolver?: (message: IValidationMessage) => string | any;
-  // default validator options
-  validator?: IValidatorOptionsPartial;
-  // additional keywords
-  keywords?: IKeyword[];
-  // mode
-  debug?: boolean;
+// storage
+export interface IStorage {
+  get(path: Route): any;
+  set(path: Route, value: any): void;
 }
 
-export interface IModelOptions extends IModelOptionsPartial {
-  // validation's process default opts
-  validator: IModelValidationOptions;
-  descriptionResolver: (message: IValidationMessage) => string | any;
-  debug: boolean;
+// Ref
+export interface IRef {
+  readonly path: string;
+  readonly route: Route;
+  value: any;
+  getValue: () => any;
+  setValue: (value: any) => void;
+  ref: (relPath: Path) => IRef;
 }
 
 // Validator
 export interface IValidationMessage {
+  success: boolean;
   keyword: string;
   description: any;
   bindings: {};
 }
 
-export interface IValidatorOptionsPartial {
-  coerceTypes?: boolean;
-  removeAdditional?: boolean;
-  errors?: { [keywordName: string]: any };
-  warnings?: { [keywordName: string]: any };
-  keywords?: IKeyword[];
-}
-
-export interface IValidatorOptions extends IValidatorOptionsPartial {
+export interface IValidatorOptions {
   coerceTypes: boolean;
   removeAdditional: boolean;
   errors: { [keywordName: string]: any };
@@ -50,19 +39,13 @@ export interface IValidatorOptions extends IValidatorOptionsPartial {
 
 // schema
 export interface ISchema {
-  title?: string;
-  description?: string;
   default?: any;
   filter?: (value: any) => any;
-  readOnly?: boolean;
-  writeOnly?: boolean;
-  examples?: any[];
+  readonly?: boolean;
   error?: any;
   warning?: any;
   errors?: { [keywordName: string]: any };
   warnings?: { [keywordName: string]: any };
-  dependencies?: string[];
-  dependsOn?: string[];
   removeAdditional?: boolean;
 }
 
@@ -73,30 +56,33 @@ export interface IRuleValidationOptions {
 }
 
 export interface ValidateRuleFn {
-  (ref: Ref, rule: IRule, options: IRuleValidationOptions): Promise<IRuleValidationResult>;
+  (ref: IRef, rule: IRule, options: IRuleValidationOptions)
+    : Promise<RuleValidationResult>;
 }
 
 export interface IRule {
-  validate?: (ref: Ref, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
-    => Promise<IRuleValidationResult>;
+  validate?: (ref: IRef, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
+    => Promise<RuleValidationResult>;
 }
 
 export interface IRuleCompiled extends IRule {
   keyword: string;
 }
 
+export type IInlineValidationResult = ValidationMessage | string | boolean | undefined;
+
+export type RuleValidationResult = IRuleValidationResult | undefined;
+
 export interface IRuleValidationResult {
-  valid?: boolean;
-  message?: IValidationMessage;
-  title?: any;
-  description?: any;
-  required?: boolean;
-  readOnly?: boolean;
-  writeOnly?: boolean;
-  validating?: boolean;
-  dependencies?: string[];
-  dependsOn?: string[];
-  [additionalMetadata: string]: any;
+  valid: boolean;
+  messages: IValidationMessage[];
+}
+
+export interface IValidationResult {
+  valid: boolean;
+  results: {
+    [path: string]: IRuleValidationResult;
+  };
 }
 
 // keywords
@@ -110,10 +96,4 @@ export interface IKeyword {
 
 export interface IKeywordMap {
   [keyword: string]: IKeyword;
-}
-
-// storage
-export interface IStorage {
-  get(path: Route): any;
-  set(path: Route, value: any): void;
 }
