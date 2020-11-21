@@ -1,12 +1,12 @@
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
+  ISchema, IKeyword, IRule, RuleValidationResult, RuleValidateFn,
 } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'allOf',
-  compile(compile: CompileFn, schema: ISchema[], parentSchema: ISchema): IRule {
+  compile(compile, schema: ISchema[], parentSchema) {
     if (!Array.isArray(schema)) {
       throw new Error('The schema of the "allOf" keyword should be an array of schemas.');
     }
@@ -21,8 +21,7 @@ const keyword: IKeyword = {
       rules.push(compile(item, parentSchema));  // all rules have validate() fn
     });
 
-    const validate = async (ref: IRef, validateRuleFn: ValidateRuleFn, options)
-      : Promise<RuleValidationResult> => {
+    const validate: RuleValidateFn = async (ref, options, validateRuleFn) => {
       const results: (RuleValidationResult)[] = [];
 
       for (const rule of rules) {

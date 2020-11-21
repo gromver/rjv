@@ -1,13 +1,11 @@
 import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'maximum',
   reserveNames: ['exclusiveMaximum'],
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any, parentSchema) {
     const limit = schema;
     const exclusive = (parentSchema as any).exclusiveMaximum || false;
 
@@ -16,7 +14,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: IRef): Promise<RuleValidationResult> {
+      async validate(ref) {
         const value = ref.value;
 
         if (utils.checkDataType('number', value)) {

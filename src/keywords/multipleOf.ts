@@ -1,12 +1,10 @@
 import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'multipleOf',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     const multiplier = schema;
 
     if (typeof multiplier !== 'number') {
@@ -18,7 +16,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: IRef): Promise<RuleValidationResult> {
+      async validate(ref) {
         const value = ref.value;
 
         if (utils.checkDataType('number', value)) {

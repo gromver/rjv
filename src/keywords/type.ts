@@ -1,9 +1,6 @@
 import utils from '../utils';
-import Ref from '../utils/Ref';
 import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, RuleValidationResult, ValueType,
-} from '../types';
+import { IKeyword, ValueType } from '../types';
 
 /**
  * Like typeof but supports 'array' type
@@ -22,7 +19,7 @@ function getValueType(value: any): string {
 const keyword: IKeyword = {
   name: 'type',
   reserveNames: ['coerceTypes'],
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any, parentSchema) {
     // Type can be: number, integer, string, boolean, array, object or null.
     let types: ValueType[] = [];
     const data = schema.data ? schema.data : schema;
@@ -36,8 +33,7 @@ const keyword: IKeyword = {
     const coerceTypes = !!parentSchema.coerceTypes;
 
     return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
-        : Promise<RuleValidationResult> {
+      async validate(ref, options) {
         const curValue = ref.value;
         const curType = getValueType(curValue);
 

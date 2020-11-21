@@ -454,7 +454,7 @@ describe('type keyword', () => {
 
     const ref = new Ref(new Storage('123'));
 
-    const res = await validator.validateRef(ref, undefined, { coerceTypes: true });
+    const res = await validator.validateRef(ref, { coerceTypes: true });
     expect(res.valid).toBe(true);
     expect(ref.value).toBe(123);
   });

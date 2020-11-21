@@ -1,12 +1,10 @@
 import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'required',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     const required: string[] = schema;
 
     if (!Array.isArray(required)) {
@@ -14,8 +12,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
-        : Promise<RuleValidationResult> {
+      async validate(ref) {
         if (utils.checkDataType('object', ref.value)) {
           const value = ref.value;
           const invalidProperties: string[] = [];

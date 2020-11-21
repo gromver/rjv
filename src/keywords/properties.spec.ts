@@ -324,7 +324,7 @@ describe('properties keyword', () => {
       '/',
     );
 
-    const res = await validator.validateRef(ref, undefined, { removeAdditional: true });
+    const res = await validator.validateRef(ref, { removeAdditional: true });
     expect(res.valid).toBe(true);
     expect(ref.value).toEqual({ foo: 0, bar: { baz: 'abc', additional2: 2 } });
   });

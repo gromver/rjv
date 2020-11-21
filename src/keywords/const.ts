@@ -1,7 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword, IRef } from '../types';
 import utils from '../utils';
 
 const _ = {
@@ -10,7 +8,7 @@ const _ = {
 
 const keyword: IKeyword = {
   name: 'const',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     let resolve: (ref: IRef) => any;
 
     if (typeof schema === 'function') {
@@ -20,7 +18,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: IRef): Promise<RuleValidationResult> {
+      async validate(ref) {
         const value = ref.value;
         const allowedValue = resolve(ref);
 

@@ -1,16 +1,19 @@
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
+  ISchema, IKeyword, IRule, IRef, ValidateRuleFn,
 } from '../types';
 import utils from '../utils';
 
-const validateFn: ValidateRuleFn = async (ref: IRef, rule: IRule)
-  : Promise<RuleValidationResult> => {
+const silentValidateFn: ValidateRuleFn = async (ref, rule) => {
   return rule.validate
-    ? rule.validate(ref, validateFn, {
-      coerceTypes: false,
-      removeAdditional: false,
-    })
+    ? rule.validate(
+      ref,
+      {
+        coerceTypes: false,
+        removeAdditional: false,
+      },
+      silentValidateFn,
+    )
     : undefined;
 };
 
@@ -18,10 +21,14 @@ async function findValidSchemaRule(rules: IRule[], ref: IRef) {
   for (let i = 0; i < rules.length; i += 1) {
     const rule = rules[i] as any;
 
-    const result = await rule.validate(ref, validateFn, {
-      coerceTypes: false,
-      removeAdditional: false,
-    });
+    const result = await rule.validate(
+      ref,
+      {
+        coerceTypes: false,
+        removeAdditional: false,
+      },
+      silentValidateFn,
+    );
 
     if (result.valid === true) {
       return rule;
@@ -31,7 +38,7 @@ async function findValidSchemaRule(rules: IRule[], ref: IRef) {
 
 const keyword: IKeyword = {
   name: 'anyOf',
-  compile(compile: CompileFn, schema: ISchema[], parentSchema: ISchema): IRule {
+  compile(compile, schema: ISchema[], parentSchema) {
     if (!Array.isArray(schema)) {
       throw new Error('The schema of the "anyOf" keyword should be an array of schemas.');
     }
@@ -47,8 +54,7 @@ const keyword: IKeyword = {
     });
 
     return {
-      validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
-        : Promise<RuleValidationResult> {
+      validate(ref, options, validateRuleFn) {
         return findValidSchemaRule(rules, ref)
           .then((rule) => {
             if (rule) {

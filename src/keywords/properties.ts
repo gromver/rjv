@@ -1,7 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword, IRule, RuleValidateFn } from '../types';
 import utils from '../utils';
 
 type PropertiesSchema = { [propertyName: string]: ISchema };
@@ -13,7 +11,7 @@ const keyword: IKeyword = {
     'patternProperties',    // todo
     'propertyNames',        // todo
   ],
-  compile(compile: CompileFn, schema: PropertiesSchema, parentSchema: ISchema): IRule {
+  compile(compile, schema: PropertiesSchema, parentSchema) {
     if (!utils.isObject(schema)) {
       throw new Error('The schema of the "properties" keyword should be an object.');
     }
@@ -40,8 +38,7 @@ const keyword: IKeyword = {
 
     const removeAdditional = !!parentSchema.removeAdditional;
 
-    const validate = async (ref: IRef, validateRuleFn: ValidateRuleFn, options)
-      : Promise<RuleValidationResult> => {
+    const validate: RuleValidateFn = async (ref, options, validateRuleFn) => {
       const invalidProperties: string[] = [];
       let hasValidProps = false;
       let hasInvalidProps = false;

@@ -60,9 +60,13 @@ export interface ValidateRuleFn {
     : Promise<RuleValidationResult>;
 }
 
+export interface RuleValidateFn {
+  (ref: IRef, options: IRuleValidationOptions, validateRuleFn: ValidateRuleFn)
+    : Promise<RuleValidationResult>;
+}
+
 export interface IRule {
-  validate?: (ref: IRef, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
-    => Promise<RuleValidationResult>;
+  validate?: RuleValidateFn;
 }
 
 export interface IRuleCompiled extends IRule {

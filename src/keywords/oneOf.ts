@@ -1,22 +1,25 @@
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
+  ISchema, IKeyword, IRule, ValidateRuleFn, RuleValidationResult,
 } from '../types';
 import utils from '../utils';
 
-const validateFn: ValidateRuleFn = async (ref: IRef, rule: IRule)
-  : Promise<RuleValidationResult> => {
+const silentValidateFn: ValidateRuleFn = async (ref, rule) => {
   return rule.validate
-    ? rule.validate(ref, validateFn, {
-      coerceTypes: false,
-      removeAdditional: false,
-    })
+    ? rule.validate(
+      ref,
+      {
+        coerceTypes: false,
+        removeAdditional: false,
+      },
+      silentValidateFn,
+    )
     : undefined;
 };
 
 const keyword: IKeyword = {
   name: 'oneOf',
-  compile(compile: CompileFn, schema: ISchema[], parentSchema: ISchema): IRule {
+  compile(compile, schema: ISchema[], parentSchema) {
     if (!Array.isArray(schema)) {
       throw new Error('The schema of the "oneOf" keyword should be an array of schemas.');
     }
@@ -32,15 +35,17 @@ const keyword: IKeyword = {
     });
 
     return {
-      validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
-        : Promise<RuleValidationResult> {
+      validate(ref, options, validateRuleFn) {
         const jobs: Promise<RuleValidationResult>[] = rules
           .map(
-            (rule) => (rule as any)
-              .validate(ref, validateFn, {
+            (rule) => (rule as any).validate(
+              ref,
+              {
                 coerceTypes: false,
                 removeAdditional: false,
-              }) as Promise<RuleValidationResult>,
+              },
+              silentValidateFn,
+            ) as Promise<RuleValidationResult>,
           );
 
         return Promise.all(jobs).then((results) => {

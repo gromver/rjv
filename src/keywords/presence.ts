@@ -1,7 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword } from '../types';
 import utils from '../utils';
 
 interface IPresenceSchema {
@@ -10,7 +8,7 @@ interface IPresenceSchema {
 
 const keyword: IKeyword = {
   name: 'presence',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     let presence = false;
     let trim = false;
 
@@ -26,7 +24,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: IRef): Promise<RuleValidationResult> {
+      async validate(ref) {
         if (presence) {
           const value = ref.value;
 

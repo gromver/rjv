@@ -15,7 +15,7 @@ import {
   IRule,
   IValidationResult,
   IRuleValidationResult,
-  RuleValidationResult,
+  RuleValidationResult, RuleValidateFn,
 } from './types';
 import defaultKeywords, { addKeyword } from './defaultKeywords';
 import utils from './utils';
@@ -137,24 +137,24 @@ export default class Validator {
       rules.push(rule);
     });
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<RuleValidationResult> => {
-      const results: IRuleValidationResult[] = [];
+    const validate: RuleValidateFn =
+      async (ref, options, validateRuleFn) => {
+        const results: IRuleValidationResult[] = [];
 
-      for (const rule of rules) {
-        if (rule.validate) {
-          const res = await rule.validate(ref, validateRuleFn, options);
+        for (const rule of rules) {
+          if (rule.validate) {
+            const res = await rule.validate(ref, options, validateRuleFn);
 
-          res && results.push(res);
+            res && results.push(res);
+          }
         }
-      }
 
-      if (results.length) {
-        return addCustomMessageDescriptions(utils.mergeResults(results));
-      }
+        if (results.length) {
+          return addCustomMessageDescriptions(utils.mergeResults(results));
+        }
 
-      return undefined;
-    };
+        return undefined;
+      };
 
     return {
       validate,
@@ -170,8 +170,8 @@ export default class Validator {
    */
   async validateRef(
     ref: IRef,
-    validateRuleFn?: ValidateRuleFn,
     options: Partial<IValidatorOptions> = {},
+    validateRuleFn?: ValidateRuleFn,
   ): Promise<IValidationResult> {
     const validationOptions = _extend({}, this.options, options);
     const results = {};
@@ -193,8 +193,8 @@ export default class Validator {
    */
   async validateData(
     data: any,
-    validateRuleFn?: ValidateRuleFn,
     options: Partial<IValidatorOptions> = {},
+    validateRuleFn?: ValidateRuleFn,
   ): Promise<IValidationResult> {
     const validationOptions = _extend({}, this.options, options);
     const ref = new Ref(new SimpleStorage(data), '/');
@@ -222,7 +222,7 @@ function getValidateRuleFn(results: {}): ValidateRuleFn {
   async function validateRuleFn(ref: IRef, rule: IRule, options: IRuleValidationOptions)
     : Promise<RuleValidationResult> {
     return rule.validate
-      ? rule.validate(ref, validateRuleFn, options)
+      ? rule.validate(ref, options, validateRuleFn)
         .then((result: RuleValidationResult) => {
           results[ref.path] = result;
           return result;

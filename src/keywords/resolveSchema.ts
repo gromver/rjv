@@ -1,6 +1,4 @@
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, ValidateRuleFn, RuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword, IRef } from '../types';
 
 type SchemaResolver = (ref: IRef) => ISchema | Promise<ISchema>;
 
@@ -10,7 +8,7 @@ async function resolveSchema(schema: SchemaResolver, ref: IRef): Promise<ISchema
 
 const keyword: IKeyword = {
   name: 'resolveSchema',
-  compile(compile: CompileFn, schema: SchemaResolver, parentSchema: ISchema): IRule {
+  compile(compile, schema: SchemaResolver, parentSchema) {
     if (typeof schema !== 'function') {
       throw new Error(
         'The schema of the "resolveSchema" keyword should be a function returns a schema.',
@@ -18,13 +16,12 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: IRef, validateRuleFn: ValidateRuleFn, options)
-        : Promise<RuleValidationResult> {
+      async validate(ref, options, validateRuleFn) {
         const resolvedSchema = await resolveSchema(schema, ref);
         const rule = compile(resolvedSchema, parentSchema);
 
         if (rule.validate) {
-          return rule.validate(ref, validateRuleFn, options);
+          return rule.validate(ref, options, validateRuleFn);
         }
 
         return undefined;

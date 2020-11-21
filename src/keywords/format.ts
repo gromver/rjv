@@ -1,8 +1,6 @@
 // tslint:disable:max-line-length
 import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword } from '../types';
 import utils from '../utils';
 
 const formats = {
@@ -34,7 +32,7 @@ function regex(str) {
 
 const keyword: IKeyword = {
   name: 'format',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     if (typeof schema !== 'string') {
       throw new Error('The schema of the "format" keyword should be a string.');
     }
@@ -48,7 +46,7 @@ const keyword: IKeyword = {
       : formats[schema];
 
     return {
-      async validate(ref: IRef): Promise<RuleValidationResult> {
+      async validate(ref) {
         const value = ref.value;
 
         if (utils.checkDataType('string', value)) {

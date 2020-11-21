@@ -1,22 +1,21 @@
 import {
   ISchema,
   IKeyword,
-  CompileFn,
-  IRule,
   IRef,
   ValidateRuleFn,
   RuleValidationResult,
-  IRuleValidationOptions, IInlineValidationResult,
+  IRuleValidationOptions,
+  IInlineValidationResult,
 } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'validate',
   compile(
-    compile: CompileFn,
+    compile,
     schema: (ref: IRef, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
       => IInlineValidationResult | Promise<IInlineValidationResult>,
-  ): IRule {
+  ) {
     if (typeof schema !== 'function') {
       throw new Error(
         'The schema of the "validate" keyword should be an async validation function.',
@@ -24,7 +23,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref, validateRuleFn, options)
+      async validate(ref, options, validateRuleFn)
         : Promise<RuleValidationResult> {
         const result = await schema(ref, validateRuleFn, options);
 

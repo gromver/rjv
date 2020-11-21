@@ -1,13 +1,11 @@
 import _isEqual from 'lodash/isEqual';
 import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRef, RuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'enum',
-  compile(compile: CompileFn, schema: any[], parentSchema: ISchema): IRule {
+  compile(compile, schema: any[]) {
     const allowedValues = schema;
 
     if (!Array.isArray(allowedValues)) {
@@ -15,7 +13,7 @@ const keyword: IKeyword = {
     }
 
     return {
-      async validate(ref: IRef): Promise<RuleValidationResult> {
+      async validate(ref) {
         const value = ref.value;
         const valid = allowedValues.some((item) => _isEqual(value, item));
 
