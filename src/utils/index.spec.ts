@@ -37,25 +37,6 @@ describe('utils.withTrailingSlash tests', () => {
   });
 });
 
-describe('utils.injectVarsToString tests', () => {
-  it('should get a string with injected variables', () => {
-    expect(utils.injectVarsToString('{foo}', { foo: 'bar' })).toEqual('bar');
-    expect(utils.injectVarsToString('{{foo}}', { foo: 'bar' })).toEqual('{bar}');
-    expect(utils.injectVarsToString(
-      '{a}, {b}, {c}',
-      { a: 'A', b: 'B', c: 'C' },
-    )).toEqual('A, B, C');
-    expect(utils.injectVarsToString(
-      '{a}, {b}, {c}, {d}, {e}, {f}',
-      { a: 0, b: '', c: null, d: false, e: undefined },
-    )).toEqual('0, , null, false, undefined, {f}');
-    expect(utils.injectVarsToString(
-      '{a}, {undefinedVariable}',
-      { a: 'A' },
-    )).toEqual('A, {undefinedVariable}');
-  });
-});
-
 describe('utils.mergeResults tests', () => {
   it('should get merged result #1', () => {
     const merged = utils.mergeResults([

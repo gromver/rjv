@@ -72,16 +72,6 @@ const utils = {
         return typeof value === dataType;
     }
   },
-  injectVarsToString(str: string, variables: {}): string {
-    if (Object.keys(variables).length === 0) {
-      return str;
-    }
-
-    return str.replace(
-      /{([^{}]+)}/g,
-      (match, name) => variables.hasOwnProperty(name) ? variables[name] : `{${name}}`,
-    );
-  },
   // helpers
   /**
    * Helper - creates success validation result
