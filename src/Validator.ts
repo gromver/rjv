@@ -22,6 +22,7 @@ import utils from './utils';
 const DEFAULT_OPTIONS: IValidatorOptions = {
   coerceTypes: false,
   removeAdditional: false,
+  validateFirst: false,
   errors: {},
   warnings: {},
   keywords: [],
@@ -39,7 +40,7 @@ const SCHEMA_ANNOTATIONS = [
 ];
 
 /**
- * Compiles given schema to a validation rule and gives an ability to validate ref using this schema
+ * Creates a Validator instance using the given schema for data validation
  */
 export default class Validator {
   private readonly options: IValidatorOptions;
@@ -75,7 +76,7 @@ export default class Validator {
       throw new Error('The schema of the "filter" keyword should be a function.');
     }
 
-    function addCustomMessageDescriptions(result: IValidateFnResult) {
+    function applyCustomMessageDescriptions(result: IValidateFnResult) {
       const { messages } = result;
 
       messages.forEach((message) => {
@@ -138,11 +139,15 @@ export default class Validator {
       for (const rule of rules) {
         const res = await rule(ref, options, applyValidateFn);
 
-        res && results.push(res);
+        if (res) {
+          results.push(res);
+
+          if (options.validateFirst && !res.valid) break;
+        }
       }
 
       if (results.length) {
-        return addCustomMessageDescriptions(utils.mergeResults(results));
+        return applyCustomMessageDescriptions(utils.mergeResults(results));
       }
 
       return undefined;
@@ -152,19 +157,17 @@ export default class Validator {
   /**
    * Validates ref and returns a validation result object
    * @param ref
-   * @param validateRuleFn
    * @param options
    */
   async validateRef(
     ref: IRef,
     options: Partial<IValidatorOptions> = {},
-    validateRuleFn?: ApplyValidateFn,
   ): Promise<IValidatorResult> {
     const validationOptions = _extend({}, this.options, options);
     const results = {};
-    const normalizedValidateRuleFn = validateRuleFn || getApplyValidateFn(results);
+    const applyValidateFn = createApplyValidateFn(results);
 
-    const result = await normalizedValidateRuleFn(ref, this.validateFn, validationOptions);
+    const result = await applyValidateFn(ref, this.validateFn, validationOptions);
 
     return {
       results,
@@ -175,20 +178,18 @@ export default class Validator {
   /**
    * Validates given data and returns a validation result object
    * @param data
-   * @param validateRuleFn
    * @param options
    */
   async validateData(
     data: any,
     options: Partial<IValidatorOptions> = {},
-    validateRuleFn?: ApplyValidateFn,
   ): Promise<IValidatorResult> {
     const validationOptions = _extend({}, this.options, options);
     const ref = new Ref(new SimpleStorage(data), '/');
     const results = {};
-    const normalizedValidateRuleFn = validateRuleFn || getApplyValidateFn(results);
+    const applyValidateFn = createApplyValidateFn(results);
 
-    const result = await normalizedValidateRuleFn(ref, this.validateFn, validationOptions);
+    const result = await applyValidateFn(ref, this.validateFn, validationOptions);
 
     return {
       results,
@@ -205,7 +206,7 @@ export default class Validator {
   }
 }
 
-function getApplyValidateFn(results: {}): ApplyValidateFn {
+function createApplyValidateFn(results: {}): ApplyValidateFn {
   async function applyValidateFn(ref: IRef, validateFn: ValidateFn, options: IValidateFnOptions)
     : Promise<ValidateFnResult> {
     return validateFn(ref, options, applyValidateFn)

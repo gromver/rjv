@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -15,17 +15,15 @@ const keyword: IKeyword = {
       const value = ref.value;
       if (utils.checkDataType('string', value)) {
         if (!regexp.test(value)) {
-          return utils.createErrorResult(
-            new ValidationMessage(
-              false,
-              keyword.name,
-              'Should match pattern {pattern}',
-              { pattern: schema },
-            ),
+          return new ValidationResult(
+            false,
+            'Should match pattern {pattern}',
+            keyword.name,
+            { pattern: schema },
           );
         }
 
-        return utils.createSuccessResult();
+        return new ValidationResult(true);
       }
 
       return undefined;

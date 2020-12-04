@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -28,13 +28,11 @@ const keyword: IKeyword = {
         const value = ref.value;
 
         if (value === undefined) {
-          return utils.createErrorResult(
-            new ValidationMessage(
-              false,
-              keyword.name,
-              'Should not be blank',
-              { path: ref.path },
-            ),
+          return new ValidationResult(
+            false,
+            'Should not be blank',
+            keyword.name,
+            { path: ref.path },
           );
         }
 
@@ -47,18 +45,16 @@ const keyword: IKeyword = {
           }
 
           if (!stringValue.length) {
-            return utils.createErrorResult(
-              new ValidationMessage(
-                false,
-                keyword.name,
-                'Should not be blank',
-                { path: ref.path },
-              ),
+            return new ValidationResult(
+              false,
+              'Should not be blank',
+              keyword.name,
+              { path: ref.path },
             );
           }
         }
 
-        return utils.createSuccessResult();
+        return new ValidationResult(true);
       }
 
       return undefined;

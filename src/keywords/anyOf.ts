@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import {
   ISchema, IKeyword, ValidateFn, IRef, ApplyValidateFn,
 } from '../types';
@@ -48,7 +48,7 @@ const keyword: IKeyword = {
         throw new Error('Items of "anyOf" keyword should be a schema object.');
       }
 
-      rules.push(compile(item, parentSchema));  // all rules have validate() fn
+      rules.push(compile(item, parentSchema));
     });
 
     return (ref, options, applyValidateFn) => {
@@ -58,11 +58,11 @@ const keyword: IKeyword = {
             return applyValidateFn(ref, rule, options);
           }
 
-          return utils.createErrorResult(new ValidationMessage(
+          return new ValidationResult(
             false,
-            keyword.name,
             'Should match some schema in anyOf',
-          ));
+            keyword.name,
+          );
         });
     };
   },

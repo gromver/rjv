@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import {
   ISchema, IKeyword, ValidateFn, ApplyValidateFn, ValidateFnResult,
 } from '../types';
@@ -58,11 +58,11 @@ const keyword: IKeyword = {
           return applyValidateFn(ref, validRules[0], options);
         }
 
-        return utils.createErrorResult(new ValidationMessage(
+        return new ValidationResult(
           false,
-          keyword.name,
           'Should match exactly one schema in oneOf',
-        ));
+          keyword.name,
+        );
       });
     };
   },

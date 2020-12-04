@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import {
   ISchema, IKeyword, ValidateFn, ValidateFnResult,
 } from '../types';
@@ -32,14 +32,14 @@ const keyword: IKeyword = {
       const validRules = results.filter((result) => result && result.valid).length;
 
       if (validRules === results.length) {
-        return utils.createSuccessResult();
+        return new ValidationResult(true);
       }
 
-      return utils.createErrorResult(new ValidationMessage(
+      return new ValidationResult(
         false,
-        keyword.name,
         'Should match all schema in allOf',
-      ));
+        keyword.name,
+      );
     };
   },
 };

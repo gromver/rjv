@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -20,17 +20,15 @@ const keyword: IKeyword = {
 
       if (utils.checkDataType('array', value)) {
         if (value.length > limit) {
-          return utils.createErrorResult(
-            new ValidationMessage(
-              false,
-              keyword.name,
-              'Should not have more than {limit} items',
-              { limit },
-            ),
+          return new ValidationResult(
+            false,
+            'Should not have more than {limit} items',
+            keyword.name,
+            { limit },
           );
         }
 
-        return utils.createSuccessResult();
+        return new ValidationResult(true);
       }
 
       return undefined;

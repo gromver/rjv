@@ -1,6 +1,5 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { IKeyword, IRef } from '../types';
-import utils from '../utils';
 
 const _ = {
   isEqual: require('lodash/isEqual'),
@@ -22,14 +21,12 @@ const keyword: IKeyword = {
       const allowedValue = resolve(ref);
 
       return _.isEqual(value, allowedValue)
-        ? utils.createSuccessResult()
-        : utils.createErrorResult(
-          new ValidationMessage(
-            false,
-            keyword.name,
-            'Should be equal to constant',
-            { allowedValue },
-          ),
+        ? new ValidationResult(true)
+        : new ValidationResult(
+          false,
+          'Should be equal to constant',
+          keyword.name,
+          { allowedValue },
         );
     };
   },

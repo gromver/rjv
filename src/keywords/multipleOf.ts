@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -20,15 +20,15 @@ const keyword: IKeyword = {
 
       if (utils.checkDataType('number', value)) {
         if ((value / multiplier) % 1 !== 0) {
-          return utils.createErrorResult(new ValidationMessage(
+          return new ValidationResult(
             false,
-            keyword.name,
             'Should be multiple of {multiplier}',
+            keyword.name,
             { multiplier },
-          ));
+          );
         }
 
-        return utils.createSuccessResult();
+        return new ValidationResult(true);
       }
 
       return undefined;

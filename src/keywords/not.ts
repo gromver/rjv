@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import {
   ISchema, IKeyword, ValidateFn, ApplyValidateFn,
 } from '../types';
@@ -35,14 +35,14 @@ const keyword: IKeyword = {
       )
         .then((result) => {
           if (result && !result.valid) {
-            return utils.createSuccessResult();
+            return new ValidationResult(true);
           }
 
-          return utils.createErrorResult(new ValidationMessage(
+          return new ValidationResult(
             false,
-            keyword.name,
             'Should not be valid',
-          ));
+            keyword.name,
+          );
         });
     };
   },

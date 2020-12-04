@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -18,19 +18,17 @@ const keyword: IKeyword = {
 
       if (utils.checkDataType('number', value)) {
         if (exclusive ? value >= limit : value > limit) {
-          return utils.createErrorResult(
-            new ValidationMessage(
-              false,
-              exclusive ? `${keyword.name}_exclusive` : keyword.name,
-              exclusive
-                ? 'Should be less than {limit}'
-                : 'Should be less than or equal {limit}',
-              { limit, exclusive },
-            ),
+          return new ValidationResult(
+            false,
+            exclusive
+              ? 'Should be less than {limit}'
+              : 'Should be less than or equal {limit}',
+            exclusive ? `${keyword.name}_exclusive` : keyword.name,
+            { limit, exclusive },
           );
         }
 
-        return utils.createSuccessResult();
+        return new ValidationResult(true);
       }
 
       return undefined;

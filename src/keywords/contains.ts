@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { ISchema, IKeyword, ValidateFn } from '../types';
 import utils from '../utils';
 
@@ -27,14 +27,14 @@ const keyword: IKeyword = {
         }
 
         if (!hasValidItem) {
-          return utils.createErrorResult(new ValidationMessage(
+          return new ValidationResult(
             false,
-            keyword.name,
             'Should contain a valid item',
-          ));
+            keyword.name,
+          );
         }
 
-        return utils.createSuccessResult();
+        return new ValidationResult(true);
       }
 
       return undefined;

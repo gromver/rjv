@@ -1,5 +1,5 @@
 // tslint:disable:max-line-length
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -50,16 +50,14 @@ const keyword: IKeyword = {
 
       if (utils.checkDataType('string', value)) {
         if (checkFormatFn(value)) {
-          return utils.createSuccessResult();
+          return new ValidationResult(true);
         }
 
-        return utils.createErrorResult(
-          new ValidationMessage(
-            false,
-            keyword.name,
-            'Should match format "{format}"',
-            { format: schema },
-          ),
+        return new ValidationResult(
+          false,
+          'Should match format "{format}"',
+          keyword.name,
+          { format: schema },
         );
       }
 

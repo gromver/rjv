@@ -1,3 +1,5 @@
+import ValidationResult from '../ValidationResult';
+
 declare const describe;
 declare const it;
 declare const expect;
@@ -70,5 +72,47 @@ describe('utils.mergeResults tests', () => {
       valid: false,
       messages: [],
     });
+  });
+});
+
+describe('utils.toValidationResult tests', () => {
+  it('should get results properly', () => {
+    expect(utils.toValidationResult(true))
+      .toMatchObject({
+        valid: true,
+        messages: [],
+      });
+    expect(utils.toValidationResult(false))
+      .toMatchObject({
+        valid: false,
+        messages: [{
+          success: false,
+          description: 'Incorrect value',
+          keyword: 'inline',
+          bindings: {},
+        }],
+      });
+    expect(utils.toValidationResult('Bad value'))
+      .toMatchObject({
+        valid: false,
+        messages: [{
+          success: false,
+          description: 'Bad value',
+          keyword: 'inline',
+          bindings: {},
+        }],
+      });
+    const res = new ValidationResult(true, 'Warning', 'custom');
+    expect(utils.toValidationResult(res))
+      .toMatchObject({
+        valid: true,
+        messages: [{
+          success: true,
+          description: 'Warning',
+          keyword: 'custom',
+          bindings: {},
+        }],
+      });
+    expect(utils.toValidationResult(res)).toEqual(res);
   });
 });

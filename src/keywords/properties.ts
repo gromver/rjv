@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { ISchema, IKeyword, ValidateFn } from '../types';
 import utils from '../utils';
 
@@ -113,16 +113,16 @@ const keyword: IKeyword = {
         }
 
         if (hasInvalidProps) {
-          return utils.createErrorResult(new ValidationMessage(
+          return new ValidationResult(
             false,
-            keyword.name,
             'Should have valid properties',
+            keyword.name,
             { invalidProperties },
-          ));
+          );
         }
 
         if (hasValidProps) {
-          return utils.createSuccessResult();
+          return new ValidationResult(true);
         }
       }
 

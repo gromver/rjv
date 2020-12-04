@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import {
   ISchema, IKeyword, ValidateFn, ApplyValidateFn, ValidateFnResult,
 } from '../types';
@@ -124,27 +124,27 @@ const keyword: IKeyword = {
         });
 
         if (hasInvalidProps) {
-          return utils.createErrorResult(new ValidationMessage(
+          return new ValidationResult(
             false,
-            keyword.name,
             'Should have valid items',
+            keyword.name,
             { invalidIndexes },
-          ));
+          );
         }
 
         if (hasItemsOverflow) {
           const limit = (rule as ValidateFn[]).length;
 
-          return utils.createErrorResult(new ValidationMessage(
+          return new ValidationResult(
             false,
-            `${keyword.name}_overflow`,
             'Should not have more than {limit} items',
+            `${keyword.name}_overflow`,
             { limit },
-          ));
+          );
         }
 
         if (hasValidProps) {
-          return utils.createSuccessResult();
+          return new ValidationResult(true);
         }
       }
 

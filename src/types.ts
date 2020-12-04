@@ -1,5 +1,3 @@
-import ValidationMessage from './ValidationMessage';
-
 export type Path = string;
 export type Route = (string | number)[];
 
@@ -32,6 +30,7 @@ export interface IValidationMessage {
 export interface IValidatorOptions {
   coerceTypes: boolean;
   removeAdditional: boolean;
+  validateFirst: boolean;
   errors: { [keywordName: string]: any };
   warnings: { [keywordName: string]: any };
   keywords: IKeyword[];
@@ -53,6 +52,7 @@ export interface ISchema {
 export interface IValidateFnOptions {
   coerceTypes?: boolean;
   removeAdditional?: boolean;
+  validateFirst?: boolean;
 }
 
 export interface ValidateFn {
@@ -65,7 +65,7 @@ export interface ApplyValidateFn {
     : Promise<ValidateFnResult>;
 }
 
-export type InlineValidationResult = ValidationMessage | string | boolean | undefined;
+export type InlineValidationResult = IValidateFnResult | string | boolean | undefined;
 
 export type ValidateFnResult = IValidateFnResult | undefined;
 

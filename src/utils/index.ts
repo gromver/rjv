@@ -1,5 +1,5 @@
 import * as pth from 'path';
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { Path, Route, ValueType, IValidateFnResult, IValidationMessage } from '../types';
 
 function reverse(promise: Promise<any>) {
@@ -72,59 +72,21 @@ const utils = {
         return typeof value === dataType;
     }
   },
-  // helpers
-  /**
-   * Helper - creates success validation result
-   * @param message
-   */
-  createSuccessResult(message?: ValidationMessage)
-    : IValidateFnResult {
-    return {
-      messages: message ? [message] : [],
-      valid: true,
-    };
-  },
-
-  /**
-   * Helper - creates error validation result
-   * @param message
-   */
-  createErrorResult(message: ValidationMessage)
-    : IValidateFnResult {
-    return {
-      messages: [message],
-      valid: false,
-    };
-  },
-
-  toValidationResult(message: ValidationMessage | boolean | string): IValidateFnResult {
-    if (message instanceof ValidationMessage) {
-      return {
-        valid: message.success,
-        messages: [message],
-      };
+  toValidationResult(result: ValidationResult | boolean | string): IValidateFnResult {
+    if (result instanceof ValidationResult) {
+      return result;
     }
 
-    if (typeof message === 'string') {
-      return {
-        valid: false,
-        messages: [new ValidationMessage(false, 'inline', message)],
-      };
+    if (typeof result === 'string') {
+      return new ValidationResult(false, result);
     }
 
-    if (message) {
-      return {
-        valid: true,
-        messages: [],
-      };
+    if (result) {
+      return new ValidationResult(true);
     }
 
-    return {
-      valid: false,
-      messages: [new ValidationMessage(false, 'inline', 'Incorrect value')],
-    };
+    return new ValidationResult(false, 'Incorrect value');
   },
-
 };
 
 export default utils;

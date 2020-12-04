@@ -6,6 +6,8 @@ export { default as Validator } from './Validator';
 
 export { default as ValidationMessage } from './ValidationMessage';
 
+export { default as ValidationResult } from './ValidationResult';
+
 export { default as utils } from './utils';
 
 export { default as Ref } from './utils/Ref';

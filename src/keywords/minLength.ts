@@ -1,4 +1,4 @@
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -20,17 +20,15 @@ const keyword: IKeyword = {
 
       if (utils.checkDataType('string', value)) {
         if (value.length < limit) {
-          return utils.createErrorResult(
-            new ValidationMessage(
+          return new ValidationResult(
               false,
-              keyword.name,
               'Should not be shorter than {limit} characters',
+              keyword.name,
               { limit },
-            ),
           );
         }
 
-        return utils.createSuccessResult();
+        return new ValidationResult(true);
       }
 
       return undefined;

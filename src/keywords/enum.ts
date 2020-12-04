@@ -1,7 +1,6 @@
 import _isEqual from 'lodash/isEqual';
-import ValidationMessage from '../ValidationMessage';
+import ValidationResult from '../ValidationResult';
 import { IKeyword } from '../types';
-import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'enum',
@@ -17,14 +16,12 @@ const keyword: IKeyword = {
       const valid = allowedValues.some((item) => _isEqual(value, item));
 
       return valid
-        ? utils.createSuccessResult()
-        : utils.createErrorResult(
-          new ValidationMessage(
-            false,
-            keyword.name,
-            'Should be equal to one of the allowed values',
-            { allowedValues },
-          ),
+        ? new ValidationResult(true)
+        : new ValidationResult(
+          false,
+          'Should be equal to one of the allowed values',
+          keyword.name,
+          { allowedValues },
         );
     };
   },

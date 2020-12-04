@@ -1,5 +1,5 @@
+import ValidationResult from '../ValidationResult';
 import utils from '../utils';
-import ValidationMessage from '../ValidationMessage';
 import { IKeyword, ValueType } from '../types';
 
 /**
@@ -101,13 +101,13 @@ const keyword: IKeyword = {
       const typesAsString = types.join(', ');
 
       return valid
-        ? utils.createSuccessResult()
-        : utils.createErrorResult(new ValidationMessage(
+        ? new ValidationResult(true)
+        : new ValidationResult(
           false,
-          keyword.name,
           'Should be {typesAsString}',
+          keyword.name,
           { types, typesAsString },
-        ));
+        );
     };
   },
 };
