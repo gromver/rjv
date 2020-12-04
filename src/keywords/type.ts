@@ -116,7 +116,7 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    type?: string | string[];
+    type?: ValueType | ValueType[];
     coerceTypes?: boolean;
   }
 }
