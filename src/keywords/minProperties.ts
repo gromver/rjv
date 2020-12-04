@@ -1,5 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword } from '../types';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -15,27 +15,25 @@ const keyword: IKeyword = {
       throw new Error('The "minProperties" keyword can\'t be less then 1.');
     }
 
-    return {
-      async validate(ref) {
-        const value = ref.value;
+    return async (ref) => {
+      const value = ref.value;
 
-        if (utils.checkDataType('object', value)) {
-          if (Object.values(value).length < limit) {
-            return utils.createErrorResult(
-              new ValidationMessage(
-                false,
-                keyword.name,
-                'Should not have fewer than {limit} properties',
-                { limit },
-              ),
-            );
-          }
-
-          return utils.createSuccessResult();
+      if (utils.checkDataType('object', value)) {
+        if (Object.values(value).length < limit) {
+          return utils.createErrorResult(
+            new ValidationMessage(
+              false,
+              keyword.name,
+              'Should not have fewer than {limit} properties',
+              { limit },
+            ),
+          );
         }
 
-        return undefined;
-      },
+        return utils.createSuccessResult();
+      }
+
+      return undefined;
     };
   },
 };

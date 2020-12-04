@@ -1,6 +1,6 @@
 // tslint:disable:max-line-length
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword } from '../types';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 const formats = {
@@ -45,27 +45,25 @@ const keyword: IKeyword = {
       ? (value) => formats[schema].test(value)
       : formats[schema];
 
-    return {
-      async validate(ref) {
-        const value = ref.value;
+    return async (ref) => {
+      const value = ref.value;
 
-        if (utils.checkDataType('string', value)) {
-          if (checkFormatFn(value)) {
-            return utils.createSuccessResult();
-          }
-
-          return utils.createErrorResult(
-            new ValidationMessage(
-              false,
-              keyword.name,
-              'Should match format "{format}"',
-              { format: schema },
-            ),
-          );
+      if (utils.checkDataType('string', value)) {
+        if (checkFormatFn(value)) {
+          return utils.createSuccessResult();
         }
 
-        return undefined;
-      },
+        return utils.createErrorResult(
+          new ValidationMessage(
+            false,
+            keyword.name,
+            'Should match format "{format}"',
+            { format: schema },
+          ),
+        );
+      }
+
+      return undefined;
     };
   },
 };

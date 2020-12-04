@@ -1,5 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword, IRef } from '../types';
+import { IKeyword, IRef } from '../types';
 import utils from '../utils';
 
 const _ = {
@@ -17,22 +17,20 @@ const keyword: IKeyword = {
       resolve = () => schema;
     }
 
-    return {
-      async validate(ref) {
-        const value = ref.value;
-        const allowedValue = resolve(ref);
+    return async (ref) => {
+      const value = ref.value;
+      const allowedValue = resolve(ref);
 
-        return _.isEqual(value, allowedValue)
-          ? utils.createSuccessResult()
-          : utils.createErrorResult(
-            new ValidationMessage(
-              false,
-              keyword.name,
-              'Should be equal to constant',
-              { allowedValue },
-            ),
-          );
-      },
+      return _.isEqual(value, allowedValue)
+        ? utils.createSuccessResult()
+        : utils.createErrorResult(
+          new ValidationMessage(
+            false,
+            keyword.name,
+            'Should be equal to constant',
+            { allowedValue },
+          ),
+        );
     };
   },
 };

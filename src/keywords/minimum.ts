@@ -1,5 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword } from '../types';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -13,29 +13,27 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "minimum" keyword should be a number.');
     }
 
-    return {
-      async validate(ref) {
-        const value = ref.value;
+    return async (ref) => {
+      const value = ref.value;
 
-        if (utils.checkDataType('number', value)) {
-          if (exclusive ? value <= limit : value < limit) {
-            return utils.createErrorResult(
-              new ValidationMessage(
-                false,
-                exclusive ? `${keyword.name}_exclusive` : keyword.name,
-                exclusive
-                  ? 'Should be greater than {limit}'
-                  : 'Should be greater than or equal {limit}',
-                { limit, exclusive },
-              ),
-            );
-          }
-
-          return utils.createSuccessResult();
+      if (utils.checkDataType('number', value)) {
+        if (exclusive ? value <= limit : value < limit) {
+          return utils.createErrorResult(
+            new ValidationMessage(
+              false,
+              exclusive ? `${keyword.name}_exclusive` : keyword.name,
+              exclusive
+                ? 'Should be greater than {limit}'
+                : 'Should be greater than or equal {limit}',
+              { limit, exclusive },
+            ),
+          );
         }
 
-        return undefined;
-      },
+        return utils.createSuccessResult();
+      }
+
+      return undefined;
     };
   },
 };

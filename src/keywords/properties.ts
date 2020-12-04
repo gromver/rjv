@@ -1,5 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword, IRule, RuleValidateFn } from '../types';
+import { ISchema, IKeyword, ValidateFn } from '../types';
 import utils from '../utils';
 
 type PropertiesSchema = { [propertyName: string]: ISchema };
@@ -16,7 +16,7 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "properties" keyword should be an object.');
     }
 
-    const properties: { [prop: string]: IRule } = {};
+    const properties: { [prop: string]: ValidateFn } = {};
 
     Object.entries(schema).forEach(([propName, propSchema]) => {
       if (!utils.isObject(propSchema)) {
@@ -30,7 +30,7 @@ const keyword: IKeyword = {
       parentSchema.additionalProperties === undefined
       || parentSchema.additionalProperties === true;
 
-    let additionalRule: IRule;
+    let additionalRule: ValidateFn;
 
     if (utils.isObject(parentSchema.additionalProperties)) {
       additionalRule = compile(parentSchema.additionalProperties, parentSchema);
@@ -38,7 +38,7 @@ const keyword: IKeyword = {
 
     const removeAdditional = !!parentSchema.removeAdditional;
 
-    const validate: RuleValidateFn = async (ref, options, validateRuleFn) => {
+    return async (ref, options, applyValidateFn) => {
       const invalidProperties: string[] = [];
       let hasValidProps = false;
       let hasInvalidProps = false;
@@ -48,7 +48,7 @@ const keyword: IKeyword = {
           const propRule = properties[propName];
           const propRef = ref.ref(propName);
 
-          const result = await validateRuleFn(propRef, propRule, options);
+          const result = await applyValidateFn(propRef, propRule, options);
 
           if (result) {
             if (result.valid) {
@@ -71,7 +71,7 @@ const keyword: IKeyword = {
               if (additionalRule) {
                 const propRef = ref.ref(propName);
 
-                const result = await validateRuleFn(propRef, additionalRule, options);
+                const result = await applyValidateFn(propRef, additionalRule, options);
 
                 if (result) {
                   if (result.valid) {
@@ -127,10 +127,6 @@ const keyword: IKeyword = {
       }
 
       return undefined;
-    };
-
-    return {
-      validate,
     };
   },
 };

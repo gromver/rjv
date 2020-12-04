@@ -1,5 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword } from '../types';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 interface IPresenceSchema {
@@ -23,12 +23,30 @@ const keyword: IKeyword = {
       );
     }
 
-    return {
-      async validate(ref) {
-        if (presence) {
-          const value = ref.value;
+    return async (ref) => {
+      if (presence) {
+        const value = ref.value;
 
-          if (value === undefined) {
+        if (value === undefined) {
+          return utils.createErrorResult(
+            new ValidationMessage(
+              false,
+              keyword.name,
+              'Should not be blank',
+              { path: ref.path },
+            ),
+          );
+        }
+
+        if (utils.checkDataType('string', ref.value)) {
+          let stringValue: string = value;
+
+          if (trim) {
+            stringValue = (value as string).trim();
+            ref.value = stringValue;
+          }
+
+          if (!stringValue.length) {
             return utils.createErrorResult(
               new ValidationMessage(
                 false,
@@ -38,32 +56,12 @@ const keyword: IKeyword = {
               ),
             );
           }
-
-          if (utils.checkDataType('string', ref.value)) {
-            let stringValue: string = value;
-
-            if (trim) {
-              stringValue = (value as string).trim();
-              ref.value = stringValue;
-            }
-
-            if (!stringValue.length) {
-              return utils.createErrorResult(
-                new ValidationMessage(
-                  false,
-                  keyword.name,
-                  'Should not be blank',
-                  { path: ref.path },
-                ),
-              );
-            }
-          }
-
-          return utils.createSuccessResult();
         }
 
-        return undefined;
-      },
+        return utils.createSuccessResult();
+      }
+
+      return undefined;
     };
   },
 };

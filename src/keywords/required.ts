@@ -1,5 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword } from '../types';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -11,32 +11,30 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "required" keyword should be an array.');
     }
 
-    return {
-      async validate(ref) {
-        if (utils.checkDataType('object', ref.value)) {
-          const value = ref.value;
-          const invalidProperties: string[] = [];
+    return async (ref) => {
+      if (utils.checkDataType('object', ref.value)) {
+        const value = ref.value;
+        const invalidProperties: string[] = [];
 
-          for (const propName of required) {
-            if (!Object.prototype.hasOwnProperty.call(value, propName)) {
-              invalidProperties.push(propName);
-            }
+        for (const propName of required) {
+          if (!Object.prototype.hasOwnProperty.call(value, propName)) {
+            invalidProperties.push(propName);
           }
-
-          if (invalidProperties.length) {
-            return utils.createErrorResult(new ValidationMessage(
-              false,
-              keyword.name,
-              'Should have all required properties',
-              { invalidProperties },
-            ));
-          }
-
-          return utils.createSuccessResult();
         }
 
-        return undefined;
-      },
+        if (invalidProperties.length) {
+          return utils.createErrorResult(new ValidationMessage(
+            false,
+            keyword.name,
+            'Should have all required properties',
+            { invalidProperties },
+          ));
+        }
+
+        return utils.createSuccessResult();
+      }
+
+      return undefined;
     };
   },
 };

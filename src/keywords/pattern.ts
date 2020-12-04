@@ -1,5 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword } from '../types';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -11,26 +11,24 @@ const keyword: IKeyword = {
 
     const regexp = new RegExp(schema);
 
-    return {
-      async validate(ref) {
-        const value = ref.value;
-        if (utils.checkDataType('string', value)) {
-          if (!regexp.test(value)) {
-            return utils.createErrorResult(
-              new ValidationMessage(
-                false,
-                keyword.name,
-                'Should match pattern {pattern}',
-                { pattern: schema },
-              ),
-            );
-          }
-
-          return utils.createSuccessResult();
+    return async (ref) => {
+      const value = ref.value;
+      if (utils.checkDataType('string', value)) {
+        if (!regexp.test(value)) {
+          return utils.createErrorResult(
+            new ValidationMessage(
+              false,
+              keyword.name,
+              'Should match pattern {pattern}',
+              { pattern: schema },
+            ),
+          );
         }
 
-        return undefined;
-      },
+        return utils.createSuccessResult();
+      }
+
+      return undefined;
     };
   },
 };

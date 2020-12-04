@@ -1,5 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword } from '../types';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -15,25 +15,23 @@ const keyword: IKeyword = {
       throw new Error('The "multipleOf" keyword can\'t be zero.');
     }
 
-    return {
-      async validate(ref) {
-        const value = ref.value;
+    return async (ref) => {
+      const value = ref.value;
 
-        if (utils.checkDataType('number', value)) {
-          if ((value / multiplier) % 1 !== 0) {
-            return utils.createErrorResult(new ValidationMessage(
-              false,
-              keyword.name,
-              'Should be multiple of {multiplier}',
-              { multiplier },
-            ));
-          }
-
-          return utils.createSuccessResult();
+      if (utils.checkDataType('number', value)) {
+        if ((value / multiplier) % 1 !== 0) {
+          return utils.createErrorResult(new ValidationMessage(
+            false,
+            keyword.name,
+            'Should be multiple of {multiplier}',
+            { multiplier },
+          ));
         }
 
-        return undefined;
-      },
+        return utils.createSuccessResult();
+      }
+
+      return undefined;
     };
   },
 };

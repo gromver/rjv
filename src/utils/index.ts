@@ -1,6 +1,6 @@
 import * as pth from 'path';
 import ValidationMessage from '../ValidationMessage';
-import { Path, Route, ValueType, IRuleValidationResult, IValidationMessage } from '../types';
+import { Path, Route, ValueType, IValidateFnResult, IValidationMessage } from '../types';
 
 function reverse(promise: Promise<any>) {
   return new Promise((resolve, reject) => Promise.resolve(promise).then(reject, resolve));
@@ -35,7 +35,7 @@ const utils = {
     const relPath =  path.substr(1);
     return relPath ? relPath.split('/').map(normalizeSlug) : [];
   },
-  mergeResults(results: IRuleValidationResult[]): IRuleValidationResult {
+  mergeResults(results: IValidateFnResult[]): IValidateFnResult {
     let valid: any = undefined;
     let messages: IValidationMessage[] = [];
 
@@ -78,7 +78,7 @@ const utils = {
    * @param message
    */
   createSuccessResult(message?: ValidationMessage)
-    : IRuleValidationResult {
+    : IValidateFnResult {
     return {
       messages: message ? [message] : [],
       valid: true,
@@ -90,14 +90,14 @@ const utils = {
    * @param message
    */
   createErrorResult(message: ValidationMessage)
-    : IRuleValidationResult {
+    : IValidateFnResult {
     return {
       messages: [message],
       valid: false,
     };
   },
 
-  toValidationResult(message: ValidationMessage | boolean | string): IRuleValidationResult {
+  toValidationResult(message: ValidationMessage | boolean | string): IValidateFnResult {
     if (message instanceof ValidationMessage) {
       return {
         valid: message.success,

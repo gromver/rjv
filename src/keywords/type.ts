@@ -32,84 +32,82 @@ const keyword: IKeyword = {
 
     const coerceTypes = !!parentSchema.coerceTypes;
 
-    return {
-      async validate(ref, options) {
-        const curValue = ref.value;
-        const curType = getValueType(curValue);
+    return async (ref, options) => {
+      const curValue = ref.value;
+      const curType = getValueType(curValue);
 
-        if (curValue === undefined) {
-          return Promise.resolve(undefined);
-        }
+      if (curValue === undefined) {
+        return Promise.resolve(undefined);
+      }
 
-        const valid = types.some((type) => {
-          if (!utils.checkDataType(type, curValue)) {
-            // try to coerce type
-            if (coerceTypes || options.coerceTypes) {
-              switch (type) {
-                case 'string':
-                  if (curType === 'number' || curType === 'boolean') {
-                    ref.value = `${curValue}`;
-                  }
-                  break;
+      const valid = types.some((type) => {
+        if (!utils.checkDataType(type, curValue)) {
+          // try to coerce type
+          if (coerceTypes || options.coerceTypes) {
+            switch (type) {
+              case 'string':
+                if (curType === 'number' || curType === 'boolean') {
+                  ref.value = `${curValue}`;
+                }
+                break;
 
-                case 'number':
-                  if (
-                    curType === 'boolean' || curValue === null
+              case 'number':
+                if (
+                  curType === 'boolean' || curValue === null
+                  // tslint:disable-next-line:triple-equals
+                  || (curType === 'string' && curValue && curValue == +curValue)
+                ) {
+                  ref.value = +curValue;
+                }
+                break;
+
+              case 'integer':
+                if (
+                  curType === 'boolean' || curValue === null
+                  || (
                     // tslint:disable-next-line:triple-equals
-                    || (curType === 'string' && curValue && curValue == +curValue)
-                  ) {
-                    ref.value = +curValue;
-                  }
-                  break;
+                    curType === 'string' && curValue && curValue == +curValue && !(curValue % 1)
+                  )
+                ) {
+                  ref.value = +curValue;
+                }
+                break;
 
-                case 'integer':
-                  if (
-                    curType === 'boolean' || curValue === null
-                    || (
-                      // tslint:disable-next-line:triple-equals
-                      curType === 'string' && curValue && curValue == +curValue && !(curValue % 1)
-                    )
-                  ) {
-                    ref.value = +curValue;
-                  }
-                  break;
+              case 'boolean':
+                if (curValue === 'false' || curValue === 0 || curValue === null) {
+                  ref.value = false;
+                } else if (curValue === 'true' || curValue === 1) {
+                  ref.value = true;
+                }
+                break;
 
-                case 'boolean':
-                  if (curValue === 'false' || curValue === 0 || curValue === null) {
-                    ref.value = false;
-                  } else if (curValue === 'true' || curValue === 1) {
-                    ref.value = true;
-                  }
-                  break;
-
-                case 'null':
-                  if (curValue === '' || curValue === 0 || curValue === false) {
-                    ref.value = null;
-                  }
-                  break;
-              }
-
-              // check type again
-              return utils.checkDataType(type, ref.value);
+              case 'null':
+                if (curValue === '' || curValue === 0 || curValue === false) {
+                  ref.value = null;
+                }
+                break;
             }
 
-            return false;
+            // check type again
+            return utils.checkDataType(type, ref.value);
           }
 
-          return true;
-        });
+          return false;
+        }
 
-        const typesAsString = types.join(', ');
+        return true;
+      });
 
-        return valid
-          ? utils.createSuccessResult()
-          : utils.createErrorResult(new ValidationMessage(
-            false,
-            keyword.name,
-            'Should be {typesAsString}',
-            { types, typesAsString },
-          ));
-      },
+      const typesAsString = types.join(', ');
+
+      return valid
+        ? utils.createSuccessResult()
+        : utils.createErrorResult(new ValidationMessage(
+          false,
+          keyword.name,
+          'Should be {typesAsString}',
+          { types, typesAsString },
+        ));
     };
   },
 };

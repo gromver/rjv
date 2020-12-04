@@ -1,27 +1,25 @@
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, IRule, IRef, ValidateRuleFn,
+  ISchema, IKeyword, ValidateFn, IRef, ApplyValidateFn,
 } from '../types';
 import utils from '../utils';
 
-const silentValidateFn: ValidateRuleFn = async (ref, rule) => {
-  return rule.validate
-    ? rule.validate(
-      ref,
-      {
-        coerceTypes: false,
-        removeAdditional: false,
-      },
-      silentValidateFn,
-    )
-    : undefined;
+const silentValidateFn: ApplyValidateFn = async (ref, validateFn) => {
+  return validateFn(
+    ref,
+    {
+      coerceTypes: false,
+      removeAdditional: false,
+    },
+    silentValidateFn,
+  );
 };
 
-async function findValidSchemaRule(rules: IRule[], ref: IRef) {
+async function findValidSchemaRule(rules: ValidateFn[], ref: IRef) {
   for (let i = 0; i < rules.length; i += 1) {
     const rule = rules[i] as any;
 
-    const result = await rule.validate(
+    const result = await rule(
       ref,
       {
         coerceTypes: false,
@@ -43,7 +41,7 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "anyOf" keyword should be an array of schemas.');
     }
 
-    const rules: IRule[] = [];
+    const rules: ValidateFn[] = [];
 
     schema.forEach((item) => {
       if (!utils.isObject(item)) {
@@ -53,21 +51,19 @@ const keyword: IKeyword = {
       rules.push(compile(item, parentSchema));  // all rules have validate() fn
     });
 
-    return {
-      validate(ref, options, validateRuleFn) {
-        return findValidSchemaRule(rules, ref)
-          .then((rule) => {
-            if (rule) {
-              return validateRuleFn(ref, rule, options);
-            }
+    return (ref, options, applyValidateFn) => {
+      return findValidSchemaRule(rules, ref)
+        .then((rule) => {
+          if (rule) {
+            return applyValidateFn(ref, rule, options);
+          }
 
-            return utils.createErrorResult(new ValidationMessage(
-              false,
-              keyword.name,
-              'Should match some schema in anyOf',
-            ));
-          });
-      },
+          return utils.createErrorResult(new ValidationMessage(
+            false,
+            keyword.name,
+            'Should match some schema in anyOf',
+          ));
+        });
     };
   },
 };

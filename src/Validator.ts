@@ -7,15 +7,14 @@ import {
   ISchema,
   IKeyword,
   IKeywordMap,
-  IRuleCompiled,
-  ValidateRuleFn,
+  ApplyValidateFn,
   IValidatorOptions,
-  IRuleValidationOptions,
+  IValidateFnOptions,
   IRef,
-  IRule,
-  IValidationResult,
-  IRuleValidationResult,
-  RuleValidationResult, RuleValidateFn,
+  ValidateFn,
+  IValidatorResult,
+  IValidateFnResult,
+  ValidateFnResult,
 } from './types';
 import defaultKeywords, { addKeyword } from './defaultKeywords';
 import utils from './utils';
@@ -45,9 +44,9 @@ const SCHEMA_ANNOTATIONS = [
 export default class Validator {
   private readonly options: IValidatorOptions;
   private readonly keywords: IKeywordMap;
-  private readonly rule: IRuleCompiled;
+  private readonly validateFn: ValidateFn;
 
-  constructor(schema: {}, options: Partial<IValidatorOptions> = {}) {
+  constructor(schema: ISchema, options: Partial<IValidatorOptions> = {}) {
     this.options = _extend({}, DEFAULT_OPTIONS, options);
     this.keywords = { ...defaultKeywords };
 
@@ -55,14 +54,14 @@ export default class Validator {
       this.addKeyword(keyword);
     });
 
-    this.rule = this.compile(schema);
+    this.validateFn = this.compile(schema);
   }
 
   /**
    * Compiles the schema
    * @param schema
    */
-  private compile = (schema: ISchema): IRuleCompiled => {
+  private compile = (schema: ISchema): ValidateFn => {
     const defaultValue = schema.default;
     const filterFn = schema.filter;
     const errorDesc = schema.error;
@@ -76,7 +75,7 @@ export default class Validator {
       throw new Error('The schema of the "filter" keyword should be a function.');
     }
 
-    function addCustomMessageDescriptions(result: IRuleValidationResult) {
+    function addCustomMessageDescriptions(result: IValidateFnResult) {
       const { messages } = result;
 
       messages.forEach((message) => {
@@ -97,27 +96,24 @@ export default class Validator {
     }
 
     // get rules
-    const rules: IRuleCompiled[] = [{
-      keyword: 'annotations',
-      validate: async (ref: Ref): Promise<undefined> => {
-        const value = ref.value;
+    const rules: ValidateFn[] = [async (ref: Ref): Promise<undefined> => {
+      const value = ref.value;
 
-        if (value === undefined) {
-          if (defaultValue !== undefined) {
-            ref.value = _cloneDeep(defaultValue);
-          }
-        } else {
-          if (filterFn) {
-            const filteredValue = filterFn(value);
+      if (value === undefined) {
+        if (defaultValue !== undefined) {
+          ref.value = _cloneDeep(defaultValue);
+        }
+      } else {
+        if (filterFn) {
+          const filteredValue = filterFn(value);
 
-            if (filteredValue !== value) {
-              ref.value = filteredValue;
-            }
+          if (filteredValue !== value) {
+            ref.value = filteredValue;
           }
         }
+      }
 
-        return undefined;
-      },
+      return undefined;
     }];
 
     Object.entries(schema).forEach(([keywordName, keywordSchema]) => {
@@ -131,34 +127,25 @@ export default class Validator {
         throw new Error(`Keyword "${keywordName}" doesn't exists.`);
       }
 
-      const rule = keyword.compile(this.compile, keywordSchema, schema) as IRuleCompiled;
-      rule.keyword = keyword.name;
+      const rule = keyword.compile(this.compile, keywordSchema, schema);
 
       rules.push(rule);
     });
 
-    const validate: RuleValidateFn =
-      async (ref, options, validateRuleFn) => {
-        const results: IRuleValidationResult[] = [];
+    return async (ref, options, applyValidateFn) => {
+      const results: IValidateFnResult[] = [];
 
-        for (const rule of rules) {
-          if (rule.validate) {
-            const res = await rule.validate(ref, options, validateRuleFn);
+      for (const rule of rules) {
+        const res = await rule(ref, options, applyValidateFn);
 
-            res && results.push(res);
-          }
-        }
+        res && results.push(res);
+      }
 
-        if (results.length) {
-          return addCustomMessageDescriptions(utils.mergeResults(results));
-        }
+      if (results.length) {
+        return addCustomMessageDescriptions(utils.mergeResults(results));
+      }
 
-        return undefined;
-      };
-
-    return {
-      validate,
-      keyword: 'schema',
+      return undefined;
     };
   }
 
@@ -171,13 +158,13 @@ export default class Validator {
   async validateRef(
     ref: IRef,
     options: Partial<IValidatorOptions> = {},
-    validateRuleFn?: ValidateRuleFn,
-  ): Promise<IValidationResult> {
+    validateRuleFn?: ApplyValidateFn,
+  ): Promise<IValidatorResult> {
     const validationOptions = _extend({}, this.options, options);
     const results = {};
-    const normalizedValidateRuleFn = validateRuleFn || getValidateRuleFn(results);
+    const normalizedValidateRuleFn = validateRuleFn || getApplyValidateFn(results);
 
-    const result = await normalizedValidateRuleFn(ref, this.rule, validationOptions);
+    const result = await normalizedValidateRuleFn(ref, this.validateFn, validationOptions);
 
     return {
       results,
@@ -194,14 +181,14 @@ export default class Validator {
   async validateData(
     data: any,
     options: Partial<IValidatorOptions> = {},
-    validateRuleFn?: ValidateRuleFn,
-  ): Promise<IValidationResult> {
+    validateRuleFn?: ApplyValidateFn,
+  ): Promise<IValidatorResult> {
     const validationOptions = _extend({}, this.options, options);
     const ref = new Ref(new SimpleStorage(data), '/');
     const results = {};
-    const normalizedValidateRuleFn = validateRuleFn || getValidateRuleFn(results);
+    const normalizedValidateRuleFn = validateRuleFn || getApplyValidateFn(results);
 
-    const result = await normalizedValidateRuleFn(ref, this.rule, validationOptions);
+    const result = await normalizedValidateRuleFn(ref, this.validateFn, validationOptions);
 
     return {
       results,
@@ -218,17 +205,15 @@ export default class Validator {
   }
 }
 
-function getValidateRuleFn(results: {}): ValidateRuleFn {
-  async function validateRuleFn(ref: IRef, rule: IRule, options: IRuleValidationOptions)
-    : Promise<RuleValidationResult> {
-    return rule.validate
-      ? rule.validate(ref, options, validateRuleFn)
-        .then((result: RuleValidationResult) => {
-          results[ref.path] = result;
-          return result;
-        })
-      : undefined;
+function getApplyValidateFn(results: {}): ApplyValidateFn {
+  async function applyValidateFn(ref: IRef, validateFn: ValidateFn, options: IValidateFnOptions)
+    : Promise<ValidateFnResult> {
+    return validateFn(ref, options, applyValidateFn)
+      .then((result: ValidateFnResult) => {
+        results[ref.path] = result;
+        return result;
+      });
   }
 
-  return validateRuleFn;
+  return applyValidateFn;
 }

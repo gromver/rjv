@@ -1,6 +1,6 @@
 import _isEqual from 'lodash/isEqual';
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword } from '../types';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -12,22 +12,20 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "enum" keyword should be an array.');
     }
 
-    return {
-      async validate(ref) {
-        const value = ref.value;
-        const valid = allowedValues.some((item) => _isEqual(value, item));
+    return async (ref) => {
+      const value = ref.value;
+      const valid = allowedValues.some((item) => _isEqual(value, item));
 
-        return valid
-          ? utils.createSuccessResult()
-          : utils.createErrorResult(
-            new ValidationMessage(
-              false,
-              keyword.name,
-              'Should be equal to one of the allowed values',
-              { allowedValues },
-            ),
-          );
-      },
+      return valid
+        ? utils.createSuccessResult()
+        : utils.createErrorResult(
+          new ValidationMessage(
+            false,
+            keyword.name,
+            'Should be equal to one of the allowed values',
+            { allowedValues },
+          ),
+        );
     };
   },
 };

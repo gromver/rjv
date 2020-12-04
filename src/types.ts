@@ -49,53 +49,45 @@ export interface ISchema {
   removeAdditional?: boolean;
 }
 
-// rules
-export interface IRuleValidationOptions {
+// Validate fn
+export interface IValidateFnOptions {
   coerceTypes?: boolean;
   removeAdditional?: boolean;
 }
 
-export interface ValidateRuleFn {
-  (ref: IRef, rule: IRule, options: IRuleValidationOptions)
-    : Promise<RuleValidationResult>;
+export interface ValidateFn {
+  (ref: IRef, options: IValidateFnOptions, applyValidateFn: ApplyValidateFn)
+    : Promise<ValidateFnResult>;
 }
 
-export interface RuleValidateFn {
-  (ref: IRef, options: IRuleValidationOptions, validateRuleFn: ValidateRuleFn)
-    : Promise<RuleValidationResult>;
+export interface ApplyValidateFn {
+  (ref: IRef, validateFn: ValidateFn, options: IValidateFnOptions)
+    : Promise<ValidateFnResult>;
 }
 
-export interface IRule {
-  validate?: RuleValidateFn;
-}
+export type InlineValidationResult = ValidationMessage | string | boolean | undefined;
 
-export interface IRuleCompiled extends IRule {
-  keyword: string;
-}
+export type ValidateFnResult = IValidateFnResult | undefined;
 
-export type IInlineValidationResult = ValidationMessage | string | boolean | undefined;
-
-export type RuleValidationResult = IRuleValidationResult | undefined;
-
-export interface IRuleValidationResult {
+export interface IValidateFnResult {
   valid: boolean;
   messages: IValidationMessage[];
 }
 
-export interface IValidationResult {
+export interface IValidatorResult {
   valid: boolean;
   results: {
-    [path: string]: IRuleValidationResult;
+    [path: string]: IValidateFnResult;
   };
 }
 
 // keywords
-export type CompileFn = (schema: any, parentSchema: ISchema) => IRule;
+export type CompileFn = (schema: any, parentSchema: ISchema) => ValidateFn;
 
 export interface IKeyword {
   name: string;
   reserveNames?: string[];
-  compile(compileFn: CompileFn, schema: any, parentSchema: ISchema): IRule;
+  compile(compileFn: CompileFn, schema: any, parentSchema: ISchema): ValidateFn;
 }
 
 export interface IKeywordMap {

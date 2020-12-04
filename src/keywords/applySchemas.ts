@@ -1,4 +1,4 @@
-import { ISchema, IKeyword, IRule, IRuleValidationResult } from '../types';
+import { ISchema, IKeyword, ValidateFn, IValidateFnResult } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -8,32 +8,30 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "applySchemas" keyword should be an array of schemas.');
     }
 
-    const rules: IRule[] = [];
+    const rules: ValidateFn[] = [];
 
     schema.forEach((item) => {
       if (!utils.isObject(item)) {
         throw new Error('Items of "applySchemas" keyword should be a schema object.');
       }
 
-      rules.push(compile(item, parentSchema));  // all rules have validate() fn
+      rules.push(compile(item, parentSchema));
     });
 
-    return {
-      async validate(ref, options, validateRuleFn) {
-        const results: IRuleValidationResult[] = [];
+    return async (ref, options, applyValidateFn) => {
+      const results: IValidateFnResult[] = [];
 
-        for (const rule of rules) {
-          const res = await validateRuleFn(ref, rule, options);
+      for (const rule of rules) {
+        const res = await applyValidateFn(ref, rule, options);
 
-          res && results.push(res);
-        }
+        res && results.push(res);
+      }
 
-        if (results.length) {
-          return utils.mergeResults(results);
-        }
+      if (results.length) {
+        return utils.mergeResults(results);
+      }
 
-        return undefined;
-      },
+      return undefined;
     };
   },
 };

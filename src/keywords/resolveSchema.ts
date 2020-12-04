@@ -15,17 +15,11 @@ const keyword: IKeyword = {
       );
     }
 
-    return {
-      async validate(ref, options, validateRuleFn) {
-        const resolvedSchema = await resolveSchema(schema, ref);
-        const rule = compile(resolvedSchema, parentSchema);
+    return async (ref, options, applyValidateFn) => {
+      const resolvedSchema = await resolveSchema(schema, ref);
+      const validateFn = compile(resolvedSchema, parentSchema);
 
-        if (rule.validate) {
-          return rule.validate(ref, options, validateRuleFn);
-        }
-
-        return undefined;
-      },
+      return validateFn(ref, options, applyValidateFn);
     };
   },
 };

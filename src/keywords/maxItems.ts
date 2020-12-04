@@ -1,5 +1,5 @@
 import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword } from '../types';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
@@ -15,27 +15,25 @@ const keyword: IKeyword = {
       throw new Error('The "maxItems" keyword can\'t be less then 0.');
     }
 
-    return {
-      async validate(ref) {
-        const value = ref.value;
+    return async (ref) => {
+      const value = ref.value;
 
-        if (utils.checkDataType('array', value)) {
-          if (value.length > limit) {
-            return utils.createErrorResult(
-              new ValidationMessage(
-                false,
-                keyword.name,
-                'Should not have more than {limit} items',
-                { limit },
-              ),
-            );
-          }
-
-          return utils.createSuccessResult();
+      if (utils.checkDataType('array', value)) {
+        if (value.length > limit) {
+          return utils.createErrorResult(
+            new ValidationMessage(
+              false,
+              keyword.name,
+              'Should not have more than {limit} items',
+              { limit },
+            ),
+          );
         }
 
-        return undefined;
-      },
+        return utils.createSuccessResult();
+      }
+
+      return undefined;
     };
   },
 };

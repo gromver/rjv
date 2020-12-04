@@ -1,6 +1,6 @@
 import ValidationMessage from '../ValidationMessage';
 import {
-  ISchema, IKeyword, IRule, RuleValidationResult, RuleValidateFn,
+  ISchema, IKeyword, ValidateFn, ValidateFnResult,
 } from '../types';
 import utils from '../utils';
 
@@ -11,21 +11,21 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "allOf" keyword should be an array of schemas.');
     }
 
-    const rules: IRule[] = [];
+    const rules: ValidateFn[] = [];
 
     schema.forEach((item) => {
       if (!utils.isObject(item)) {
         throw new Error('Items of "allOf" keyword should be a schema object.');
       }
 
-      rules.push(compile(item, parentSchema));  // all rules have validate() fn
+      rules.push(compile(item, parentSchema));
     });
 
-    const validate: RuleValidateFn = async (ref, options, validateRuleFn) => {
-      const results: (RuleValidationResult)[] = [];
+    return async (ref, options, applyValidateFn) => {
+      const results: (ValidateFnResult)[] = [];
 
       for (const rule of rules) {
-        const res = await validateRuleFn(ref, rule, options);
+        const res = await applyValidateFn(ref, rule, options);
         results.push(res);
       }
 
@@ -40,10 +40,6 @@ const keyword: IKeyword = {
         keyword.name,
         'Should match all schema in allOf',
       ));
-    };
-
-    return {
-      validate,
     };
   },
 };
