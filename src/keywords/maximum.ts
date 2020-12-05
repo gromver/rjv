@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -18,7 +18,7 @@ const keyword: IKeyword = {
 
       if (utils.checkDataType('number', value)) {
         if (exclusive ? value >= limit : value > limit) {
-          return new ValidationResult(
+          return new ValidateFnResult(
             false,
             exclusive
               ? 'Should be less than {limit}'
@@ -28,7 +28,7 @@ const keyword: IKeyword = {
           );
         }
 
-        return new ValidationResult(true);
+        return new ValidateFnResult(true);
       }
 
       return undefined;

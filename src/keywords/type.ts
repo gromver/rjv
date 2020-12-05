@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import utils from '../utils';
 import { IKeyword, ValueType } from '../types';
 
@@ -101,8 +101,8 @@ const keyword: IKeyword = {
       const typesAsString = types.join(', ');
 
       return valid
-        ? new ValidationResult(true)
-        : new ValidationResult(
+        ? new ValidateFnResult(true)
+        : new ValidateFnResult(
           false,
           'Should be {typesAsString}',
           keyword.name,

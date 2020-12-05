@@ -2,16 +2,16 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import ValidationResult from './ValidationResult';
+import ValidateFnResult from './ValidateFnResult';
 
 describe('ValidationResult tests', () => {
   it('should create ValidationResult instances', () => {
-    expect(new ValidationResult(true))
+    expect(new ValidateFnResult(true))
       .toMatchObject({
         valid: true,
         messages: [],
       });
-    expect(new ValidationResult(true, 'description'))
+    expect(new ValidateFnResult(true, 'description'))
       .toMatchObject({
         valid: true,
         messages: [{
@@ -21,7 +21,7 @@ describe('ValidationResult tests', () => {
           bindings: {},
         }],
       });
-    expect(new ValidationResult(true, 'description {value}', 'test', { value: 1 }))
+    expect(new ValidateFnResult(true, 'description {value}', 'test', { value: 1 }))
       .toMatchObject({
         valid: true,
         messages: [{
@@ -31,12 +31,12 @@ describe('ValidationResult tests', () => {
           bindings: { value: 1 },
         }],
       });
-    expect(new ValidationResult(false))
+    expect(new ValidateFnResult(false))
       .toMatchObject({
         valid: false,
         messages: [],
       });
-    expect(new ValidationResult(false, 'description {value}', 'test', { value: 1 }))
+    expect(new ValidateFnResult(false, 'description {value}', 'test', { value: 1 }))
       .toMatchObject({
         valid: false,
         messages: [{

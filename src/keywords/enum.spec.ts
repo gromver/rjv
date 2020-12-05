@@ -24,7 +24,7 @@ describe('enum keyword', () => {
     ref.setValue(2);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'enum',
       description: 'Should be equal to one of the allowed values',
       bindings: { allowedValues: ENUM },

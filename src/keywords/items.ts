@@ -1,6 +1,6 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import {
-  ISchema, IKeyword, ValidateFn, ApplyValidateFn, ValidateFnResult,
+  ISchema, IKeyword, ValidateFn, ApplyValidateFn, KeywordFnValidationResult,
 } from '../types';
 import utils from '../utils';
 
@@ -49,7 +49,7 @@ const keyword: IKeyword = {
     const removeAdditional = !!parentSchema.removeAdditional;
 
     return async (ref, options, applyValidateFn) => {
-      const results: (ValidateFnResult)[] = [];
+      const results: (KeywordFnValidationResult)[] = [];
       const invalidIndexes: number[] = [];
       const value = ref.value as [];
       let hasValidProps = false;
@@ -124,7 +124,7 @@ const keyword: IKeyword = {
         });
 
         if (hasInvalidProps) {
-          return new ValidationResult(
+          return new ValidateFnResult(
             false,
             'Should have valid items',
             keyword.name,
@@ -135,7 +135,7 @@ const keyword: IKeyword = {
         if (hasItemsOverflow) {
           const limit = (rule as ValidateFn[]).length;
 
-          return new ValidationResult(
+          return new ValidateFnResult(
             false,
             'Should not have more than {limit} items',
             `${keyword.name}_overflow`,
@@ -144,7 +144,7 @@ const keyword: IKeyword = {
         }
 
         if (hasValidProps) {
-          return new ValidationResult(true);
+          return new ValidateFnResult(true);
         }
       }
 

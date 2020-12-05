@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -28,7 +28,7 @@ const keyword: IKeyword = {
         const value = ref.value;
 
         if (value === undefined) {
-          return new ValidationResult(
+          return new ValidateFnResult(
             false,
             'Should not be blank',
             keyword.name,
@@ -45,7 +45,7 @@ const keyword: IKeyword = {
           }
 
           if (!stringValue.length) {
-            return new ValidationResult(
+            return new ValidateFnResult(
               false,
               'Should not be blank',
               keyword.name,
@@ -54,7 +54,7 @@ const keyword: IKeyword = {
           }
         }
 
-        return new ValidationResult(true);
+        return new ValidateFnResult(true);
       }
 
       return undefined;

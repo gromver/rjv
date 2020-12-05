@@ -111,6 +111,6 @@ describe('resolveSchema keyword', () => {
     );
     const res = await validator.validateData('a');
 
-    expect(res.results['/'].messages[0].description).toBe(CUSTOM_MESSAGE);
+    expect(res.results['/']!.messages[0].description).toBe(CUSTOM_MESSAGE);
   });
 });

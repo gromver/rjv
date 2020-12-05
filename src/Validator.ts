@@ -12,9 +12,9 @@ import {
   IValidateFnOptions,
   IRef,
   ValidateFn,
-  IValidatorResult,
+  IValidationResult,
   IValidateFnResult,
-  ValidateFnResult,
+  KeywordFnValidationResult,
 } from './types';
 import defaultKeywords, { addKeyword } from './defaultKeywords';
 import utils from './utils';
@@ -22,7 +22,7 @@ import utils from './utils';
 const DEFAULT_OPTIONS: IValidatorOptions = {
   coerceTypes: false,
   removeAdditional: false,
-  validateFirst: false,
+  validateFirst: true,
   errors: {},
   warnings: {},
   keywords: [],
@@ -46,6 +46,7 @@ export default class Validator {
   private readonly options: IValidatorOptions;
   private readonly keywords: IKeywordMap;
   private readonly validateFn: ValidateFn;
+  private readonly validateFnOptions: IValidateFnOptions;
 
   constructor(schema: ISchema, options: Partial<IValidatorOptions> = {}) {
     this.options = _extend({}, DEFAULT_OPTIONS, options);
@@ -55,11 +56,17 @@ export default class Validator {
       this.addKeyword(keyword);
     });
 
+    this.validateFnOptions = {
+      removeAdditional: options.removeAdditional,
+      coerceTypes: options.coerceTypes,
+      validateFirst: options.validateFirst,
+    };
+
     this.validateFn = this.compile(schema);
   }
 
   /**
-   * Compiles the schema
+   * Compiles the schema according to the validator options
    * @param schema
    */
   private compile = (schema: ISchema): ValidateFn => {
@@ -140,6 +147,7 @@ export default class Validator {
         const res = await rule(ref, options, applyValidateFn);
 
         if (res) {
+          // todo check correctness of the result
           results.push(res);
 
           if (options.validateFirst && !res.valid) break;
@@ -161,9 +169,9 @@ export default class Validator {
    */
   async validateRef(
     ref: IRef,
-    options: Partial<IValidatorOptions> = {},
-  ): Promise<IValidatorResult> {
-    const validationOptions = _extend({}, this.options, options);
+    options: Partial<IValidateFnOptions> = {},
+  ): Promise<IValidationResult> {
+    const validationOptions = _extend({}, this.validateFnOptions, options);
     const results = {};
     const applyValidateFn = createApplyValidateFn(results);
 
@@ -182,9 +190,9 @@ export default class Validator {
    */
   async validateData(
     data: any,
-    options: Partial<IValidatorOptions> = {},
-  ): Promise<IValidatorResult> {
-    const validationOptions = _extend({}, this.options, options);
+    options: Partial<IValidateFnOptions> = {},
+  ): Promise<IValidationResult> {
+    const validationOptions = _extend({}, this.validateFnOptions, options);
     const ref = new Ref(new SimpleStorage(data), '/');
     const results = {};
     const applyValidateFn = createApplyValidateFn(results);
@@ -208,9 +216,9 @@ export default class Validator {
 
 function createApplyValidateFn(results: {}): ApplyValidateFn {
   async function applyValidateFn(ref: IRef, validateFn: ValidateFn, options: IValidateFnOptions)
-    : Promise<ValidateFnResult> {
+    : Promise<KeywordFnValidationResult> {
     return validateFn(ref, options, applyValidateFn)
-      .then((result: ValidateFnResult) => {
+      .then((result: KeywordFnValidationResult) => {
         results[ref.path] = result;
         return result;
       });

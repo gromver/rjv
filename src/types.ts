@@ -57,27 +57,27 @@ export interface IValidateFnOptions {
 
 export interface ValidateFn {
   (ref: IRef, options: IValidateFnOptions, applyValidateFn: ApplyValidateFn)
-    : Promise<ValidateFnResult>;
+    : Promise<KeywordFnValidationResult>;
 }
 
 export interface ApplyValidateFn {
   (ref: IRef, validateFn: ValidateFn, options: IValidateFnOptions)
-    : Promise<ValidateFnResult>;
+    : Promise<KeywordFnValidationResult>;
 }
 
-export type InlineValidationResult = IValidateFnResult | string | boolean | undefined;
+export type InlineFnValidationResult = IValidateFnResult | string | boolean | undefined;
 
-export type ValidateFnResult = IValidateFnResult | undefined;
+export type KeywordFnValidationResult = IValidateFnResult | undefined;
 
 export interface IValidateFnResult {
   valid: boolean;
   messages: IValidationMessage[];
 }
 
-export interface IValidatorResult {
+export interface IValidationResult {
   valid: boolean;
   results: {
-    [path: string]: IValidateFnResult;
+    [path: string]: KeywordFnValidationResult;
   };
 }
 

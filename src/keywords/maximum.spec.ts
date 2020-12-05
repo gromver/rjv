@@ -22,7 +22,7 @@ describe('maximum keyword', () => {
     ref.setValue(6);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'maximum',
       description: 'Should be less than or equal {limit}',
       bindings: { limit: 5, exclusive: false },
@@ -49,7 +49,7 @@ describe('maximum keyword', () => {
     ref.setValue(5);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'maximum_exclusive',
       description: 'Should be less than {limit}',
       bindings: { limit: 5, exclusive: true },

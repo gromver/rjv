@@ -30,7 +30,7 @@ describe('pattern keyword', () => {
     ref.setValue('');
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'pattern',
       description: 'Should match pattern {pattern}',
       bindings: { pattern: '[abc]+' },

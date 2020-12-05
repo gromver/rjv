@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -15,7 +15,7 @@ const keyword: IKeyword = {
       const value = ref.value;
       if (utils.checkDataType('string', value)) {
         if (!regexp.test(value)) {
-          return new ValidationResult(
+          return new ValidateFnResult(
             false,
             'Should match pattern {pattern}',
             keyword.name,
@@ -23,7 +23,7 @@ const keyword: IKeyword = {
           );
         }
 
-        return new ValidationResult(true);
+        return new ValidateFnResult(true);
       }
 
       return undefined;

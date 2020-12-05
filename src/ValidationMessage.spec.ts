@@ -28,13 +28,6 @@ describe('ValidationMessage tests', () => {
     expect(mes.toString()).toBe('description 1');
     expect(`${mes}`).toBe('description 1');
   });
-
-  it('should return normalized description text #2', () => {
-    // @ts-ignore
-    const mes = new ValidationMessage(false, 'test');
-    expect(mes.toString()).toBe('undefined');
-    expect(`${mes}`).toBe('undefined');
-  });
 });
 
 describe('injectVarsToString tests', () => {

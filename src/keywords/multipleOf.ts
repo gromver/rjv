@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import { IKeyword } from '../types';
 import utils from '../utils';
 
@@ -20,7 +20,7 @@ const keyword: IKeyword = {
 
       if (utils.checkDataType('number', value)) {
         if ((value / multiplier) % 1 !== 0) {
-          return new ValidationResult(
+          return new ValidateFnResult(
             false,
             'Should be multiple of {multiplier}',
             keyword.name,
@@ -28,7 +28,7 @@ const keyword: IKeyword = {
           );
         }
 
-        return new ValidationResult(true);
+        return new ValidateFnResult(true);
       }
 
       return undefined;

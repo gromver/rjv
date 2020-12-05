@@ -23,7 +23,7 @@ describe('required keyword', () => {
     const fooRef = ref.ref('foo');
     let res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'required',
       description: 'Should have all required properties',
       bindings: { invalidProperties: ['foo'] },

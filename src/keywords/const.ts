@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import { IKeyword, IRef } from '../types';
 
 const _ = {
@@ -21,8 +21,8 @@ const keyword: IKeyword = {
       const allowedValue = resolve(ref);
 
       return _.isEqual(value, allowedValue)
-        ? new ValidationResult(true)
-        : new ValidationResult(
+        ? new ValidateFnResult(true)
+        : new ValidateFnResult(
           false,
           'Should be equal to constant',
           keyword.name,

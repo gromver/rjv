@@ -22,7 +22,7 @@ describe('maxProperties keyword', () => {
     ref.setValue({ a: 1, b: 2, c: 3 });
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'maxProperties',
       description: 'Should not have more than {limit} properties',
       bindings: { limit: 2 },

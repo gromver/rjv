@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import {
   ISchema, IKeyword, ValidateFn, IRef, ApplyValidateFn,
 } from '../types';
@@ -58,7 +58,7 @@ const keyword: IKeyword = {
             return applyValidateFn(ref, rule, options);
           }
 
-          return new ValidationResult(
+          return new ValidateFnResult(
             false,
             'Should match some schema in anyOf',
             keyword.name,

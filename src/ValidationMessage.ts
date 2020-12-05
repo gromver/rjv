@@ -15,15 +15,15 @@ export default class ValidationMessage implements IValidationMessage {
   constructor(
     public readonly success: boolean,
     public readonly keyword: string,
-    public description: any,
+    public description: string,
     public readonly bindings = {},
   ) {}
 
   toString(): string {
-    if (typeof this.description === 'string') {
-      return injectVarsToString(this.description, this.bindings);
-    }
-
-    return `${this.description}`;
+    return injectVarsToString(this.description, this.bindings);
+    // if (typeof this.description === 'string') {
+    // }
+    //
+    // return `${this.description}`;
   }
 }

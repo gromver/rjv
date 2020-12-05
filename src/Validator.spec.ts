@@ -14,7 +14,7 @@ describe('Validator::constructor tests', () => {
         options: {
           coerceTypes: false,
           removeAdditional: false,
-          validateFirst: false,
+          validateFirst: true,
           errors: {},
           warnings: {},
           keywords: [],
@@ -23,7 +23,7 @@ describe('Validator::constructor tests', () => {
     const opts = {
       coerceTypes: true,
       removeAdditional: true,
-      validateFirst: true,
+      validateFirst: false,
       errors: { foo: 'foo' },
       warnings: { bar: 'bar' },
     };
@@ -35,6 +35,21 @@ describe('Validator::constructor tests', () => {
 });
 
 describe('Validator::validateData tests', () => {
+  it('should get invalid result when schema doesn\'t have applicable rules', async () => {
+    const validator = new Validator({
+      minimum: 1,
+    });
+
+    await expect(validator.validateData('abc'))
+      .resolves
+      .toMatchObject({
+        valid: false,
+        results: {
+          '/': undefined,
+        },
+      });
+  });
+
   it('should get proper validation results with validateFirst=false', async () => {
     const validator = new Validator({
       presence: true,
@@ -96,6 +111,7 @@ describe('Validator::validateData tests', () => {
           },
         },
       });
+    // @ts-ignore
     expect(res.results['/'].messages).toHaveLength(1);
 
     await expect(validator.validateData(0, { validateFirst: true }))

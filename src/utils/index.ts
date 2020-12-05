@@ -1,5 +1,5 @@
 import * as pth from 'path';
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import { Path, Route, ValueType, IValidateFnResult, IValidationMessage } from '../types';
 
 function reverse(promise: Promise<any>) {
@@ -72,20 +72,20 @@ const utils = {
         return typeof value === dataType;
     }
   },
-  toValidationResult(result: ValidationResult | boolean | string): IValidateFnResult {
-    if (result instanceof ValidationResult) {
+  toValidationResult(result: ValidateFnResult | boolean | string): IValidateFnResult {
+    if (result instanceof ValidateFnResult) {
       return result;
     }
 
     if (typeof result === 'string') {
-      return new ValidationResult(false, result);
+      return new ValidateFnResult(false, result);
     }
 
     if (result) {
-      return new ValidationResult(true);
+      return new ValidateFnResult(true);
     }
 
-    return new ValidationResult(false, 'Incorrect value');
+    return new ValidateFnResult(false, 'Incorrect value');
   },
 };
 

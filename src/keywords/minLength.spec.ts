@@ -22,7 +22,7 @@ describe('minLength keyword', () => {
     ref.setValue('ab');
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'minLength',
       description: 'Should not be shorter than {limit} characters',
       bindings: { limit: 3 },

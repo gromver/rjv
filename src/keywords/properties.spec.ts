@@ -33,7 +33,7 @@ describe('properties keyword', () => {
     ref.ref('foo').setValue('invalid value');
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'properties',
       description: 'Should have valid properties',
       bindings: { invalidProperties: ['foo'] },
@@ -109,7 +109,7 @@ describe('properties keyword', () => {
 
     const res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0].bindings).toMatchObject({
+    expect(res.results['/']!.messages[0].bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
@@ -143,7 +143,7 @@ describe('properties keyword', () => {
     ref.ref('bar').setValue(1);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0].bindings).toMatchObject({
+    expect(res.results['/']!.messages[0].bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
@@ -179,7 +179,7 @@ describe('properties keyword', () => {
     ref.ref('bar').setValue(1);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0].bindings).toMatchObject({
+    expect(res.results['/']!.messages[0].bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });
@@ -217,7 +217,7 @@ describe('properties keyword', () => {
     ref.ref('bar').setValue(1);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0].bindings).toMatchObject({
+    expect(res.results['/']!.messages[0].bindings).toMatchObject({
       invalidProperties: ['bar'],
     });
   });

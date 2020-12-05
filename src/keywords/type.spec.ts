@@ -210,7 +210,7 @@ describe('type keyword', () => {
     ref.setValue({});
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'type',
       description: 'Should be {typesAsString}',
       bindings: {

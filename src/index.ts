@@ -6,7 +6,7 @@ export { default as Validator } from './Validator';
 
 export { default as ValidationMessage } from './ValidationMessage';
 
-export { default as ValidationResult } from './ValidationResult';
+export { default as ValidateFnResult } from './ValidateFnResult';
 
 export { default as utils } from './utils';
 

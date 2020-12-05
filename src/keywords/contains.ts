@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import { ISchema, IKeyword, ValidateFn } from '../types';
 import utils from '../utils';
 
@@ -27,14 +27,14 @@ const keyword: IKeyword = {
         }
 
         if (!hasValidItem) {
-          return new ValidationResult(
+          return new ValidateFnResult(
             false,
             'Should contain a valid item',
             keyword.name,
           );
         }
 
-        return new ValidationResult(true);
+        return new ValidateFnResult(true);
       }
 
       return undefined;

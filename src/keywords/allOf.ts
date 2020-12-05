@@ -1,6 +1,6 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import {
-  ISchema, IKeyword, ValidateFn, ValidateFnResult,
+  ISchema, IKeyword, ValidateFn, KeywordFnValidationResult,
 } from '../types';
 import utils from '../utils';
 
@@ -22,7 +22,7 @@ const keyword: IKeyword = {
     });
 
     return async (ref, options, applyValidateFn) => {
-      const results: (ValidateFnResult)[] = [];
+      const results: (KeywordFnValidationResult)[] = [];
 
       for (const rule of rules) {
         const res = await applyValidateFn(ref, rule, options);
@@ -32,10 +32,10 @@ const keyword: IKeyword = {
       const validRules = results.filter((result) => result && result.valid).length;
 
       if (validRules === results.length) {
-        return new ValidationResult(true);
+        return new ValidateFnResult(true);
       }
 
-      return new ValidationResult(
+      return new ValidateFnResult(
         false,
         'Should match all schema in allOf',
         keyword.name,

@@ -3,7 +3,7 @@ import {
   IRef,
   ApplyValidateFn,
   IValidateFnOptions,
-  InlineValidationResult,
+  InlineFnValidationResult,
 } from '../types';
 import utils from '../utils';
 
@@ -12,7 +12,7 @@ const keyword: IKeyword = {
   compile(
     compile,
     schema: (ref: IRef, applyValidateFn: ApplyValidateFn, options: IValidateFnOptions)
-      => InlineValidationResult | Promise<InlineValidationResult>,
+      => InlineFnValidationResult | Promise<InlineFnValidationResult>,
   ) {
     if (typeof schema !== 'function') {
       throw new Error(
@@ -33,6 +33,6 @@ export default keyword;
 declare module '../types' {
   export interface ISchema {
     validate?: (ref: IRef, applyValidateFn: ApplyValidateFn, options: IValidateFnOptions)
-      => InlineValidationResult | Promise<InlineValidationResult>;
+      => InlineFnValidationResult | Promise<InlineFnValidationResult>;
   }
 }

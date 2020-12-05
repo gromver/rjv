@@ -231,7 +231,7 @@ describe('items keyword', () => {
     ref.setValue([1, 2, 3]);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       description: 'Should not have more than {limit} items',
       bindings: { limit: 2 },
     });
@@ -378,7 +378,7 @@ describe('items keyword', () => {
     ref.setValue([1, 2, 3]);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'items_overflow',
       description: 'Should not have more than {limit} items',
       bindings: { limit: 2 },

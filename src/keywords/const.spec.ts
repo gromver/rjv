@@ -22,7 +22,7 @@ describe('const keyword', () => {
     ref.setValue('foo');
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'const',
       description: 'Should be equal to constant',
       bindings: { allowedValue: 'test' },
@@ -52,7 +52,7 @@ describe('const keyword', () => {
     ref.setValue('foo');
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'const',
       description: 'Should be equal to constant',
       bindings: { allowedValue: 'test' },

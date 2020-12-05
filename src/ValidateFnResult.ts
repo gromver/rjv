@@ -3,12 +3,12 @@ import ValidationMessage from './ValidationMessage';
 
 const DEFAULT_KEYWORD = 'inline';
 
-export default class ValidationResult implements IValidateFnResult {
+export default class ValidateFnResult implements IValidateFnResult {
   messages: ValidationMessage[] = [];
 
   constructor(
     public readonly valid: boolean,
-    description?: any,
+    description?: string,
     keyword?: string,
     bindings?: {},
   ) {

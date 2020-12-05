@@ -22,7 +22,7 @@ describe('format keyword', () => {
     ref.setValue('foo');
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'format',
       description: 'Should match format "{format}"',
       bindings: { format: 'email' },

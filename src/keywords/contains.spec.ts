@@ -24,7 +24,7 @@ describe('contains keyword', () => {
     ref.setValue([null, 'test']);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'contains',
       description: 'Should contain a valid item',
     });
@@ -55,7 +55,7 @@ describe('contains keyword', () => {
     ref.setValue([null, 'test']);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'contains',
       description: 'Should contain a valid item',
     });

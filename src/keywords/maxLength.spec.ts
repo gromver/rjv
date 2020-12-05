@@ -22,7 +22,7 @@ describe('maxLength keyword', () => {
     ref.setValue('abcd');
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'maxLength',
       description: 'Should not be longer than {limit} characters',
       bindings: { limit: 3 },

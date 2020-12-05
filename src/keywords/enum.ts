@@ -1,5 +1,5 @@
 import _isEqual from 'lodash/isEqual';
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import { IKeyword } from '../types';
 
 const keyword: IKeyword = {
@@ -16,8 +16,8 @@ const keyword: IKeyword = {
       const valid = allowedValues.some((item) => _isEqual(value, item));
 
       return valid
-        ? new ValidationResult(true)
-        : new ValidationResult(
+        ? new ValidateFnResult(true)
+        : new ValidateFnResult(
           false,
           'Should be equal to one of the allowed values',
           keyword.name,

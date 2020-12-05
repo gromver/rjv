@@ -22,7 +22,7 @@ describe('minimum keyword', () => {
     ref.setValue(4);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'minimum',
       description: 'Should be greater than or equal {limit}',
       bindings: { limit: 5, exclusive: false },
@@ -49,7 +49,7 @@ describe('minimum keyword', () => {
     ref.setValue(5);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'minimum_exclusive',
       description: 'Should be greater than {limit}',
       bindings: { limit: 5, exclusive: true },

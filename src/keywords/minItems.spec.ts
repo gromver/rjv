@@ -22,7 +22,7 @@ describe('minItems keyword', () => {
     ref.setValue([1]);
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'minItems',
       description: 'Should not have fewer than {limit} items',
       bindings: { limit: 2 },

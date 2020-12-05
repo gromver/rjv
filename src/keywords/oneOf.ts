@@ -1,6 +1,6 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import {
-  ISchema, IKeyword, ValidateFn, ApplyValidateFn, ValidateFnResult,
+  ISchema, IKeyword, ValidateFn, ApplyValidateFn, KeywordFnValidationResult,
 } from '../types';
 import utils from '../utils';
 
@@ -33,7 +33,7 @@ const keyword: IKeyword = {
     });
 
     return (ref, options, applyValidateFn) => {
-      const jobs: Promise<ValidateFnResult>[] = rules
+      const jobs: Promise<KeywordFnValidationResult>[] = rules
         .map(
           (rule) => rule(
             ref,
@@ -58,7 +58,7 @@ const keyword: IKeyword = {
           return applyValidateFn(ref, validRules[0], options);
         }
 
-        return new ValidationResult(
+        return new ValidateFnResult(
           false,
           'Should match exactly one schema in oneOf',
           keyword.name,

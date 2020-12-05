@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 
 declare const describe;
 declare const it;
@@ -102,7 +102,7 @@ describe('utils.toValidationResult tests', () => {
           bindings: {},
         }],
       });
-    const res = new ValidationResult(true, 'Warning', 'custom');
+    const res = new ValidateFnResult(true, 'Warning', 'custom');
     expect(utils.toValidationResult(res))
       .toMatchObject({
         valid: true,

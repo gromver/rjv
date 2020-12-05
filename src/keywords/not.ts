@@ -1,4 +1,4 @@
-import ValidationResult from '../ValidationResult';
+import ValidateFnResult from '../ValidateFnResult';
 import {
   ISchema, IKeyword, ValidateFn, ApplyValidateFn,
 } from '../types';
@@ -35,10 +35,10 @@ const keyword: IKeyword = {
       )
         .then((result) => {
           if (result && !result.valid) {
-            return new ValidationResult(true);
+            return new ValidateFnResult(true);
           }
 
-          return new ValidationResult(
+          return new ValidateFnResult(
             false,
             'Should not be valid',
             keyword.name,

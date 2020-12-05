@@ -22,7 +22,7 @@ describe('minProperties keyword', () => {
     ref.setValue({ a: 1 });
     res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/'].messages[0]).toMatchObject({
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'minProperties',
       description: 'Should not have fewer than {limit} properties',
       bindings: { limit: 2 },

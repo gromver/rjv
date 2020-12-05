@@ -32,47 +32,47 @@ describe('presence keyword', () => {
 
     let res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/foo'].valid).toBe(false);
-    expect(res.results['/foo'].messages[0]).toMatchObject({
+    expect(res.results['/foo']!.valid).toBe(false);
+    expect(res.results['/foo']!.messages[0]).toMatchObject({
       keyword: 'presence',
       description: 'Should not be blank',
       bindings: { path: '/foo' },
     });
-    expect(res.results['/bar'].valid).toBe(true);
+    expect(res.results['/bar']!.valid).toBe(true);
     expect(res.results['/car']).toBeUndefined();
 
     fooRef.setValue('');
     res = await validator.validateRef(ref);
-    expect(res.results['/foo'].valid).toBe(false);
+    expect(res.results['/foo']!.valid).toBe(false);
 
     fooRef.setValue('abc');
     res = await validator.validateRef(ref);
-    expect(res.results['/foo'].valid).toBe(true);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     fooRef.setValue(null);
     res = await validator.validateRef(ref);
-    expect(res.results['/foo'].valid).toBe(true);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     fooRef.setValue(0);
     res = await validator.validateRef(ref);
-    expect(res.results['/foo'].valid).toBe(true);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     fooRef.setValue([]);
     res = await validator.validateRef(ref);
-    expect(res.results['/foo'].valid).toBe(true);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     fooRef.setValue({});
     res = await validator.validateRef(ref);
-    expect(res.results['/foo'].valid).toBe(true);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     barRef.setValue('   ');
     res = await validator.validateRef(ref);
-    expect(res.results['/bar'].valid).toBe(false);
+    expect(res.results['/bar']!.valid).toBe(false);
     expect(barRef.value).toBe('');
 
     barRef.setValue(' foo ');
     res = await validator.validateRef(ref);
-    expect(res.results['/bar'].valid).toBe(true);
+    expect(res.results['/bar']!.valid).toBe(true);
     expect(barRef.value).toBe('foo');
   });
 
@@ -94,7 +94,7 @@ describe('presence keyword', () => {
 
     const res = await validator.validateRef(ref);
     expect(res.valid).toBe(false);
-    expect(res.results['/foo'].valid).toBe(false);
+    expect(res.results['/foo']!.valid).toBe(false);
   });
 
   it('Test default and presence keywords case #2', async () => {
