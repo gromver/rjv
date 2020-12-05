@@ -9,7 +9,7 @@ export interface IStorage {
   set(path: Route, value: any): void;
 }
 
-// Ref
+// ref
 export interface IRef {
   readonly path: string;
   readonly route: Route;
@@ -17,23 +17,6 @@ export interface IRef {
   getValue: () => any;
   setValue: (value: any) => void;
   ref: (relPath: Path) => IRef;
-}
-
-// Validator
-export interface IValidationMessage {
-  success: boolean;
-  keyword: string;
-  description: any;
-  bindings: {};
-}
-
-export interface IValidatorOptions {
-  coerceTypes: boolean;
-  removeAdditional: boolean;
-  validateFirst: boolean;
-  errors: { [keywordName: string]: any };
-  warnings: { [keywordName: string]: any };
-  keywords: IKeyword[];
 }
 
 // schema
@@ -48,7 +31,15 @@ export interface ISchema {
   removeAdditional?: boolean;
 }
 
-// Validate fn
+// validation messages
+export interface IValidationMessage {
+  success: boolean;
+  keyword: string;
+  description: any;
+  bindings: {};
+}
+
+// validate fn
 export interface IValidateFnOptions {
   coerceTypes?: boolean;
   removeAdditional?: boolean;
@@ -65,13 +56,23 @@ export interface ApplyValidateFn {
     : Promise<KeywordFnValidationResult>;
 }
 
-export type InlineFnValidationResult = IValidateFnResult | string | boolean | undefined;
-
-export type KeywordFnValidationResult = IValidateFnResult | undefined;
-
 export interface IValidateFnResult {
   valid: boolean;
   messages: IValidationMessage[];
+}
+
+export type KeywordFnValidationResult = IValidateFnResult | undefined;
+
+export type InlineFnValidationResult = IValidateFnResult | string | boolean | undefined;
+
+// validator
+export interface IValidatorOptions {
+  coerceTypes: boolean;
+  removeAdditional: boolean;
+  validateFirst: boolean;
+  errors: { [keywordName: string]: any };
+  warnings: { [keywordName: string]: any };
+  keywords: IKeyword[];
 }
 
 export interface IValidationResult {

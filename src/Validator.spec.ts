@@ -180,4 +180,86 @@ describe('Validator::validateRef tests', () => {
     expect(props).toHaveLength(1);
     expect(props[0]).toEqual('a');
   });
+
+  it('should get proper validation result validating nested ref', async () => {
+    const validator = new Validator({
+      presence: true,
+      type: 'number',
+    });
+
+    const ref = new Ref(
+      new Storage({
+        foo: 123,
+      }),
+      '/foo',
+    );
+    const res = await validator.validateRef(ref);
+    expect(res)
+      .toMatchObject({
+        valid: true,
+        results: {
+          '/foo': {
+            valid: true,
+            messages: [],
+          },
+        },
+      });
+    const props = Object.keys(res.results);
+    expect(props).toHaveLength(1);
+    expect(props[0]).toEqual('/foo');
+  });
+});
+
+describe('Validator::validateStorage tests', () => {
+  it('should get proper validation results with coerceTypes=true', async () => {
+    const validator = new Validator({
+      presence: true,
+      type: 'number',
+    });
+
+    const storage = new Storage('123');
+
+    await expect(validator.validateStorage(storage, { coerceTypes: true }))
+      .resolves
+      .toMatchObject({
+        valid: true,
+        results: {
+          '/': {
+            valid: true,
+            messages: [],
+          },
+        },
+      });
+    expect(storage.get([])).toEqual(123);
+  });
+
+  it('should get proper validation results with removeAdditional=true', async () => {
+    const validator = new Validator({
+      properties: {
+        a: { type: 'string' },
+      },
+      additionalProperties: false,
+    });
+
+    const storage = new Storage({
+      a: 'a',
+      b: 'b',
+      c: 'c',
+    });
+
+    await expect(validator.validateStorage(storage, { removeAdditional: true }))
+      .resolves
+      .toMatchObject({
+        valid: true,
+        results: {
+          '/': {
+            valid: true,
+            messages: [],
+          },
+        },
+      });
+    const props = Object.keys(storage.get([]));
+    expect(props).toHaveLength(1);
+    expect(props[0]).toEqual('a');
+  });
 });

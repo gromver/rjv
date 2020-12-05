@@ -7,10 +7,10 @@ import {
   ISchema,
   IKeyword,
   IKeywordMap,
-  ApplyValidateFn,
   IValidatorOptions,
   IValidateFnOptions,
   IRef,
+  IStorage,
   ValidateFn,
   IValidationResult,
   IValidateFnResult,
@@ -173,7 +173,15 @@ export default class Validator {
   ): Promise<IValidationResult> {
     const validationOptions = _extend({}, this.validateFnOptions, options);
     const results = {};
-    const applyValidateFn = createApplyValidateFn(results);
+
+    async function applyValidateFn(ref: IRef, validateFn: ValidateFn, options: IValidateFnOptions)
+      : Promise<KeywordFnValidationResult> {
+      return validateFn(ref, options, applyValidateFn)
+        .then((result: KeywordFnValidationResult) => {
+          results[ref.path] = result;
+          return result;
+        });
+    }
 
     const result = await applyValidateFn(ref, this.validateFn, validationOptions);
 
@@ -184,7 +192,21 @@ export default class Validator {
   }
 
   /**
-   * Validates given data and returns a validation result object
+   * Validates storage and returns a validation result object
+   * @param storage
+   * @param options
+   */
+  async validateStorage(
+    storage: IStorage,
+    options: Partial<IValidateFnOptions> = {},
+  ): Promise<IValidationResult> {
+    const ref = new Ref(storage);
+
+    return this.validateRef(ref, options);
+  }
+
+  /**
+   * Validates data and returns a validation result object
    * @param data
    * @param options
    */
@@ -192,17 +214,9 @@ export default class Validator {
     data: any,
     options: Partial<IValidateFnOptions> = {},
   ): Promise<IValidationResult> {
-    const validationOptions = _extend({}, this.validateFnOptions, options);
-    const ref = new Ref(new SimpleStorage(data), '/');
-    const results = {};
-    const applyValidateFn = createApplyValidateFn(results);
+    const ref = new Ref(new SimpleStorage(data));
 
-    const result = await applyValidateFn(ref, this.validateFn, validationOptions);
-
-    return {
-      results,
-      valid: result ? result.valid : false,
-    };
+    return this.validateRef(ref, options);
   }
 
   /**
@@ -212,17 +226,4 @@ export default class Validator {
   addKeyword(keyword: IKeyword) {
     addKeyword(keyword, this.keywords);
   }
-}
-
-function createApplyValidateFn(results: {}): ApplyValidateFn {
-  async function applyValidateFn(ref: IRef, validateFn: ValidateFn, options: IValidateFnOptions)
-    : Promise<KeywordFnValidationResult> {
-    return validateFn(ref, options, applyValidateFn)
-      .then((result: KeywordFnValidationResult) => {
-        results[ref.path] = result;
-        return result;
-      });
-  }
-
-  return applyValidateFn;
 }

@@ -11,6 +11,9 @@ export function injectVarsToString(str: string, variables: {}): string {
   );
 }
 
+/**
+ * Represents a validation message
+ */
 export default class ValidationMessage implements IValidationMessage {
   constructor(
     public readonly success: boolean,
@@ -21,9 +24,5 @@ export default class ValidationMessage implements IValidationMessage {
 
   toString(): string {
     return injectVarsToString(this.description, this.bindings);
-    // if (typeof this.description === 'string') {
-    // }
-    //
-    // return `${this.description}`;
   }
 }
