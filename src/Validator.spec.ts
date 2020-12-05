@@ -1,8 +1,11 @@
+import Ref from './utils/Ref';
+
 declare const describe;
 declare const it;
 declare const expect;
 
 import Validator from './Validator';
+import Storage from './utils/Storage';
 
 describe('Validator::constructor tests', () => {
   it('should create Validator instances', () => {
@@ -106,5 +109,59 @@ describe('Validator::validateData tests', () => {
           },
         },
       });
+  });
+});
+
+describe('Validator::validateRef tests', () => {
+  it('should get proper validation results with coerceTypes=true', async () => {
+    const validator = new Validator({
+      presence: true,
+      type: 'number',
+    });
+
+    const ref = new Ref(new Storage('123'));
+
+    await expect(validator.validateRef(ref, { coerceTypes: true }))
+      .resolves
+      .toMatchObject({
+        valid: true,
+        results: {
+          '/': {
+            valid: true,
+            messages: [],
+          },
+        },
+      });
+    expect(ref.value).toEqual(123);
+  });
+
+  it('should get proper validation results with removeAdditional=true', async () => {
+    const validator = new Validator({
+      properties: {
+        a: { type: 'string' },
+      },
+      additionalProperties: false,
+    });
+
+    const ref = new Ref(new Storage({
+      a: 'a',
+      b: 'b',
+      c: 'c',
+    }));
+
+    await expect(validator.validateRef(ref, { removeAdditional: true }))
+      .resolves
+      .toMatchObject({
+        valid: true,
+        results: {
+          '/': {
+            valid: true,
+            messages: [],
+          },
+        },
+      });
+    const props = Object.keys(ref.value);
+    expect(props).toHaveLength(1);
+    expect(props[0]).toEqual('a');
   });
 });
