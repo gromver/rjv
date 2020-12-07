@@ -1,42 +1,40 @@
-# RxJV
+# RJV
 
-Reactive JSON Schema Validator. Provides a low level API for building frontend form validation tools.
-At the moment, there is the [rjv-react](https://github.com/gromver/rjv-react) tool for creating forms in ReactJS applications.
+Reactive JSON Schema Validator - a simplified JSON schema validator adapted for building frontend form validation tools,
+such as the [rjv-react](https://github.com/gromver/rjv-react) library for creating forms in ReactJS applications.
 
- - utilizing familiar JSON schema to describe validation rules and extend it with functional keywords which allows to easily create dynamic validation rules.
- - managing validation state (errors/warnings) of the props
- - managing UI state (touched/dirty/validated/required/mutable/immutable) of the props 
+ - extends JSON schema with functional keywords which allow creating validation rules at runtime.
  - customizable error and warning messages
 
-> If you are looking for a server side data validation solution, you should choose another, such as [ajv](https://github.com/ajv-validator/ajv)
+> If you are looking for a server side data validation solution, you should choose another one, such as [ajv](https://github.com/ajv-validator/ajv)
 
  - [Install](#install)
- - [Guide](#guide)
- - [API](#api)
+ - [Usage](#usage)
  - [Keywords](#keywords)
+ - [API](#api)
 
 # Install
 ```
-# install using npm
-npm i rjv lodash rxjs rxjs-compat
+# npm
+npm i rjv
 
-# or using yarn
-yarn add rjv lodash rxjs rxjs-compat
+# yarn
+yarn add rjv
 ```
 
-# Guide
+# Usage
  - [Validating data](#validating-data)
- - [Subscription to the model events](#subscription-to-the-model-events)
- - [Accessing and managing data](#accessing-and-managing-data)
+ - [Accessing data](#accessing-data)
  - [Inline validation](#inline-validation)
  - [Conditional validation](#conditional-validation)
  - [Customizing validation messages](#customizing-validation-messages)
+ - [Adding validation keywords](#adding-validation-keywords)
 
 ## Validating data
 
 Validating scalar value
-```js
-import { Model } from 'rjv';
+```typescript
+import { Validator } from 'rjv';
 
 const schema = {
   type: 'number',
@@ -44,14 +42,18 @@ const schema = {
   exclusiveMinimum: true,
 }
 
-const model = new Model(schema, 6)
+const validator = new Validator(schema)
 
-model.validate().then(isValid => console.log('isValid: ', isValid))
+const data = 6;
+
+validator
+  .validateData(data)
+  .then(result => console.log('is valid: ', result.valid)) // is valid: true
 ```
 
 Validating object value
-```js
-import { Model } from 'rjv';
+```typescript
+import { Validator } from 'rjv';
 
 const schema = {
   properties: {
@@ -72,43 +74,27 @@ const schema = {
 
 const data = {
   login: 'john@mail.com',
-  password: '123qwe',
+  password: '',
 }
 
+const validator = new Validator(schema)
 
-const model = new Model(schema, data)
-
-model.validate().then(isValid => console.log('isValid: ', isValid)) // isValid: true
+validator
+  .validateData(data)
+  .then(result => console.log('is valid: ', result.valid)) // is valid: false
 ```
 
-## Subscription to the model events
-Model exposes RxJs Subject to subscribe.
-
-```js
-import { Model } from 'rjv';
-
-const schema = {
-  type: 'string',
-  presence: true,
-}
-
-const model = new Model(schema, 'abc')
-
-const subscription = model.observable.subscribe((event) => console.log(event));
-
-// to unsubscribe
-subscription.unsubscribe();
-```
-
-## Accessing and managing data
-The `Ref` is a main [interface](#ref) to access and manage data. It can be retrieved from a `Model` or any other `Ref`.
-Each `Ref` points on the certain property of the data, to determine that property a `path` is being used.
-`path` is a simple string working like a file system path, it could be absolute - `/a/b/c` or relative - `../b/c`, `b/c`.
+## Accessing data
+The `Ref` is a main [interface](#ref) to access and change data.
+Each `Ref` points to a specific data property, to determine that property a `path` is being used.
+The `path` is a simple string working like a file system path, it could be absolute - `/`, `/a/b/c` or relative - `../b/c`, `b/c`.
 The numeric parts of the `path` are treated as an array index, the rest as an object key.
+Refs are provided to the validation functions, also refs can be created manually or retrieved from any other `Ref`.
 
 ```typescript
-import { Model, Ref } from 'rjv';
+import { Ref, Storage, Validator } from 'rjv';
 
+// data source
 const data = {
   items: [1, 2, 3],
   obj: {
@@ -116,23 +102,25 @@ const data = {
   }
 }
 
-const model = new Model({}, data);
-const rootRef = model.ref(); // the same as model.ref('/')
-// getting value
+// wrap data to a Storage object
+const storage = new Storage(data);
+const rootRef = new Ref(storage); // the same as - new Ref(storage, '/')
+
+// getting values
 console.log(rootRef.value); // { items: [1, 2, 3], obj: { prop: 'foo' } }
 
-const objRef = model.ref('obj');
+const objRef = rootRef.ref('obj');
 // there is used a relative path which model resolves to the root path '/'
 // or could be used an absolute path '/obj'
 console.log(objRef.value); // { prop: 'foo' }
 
-let propRef = model.ref('obj/prop');  // get a ref to the "foo" property using model 
+let propRef = rootRef.ref('obj/prop');  // get a ref to the "foo" property using model 
 propRef = objRef.ref('prop'); // get a ref to the "foo" property using another ref
 // the objRef resolves relative paths to the '/obj' path
 propRef = objRef.ref('/obj/prop'); // get ref using absolute path
 console.log(propRef.value); // 'foo'
 
-const itemsRef = model.ref('items');
+const itemsRef = rootRef.ref('items');
 console.log(itemsRef.value); // [1, 2, 3]
 console.log(itemsRef.ref('0').value); // 1
 console.log(itemsRef.ref('1').value); // 2
@@ -142,105 +130,105 @@ console.log(itemsRef.ref('1').ref('../../obj/prop').value); // 'foo'
 // changing values
 propRef.value = 'bar';
 console.log(propRef.value); // 'bar'
-// validating data
-rootRef.validate(); // validate whole data, same as model.validate()
-objRef.validate() // validate /obj object
-propRef.validate() // validate /obj/prop value
-itemsRef.validate() // validate /items array
-itemsRef.ref('0').validate() // validate first item of the array
+console.log(objRef.value); // { prop: 'bar' }
+console.log(rootRef.value); // { items: [1, 2, 3], obj: { prop: 'bar' } }
+
+// validating refs
+const result = await (new Validator({ type: 'string' })).validateRef(propRef)
+console.log('is valid: ', result.valid) // is valid: true
 ```
 
 ## Inline validation
-Besides the standard JSON validation keywords there is an additional `validate` keyword, which allows
-you to place custom validation functions right in the schema. These functions receive a `Ref` instance to validate and must return
-a validation result object. There are three possible results:
- - success result - means that the value of the ref is correct and might have a validation message treated as a warning description.
- - error result - means that the value of the ref is incorrect and must have a validation message treated as an error description.
- - undefined result - means that the value of the ref is not suitable for validation and was skipped
+Besides, the standard JSON validation keywords there is an additional `validate` keyword, which allows
+you to place custom validation functions right in the schema.
+That functions receive a `Ref` instance to validate and must return a **value**
+which is resolved to a `ValidateFnResult` [object](#validatefnresult) according to the following rules:
+ - a `ValidateFnResult` object is used as is
+ - a `string` value - invalid result with error message ```{ keyword: 'inline', description: `${value}` }```
+ - a `boolean` value:
+    - `true` - valid result without warning message
+    - `false` - invalid result with default error message `{ keyword: 'inline', description: 'Incorrect value' }`
 
 Validation function could be sync:
-```javascript
-import { Model } from 'rjv';
+```typescript
+import { Validator, Ref, ValidateFnResult, types } from 'rjv';
 
-const schema = {
+const schema: types.ISchema = {
   properties: {
-    age: {
-      type: 'number',
-      validate: (ref) => {
-        if (!ref.checkDataType('number')) {
-          // Skip validation of the value as it is a non-numeric value
-          // In practice, you are not required to handle undefined results in inline validation functions
-          return ref.createUndefinedResult();
+    password: {
+      validate: (ref: Ref) => {
+        const password = ref.value;
+
+        if (typeof password === 'string') {
+          if (password.length < 6) {
+            // invalid value having an error message with
+            // description - "Password must be at least 6 characters"
+            // keyword - "inline"
+            return 'Password must be at least 6 characters'
+          }
+
+          if (password.length < 8) {
+            // valid value but has an additional warning message with
+            // description - "Weak password"
+            // keyword - "password"
+            return new ValidateFnResult(true, 'Weak password', 'password')
+          }
+
+          // valid value without warning message
+          return true
         }
 
-        const value = ref.value;
-
-        if (value < 18) {
-          return ref.createErrorResult('You are too young.')
-        }
-
-        if (value >= 100) {
-          return ref.createErrorResult('You are too old.')
-        }
-
-        return ref.createSuccessResult();
+        // invalid value having a default error message with
+        // description - "Incorrect value"
+        // keyword - "inline"
+        return false
       },
     }
   }
 };
-const data = { age: 16 };
+const data = { password: '1234567' };
 
-const model = new Model(schema, data);
+const validator = new Validator(schema);
 
-const isValid = await model.validate(); // false
-conosle.log(model.ref('age').isValid); // false
-conosle.log(model.ref('age').messageDescription); // You are too young.
+const { valid, results } = await validator.validateData(data);
+conosle.log(valid); // true
+conosle.log(results['/'].messages[0].toString()); // Weak password
 ```
 
 or async:
-```javascript
-import { Model } from 'rjv';
+```typescript
+import { Validator, Ref, types } from 'rjv';
 
-const schema = {
+const schema: types.ISchema = {
   properties: {
     email: {
       presence: true,
       type: 'string',
       format: 'email',
-      if: {
-        presence: true,
-        type: 'string',
-        format: 'email',
+      validate: async (ref: Ref) => {
+        const value = ref.value;
+
+        const res = await fetch(`/is-email-registered?email=${value}`);
+
+        if (res === 'ok') {
+          // invalid value
+          return 'Email is already registered'
+        }
+
+        // valid value
+        return true;
       },
-      then: {
-        // there is a little trick
-        // the validate function is enclosed in the "if/then" condition
-        // to launch async validation only when the passed value is a valid email
-        // and it prevents unnecessary requests with invalid email values
-        validate: async (ref) => {
-          const value = ref.value;  // always be a valid email string 
-        
-          const res = await fetch(`/is-email-registered?email=${value}`);
-
-          if (res === 'ok') {
-            return ref.createErrorResult('Email is already registered.')
-          }
-          
-
-          return ref.createSuccessResult();
-        },
-      }
     }
   }
 };
 const data = { email: 'john123@gmail.com' };
 
-const model = new Model(schema, data);
+const validator = new Validator(schema);
 
 // assume that the user was already registered
-const isValid = await model.validate(); // false
-conosle.log(model.ref('email').isValid); // false
-conosle.log(model.ref('email').messageDescription); // Email is already registered.
+const { valid, results } = await validator.validateData(data);
+conosle.log(valid); // false
+conosle.log(results['/'].messages[0].toString()); // Email is already registered
 ```
 
 ## Conditional validation
@@ -249,438 +237,329 @@ Conditional validation could be realized in two ways:
  - Functional way - using the `resolveSchema` keyword, which is a function that takes a `Ref` instance and returns a JSON validation schema for the given ref.
 
 ## Customizing validation messages
-There are two options to customize error messages:
- - Through the `validator` option of the model [options](#model-options), these settings changes default keyword messages:
-    ```javascript
-    import { Model } from 'rjv';
+There are two options to customize error/warning messages:
+ - Through the [options](#ivalidatoroptions) param, these settings changes default keyword messages:
+    ```typescript
+    import { Validator } from 'rjv';
     
-    const model = new Model(
+    const validator = new Validator(
       { minLength: 6 },
-      'abc',
+      // options param
       {
-        validator: {
-          errors: {
-            minLength: 'The value must be at least {limit} characters.',
-          }
+        errors: {
+        minLength: 'The value must be at least {limit} characters.',
         }
       }
     );
     ```
  - Through the [`error/errors`](#error--errors) and [`warning/warnings`](#warning--warnings) schema keywords, these setting will only be applied within the schema where they were declared:
-    ```javascript
-    import { Model } from 'rjv';
+    ```typescript
+    import { Validator } from 'rjv';
     
-    const model = new Model(
+    const validator = new Validator(
       {
          minLength: 6,
          errors: {
            minLength: 'The value must be at least {limit} characters.'
          }
       },
-      'abc'
     );
     ```
 
+## Adding validation keywords
+TBD
+
 # API
- - [Model](#model)
-    - [`new Model(schema: Object<Schema>, data?: any, options?: Object<Model options>): Model`](#new-modelschema-objectschema-data-any-options-objectmodel-options-model)
-    - [`model.validate(options?: Object<Validation options>): Promise<bool>`](#modelvalidateoptions-objectvalidation-options-promisebool)
-    - [`model.prepare(options?: Object<Validation options>): Promise<bool>`](#modelprepareoptions-objectvalidation-options-promisebool)
-    - [`model.ref(path = '/', resolve = true): Ref`](#modelrefpath---resolve--true-ref)
-    - [`model.safeRef(path = '/', resolve = true): Ref | undefined`](#modelsaferefpath---resolve--true-ref--undefined)
-    - [`model.getData(): any` / `model.data: any`](#modelgetdata-any)
-    - [`model.setSchema(schema: Object<Schema>): void`](#modelsetschemaschema-objectschema-void)
-    - [`model.getSchema(): Object<Schema>`](#modelgetschema-objectschema)
+ - [Validator](#validator)
+    - [`new Validator(schema: ISchema, options?: Partial<IValidatorOptions>): Validator`](#new-validatorschema-ischema-options-partialivalidatoroptions-validator)
+    - [`IValidatorOptions`](#ivalidatoroptions)
+    - [`validator.validateData(data: any, options?: Partial<IValidateFnOptions>): Promise<IValidationResult>`](#validatorvalidatedatadata-any-options-partialivalidatefnoptions-promiseivalidationresult)
+    - [`validator.validateStorage(storage: IStorage, options?: Partial<IValidateFnOptions>): Promise<IValidationResult>`](#validatorvalidatestoragestorage-istorage-options-partialivalidatefnoptions-promiseivalidationresult)
+    - [`validator.validateRef(ref: IRef, options?: Partial<IValidateFnOptions>): Promise<IValidationResult>`](#validatorvalidaterefref-iref-options-partialivalidatefnoptions-promiseivalidationresult)
+    - [`IValidateFnOptions`](#ivalidatefnoptions)
+    - [`IValidationResult`](#ivalidationresult)
+ - [Storage](#storage)
+    - [`new Storage(data: any): Storage`](#new-storagedata-any-storage)
+    - [`storage.set(route: Array<string | number>, value: any): void`](#storagesetroute-arraystring--number-value-any-void)
+    - [`storage.get(route: Array<string | number>): any`](#storagegetroute-arraystring--number-any)
  - [Ref](#ref)
-    - [`new Ref(model: Model, path: string): Ref`](#new-refmodel-model-path-string-ref)
-    - [Accessors](#accessors)
-        - [`ref.ref(path = '/', resolve = true): Ref`](#refrefpath---resolve--true-ref)
-        - [`ref.safeRef(path = '/', resolve = true): Ref | undefined`](#refsaferefpath---resolve--true-ref--undefined)
-        - [`ref.validate(options?: Object<Validation options>): Promise<bool>`](#refvalidateoptions-objectvalidation-options-promisebool)
-        - [`ref.prepare(onlyRef = false): Promise<bool>`](#refprepareonlyref--false-promisebool)
-        - [`ref.setValue(value: any): void` / `ref.value = value`](#refsetvaluevalue-any-void)
-        - [`ref.getValue(): any` / `ref.value: any`](#refgetvalue-any)
-        - [`ref.getInitialValue(): any` / `ref.initialValue: any`](#refgetinitialvalue-any)
-        - [`ref.errors: Ref[]`](#referrors-ref)
-        - [`ref.validatedErrors: Ref[]`](#refvalidatederrors-ref)
-        - [`ref.firstError: Ref | undefined`](#reffirsterror-ref--undefined)
-        - [`ref.validatedFirstError: Ref | undefined`](#refvalidatedfirsterror-ref--undefined)
-    - [Data validation state](#data-validation-state)
-        - [`ref.state: Object<Validation state>`](#refstate-objectvalidation-state)
-        - [`ref.message: ValidationMessage | undefined`](#refmessage-validationmessage--undefined)
-        - [`ref.messageDescription: string | any | undefined`](#refmessagedescription-string--any--undefined)
-        - [`ref.isValid: boolean`](#refisvalid-boolean)
-        - [`ref.isInvalid: boolean`](#refisinvalid-boolean)
-        - [`ref.isRequired: boolean`](#refisrequired-boolean)
-        - [`ref.isShouldNotBeBlank: boolean`](#refisshouldnotbeblank-boolean)
-        - [`ref.isMutable: boolean`](#refismutable-boolean)
-        - [`ref.isReadOnly: boolean`](#refisreadonly-boolean)
-        - [`ref.isWriteOnly: boolean`](#refiswriteonly-boolean)
-    - [UI field state](#ui-field-state)
-        - [`ref.isTouched: boolean`](#refistouched-boolean)
-        - [`ref.isUntouched: boolean`](#refisuntouched-boolean)
-        - [`ref.isChanged: boolean`](#refischanged-boolean)
-        - [`ref.isDirty: boolean`](#refisdirty-boolean)
-        - [`ref.isValidated: boolean`](#refisvalidated-boolean)
-        - [`ref.isPristine: boolean`](#refispristine-boolean)
-    - [Changing UI field state](#changing-ui-field-state)
-        - [`ref.markAsDirty(): void`](#refmarkasdirty-void)
-        - [`ref.markAsTouched(): void`](#refmarkastouched-void)
-        - [`ref.markAsValidated(): void`](#refmarkasvalidated-void)
-        - [`ref.markAsPristine(): void`](#refmarkaspristine-void)
-        - [`ref.markAsChanged(): void`](#refmarkaschanged-void)
-    - [Helpers](#helpers)
-        - [`ref.resolvePath(path: string): string`](#refresolvepathpath-string-string)
-        - [`ref.checkDataType(dataType: 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean'): boolean`](#refcheckdatatypedatatype-null--string--number--integer--object--array--boolean-boolean)
-        - [`ref.createUndefinedResult(metadata?: Object<Metadata>): Object<Validation result>`](#refcreateundefinedresultmetadata-objectmetadata-objectvalidation-result)
-        - [`ref.createErrorResult(message: ValidationMessage | string | any, metadata: Object<Metadata>): Object<Validation result>`](#refcreateerrorresultmessage-validationmessage--string--any-metadata-objectmetadata-objectvalidation-result)
-        - [`ref.createSuccessResult(message?: ValidationMessage | string | any, metadata?: Object<Metadata>): Object<Validation result>`](#refcreatesuccessresultmessage-validationmessage--string--any-metadata-objectmetadata-objectvalidation-result)
- - [Events](#events)
-    - [`changeRefValue`](#changerefvalue)
-    - [`beforeValidation`, `changeRefValidationState`, `afterValidation`](#beforevalidation-changerefvalidationstate-aftervalidation)
-    - [`changeRefUIState`](#changerefuistate)
+    - [`new Ref(storage: Storage, path = '/'): Ref`](#new-refstorage-storage-path---ref)
+    - [`ref.ref(path: string): Ref`](#refrefpath-string-ref)
+    - [`ref.setValue(value: any): void` / `ref.value = value`](#refsetvaluevalue-any-void)
+    - [`ref.getValue(): any` / `ref.value: any`](#refgetvalue-any)
  - [ValidationMessage](#validationmessage)
-    - [`new ValidationMessage(keyword: string, description: string | any, bindings?: {}): ValidationMessage`](#new-validationmessagekeyword-string-description-string--any-bindings--validationmessage)
+    - [`IValidationMessage`](#ivalidationmessage)
+    - [`new ValidationMessage(success: boolean, keyword: string, description: string, bindings?: {}): ValidationMessage`](#new-validationmessagesuccess-boolean-keyword-string-description-string-bindings--validationmessage)
+    - [`message.toString(): string`](#messagetostring-string)
+ - [ValidateFnResult](#validatefnresult)
+    - [`IValidateFnResult`](#ivalidatefnresult)
+    - [`new ValidateFnResult(valid: boolean, description?: string, keyword?: string, bindings?: {}): ValidateFnResult`](#new-validatefnresultvalid-boolean-description-string-keyword-string-bindings--validatefnresult)
 
-## Model
-The main class for data validation combines JSON schema and data together.
-#### `new Model(schema: Object<Schema>, data?: any, options?: Object<Model options>): Model`
-Creates model instance.
-> Note that the provided data to be cloned. 
+## Validator
+The main class uses JSON schema for data validation.
+#### `new Validator(schema: ISchema, options?: Partial<IValidatorOptions>): Validator`
+Creates Validator instance:
+```typescript
+import { Validator } from 'rjv';
 
-##### Model options:
- - keywords: list of additional keywords.
- - validator: [validator options](#validator-options).
- - descriptionResolver: a function `(message: Object<Validation message>) => string | any` gets a validation [message](#validation-message) and returns a readable description. Used by [`Ref::messageDescription`](#refmessagedescription-string--any--undefined). You might customize it for getting multi-language descriptions.
- - debug: debug mode, if enabled provides additional info
-
-Model options defaults:
-```json5
-{
-  keywords: [],
-  validator: {},
-  debug: false,
-}
+const validator = new Validator({ type: 'string', presence: true })
 ```
 
-##### Validator options:
- - coerceTypes: coerce data types by default
- - removeAdditional: remove additional properties by default
- - errors: customize error messages, an object `{ [keywordName]: any }` expected
- - warnings: customize warning messages, an object `{ [keywordName]: any }` expected
- - keywords: additional keywords
-
-Validator options defaults:
-```json5
-{
+#### `IValidatorOptions`:
+An object representing a validator options
+```typescript
+interface IValidatorOptions {
+  /**
+   * Coerce data types
+   */
+  coerceTypes: boolean;
+  /**
+   * Remove additional properties
+   */
+  removeAdditional: boolean;
+  /**
+   * Stop the property validation proccess on the first error
+   */
+  validateFirst: boolean;
+  /**
+   * A map with custom error messages
+   */
+  errors: { [keywordName: string]: string };
+  /**
+   * A map with custom warning messages
+   */
+  warnings: { [keywordName: string]: string };
+  /**
+   * An array of additional keywords
+   */
+  keywords: IKeyword[];
+}
+```
+Default validator options:
+```typescript
+const defaultOptions = {
   coerceTypes: false,
   removeAdditional: false,
+  validateFirst: true,
   errors: {},
   warnings: {},
-  keywords: [],
+  keywords: []
 }
 ```
 
-#### `model.validate(options?: Object<Validation options>): Promise<bool>`
-Launch async validation process of the whole model data using provided validation options.
+#### `validator.validateData(data: any, options?: Partial<IValidateFnOptions>): Promise<IValidationResult>`
+Validates data
+```typescript
+import { Validator } from 'rjv';
 
-##### Validation options:
- - coerceTypes: coerce data types
- - removeAdditional: remove additional properties
- - markAsValidated: mark refs as validated
+const validator = new Validator({ type: 'string', presence: true })
+validator
+  .validateData('abc')
+  .then((res) => console.log(res.valid)) // true
+```
+See [IValidateFnOptions](#ivalidatefnoptions), [IValidationResult](#ivalidationresult)
 
-#### `model.prepare(options?: Object<Validation options>): Promise<bool>`
-The wrapper function around `model.validate({ markAsValidated: false  })` call.
-The difference is that the refs aren't marked as validated.
-`model.prepare()` is usually being used for the population of the model's initial state.
+#### `validator.validateStorage(storage: IStorage, options?: Partial<IValidateFnOptions>): Promise<IValidationResult>`
+Validates data wrapped in a `Storage` object
+```typescript
+import { Validator, Storage } from 'rjv';
 
-#### `model.ref(path = '/', resolve = true): Ref`
-Get a ref of the property. `path` could be absolute or relative. By default, the given `path` is resolved using the root path `/`.
-If the `resolve` option disabled you should provide an absolute `path`.
+const validator = new Validator({ type: 'string', presence: true })
+validator
+  .validateData(new Storage('abc'))
+  .then((res) => console.log(res.valid)) // true
+```
+See [IValidateFnOptions](#ivalidatefnoptions), [IValidationResult](#ivalidationresult)
 
-#### `model.safeRef(path = '/', resolve = true): Ref | undefined`
-Same as `model.ref()` but it returns a property reference only if it has applicable schema rules
+#### `validator.validateRef(ref: IRef, options?: Partial<IValidateFnOptions>): Promise<IValidationResult>`
+Validates data referenced by the `Ref` object
+```typescript
+import { Validator, Storage } from 'rjv';
 
-#### `model.getData(): any`
-#### `model.data: any`
-Get data of the model. Note that the returned data will be cloned. 
+const validator = new Validator({ type: 'string', presence: true })
+const storage = new Storage({
+  foo: 'abc',
+  bar: 123
+})
 
-#### `model.setSchema(schema: Object<Schema>): void`
-Replace the schema of the model with a new one.
+validator
+  .validateData(new Ref(storage, '/foo'))
+  .then((res) => console.log(res.valid)) // true
 
-#### `model.getSchema(): Object<Schema>`
-Get the current schema of the model.
+validator
+  .validateData(new Ref(storage, '/bar'))
+  .then((res) => console.log(res.valid)) // false
+```
+
+#### `IValidateFnOptions`:
+An object representing a validate process options, default values are inherited
+from the [IValidatorOptions](#ivalidatoroptions) object
+```typescript
+interface IValidatorOptions {
+  /**
+   * Coerce data types
+   */
+  coerceTypes: boolean;
+  /**
+   * Remove additional properties
+   */
+  removeAdditional: boolean;
+  /**
+   * Stop the property validation proccess on the first error
+   */
+  validateFirst: boolean;
+}
+```
+
+#### `IValidationResult`:
+An object representing a validate process result
+```typescript
+interface IValidatorOptions {
+  /**
+   * Is the verified data valid?
+   */
+  valid: boolean;
+  /**
+   * Results map
+   * Note: that some properties may have an undefined result
+   * that means there is no applicable rules for the value type of the property
+   * for example: schema { minimum: 10 } doesn't applicable for any non-number values,
+   * because "minimum" keyword only works with numbers
+   * You should avoid undefined results
+   */
+  results: {
+    [path: string]: IValidateFnResult | undefined;
+  };
+}
+```
+See [IValidateFnResult](#ivalidatefnresult)
+
+## Storage
+Provides a simple `get/set` API to access data
+
+#### `new Storage(data: any): Storage`
+Creates Storage instance.
+```typescript
+import { Storage } from 'rjv';
+
+const storage = new Storage('some data');
+```
+
+#### `storage.set(route: Array<string | number>, value: any): void`
+Sets new value to the specified property
+```typescript
+import { Storage } from 'rjv';
+
+const scalarStorage = new Storage('foo');
+console.log(scalarStorage.get([])); // foo
+scalarStorage.set([], 'bar');
+console.log(scalarStorage.get([])); // bar
+
+const objectStorage = new Storage({ prop: 'foo' });
+console.log(objectStorage.get([])); // { prop: 'foo' }
+objectStorage.set(['prop'], 'bar');
+console.log(objectStorage.get([])); // { prop: 'bar' }
+
+const arrayStorage = new Storage(['foo']);
+console.log(arrayStorage.get([])); // ['foo']
+arrayStorage.set([0], 'bar');
+console.log(arrayStorage.get([])); // ['bar']
+```
+
+#### `storage.get(route: Array<string | number>): any`
+Gets the value of the specified property
+```typescript
+import { Storage } from 'rjv';
+
+const storage = new Storage({
+  a: 'a',
+  b: {
+    c: 'c',
+    d: [123]
+  }
+});
+console.log(storage.get([])); // { a: 'a', b: { c: 'c', d: [123] } }
+console.log(storage.get(['a'])); // 'a'
+console.log(storage.get(['b'])); // { c: 'c', d: [123] }
+console.log(storage.get(['b', 'd', 0])); // 123 }
+```
 
 ## Ref
-Represents a reference to a property of the model and provides access to value and state of the property.
+Represents a reference to a property of the data storage and provides access to the value of the property.
 
-#### `new Ref(model: Model, path: string): Ref`
-Create ref instance. Provided `path` must be absolute.
+#### `new Ref(storage: Storage, path = '/'): Ref`
+Creates Ref instance.
+```typescript
+import { Storage, Ref } from 'rjv';
 
-### Accessors
+const ref = new Ref(new Storage('foo'));
+```
+> Provided `path` must be absolute.
 
-#### `ref.ref(path = '/', resolve = true): Ref`
-Get a ref of the property. `path` could be absolute or relative. By default, the given `path` is resolved using the path of the ref.
-If the `resolve` option disabled you should provide an absolute `path`.
-
-#### `ref.safeRef(path = '/', resolve = true): Ref | undefined`
-Same as `ref.ref()` but it returns a property reference only if it has applicable schema rules
-
-#### `ref.validate(options?: Object<Validation options>): Promise<bool>`
-Launch async validation process of the ref's value using provided [validation options](#validation-options).
-
-#### `ref.prepare(onlyRef = false): Promise<bool>`
-The wrapper function around `model.validate({ markAsValidated: false  })` call.
-The difference is that the refs aren't marked as validated.
-`ref.prepare()` is usually being used for the (re)population of the model's initial state, 
-if `onlyRef=true` validation process affects only the ref's value.
+#### `ref.ref(path: string): Ref`
+Resolves the `path` and gets a ref to the desired property. The `path` could be absolute or relative.
+If given `path` is relative it is resolved to the `path` of the current ref.
 
 #### `ref.setValue(value: any): void`
 #### `ref.value = value`
-Change value of the ref and trigger [ChangeRefValueEvent](#changerefvalue).
+Change the value of the ref.
+```typescript
+import { Storage, Ref } from 'rjv';
+
+const ref = new Ref(new Storage('foo'));
+// setter
+ref.value = 'bar'; // set new value
+// as function
+ref.setValue('bar');  // the same
+```
 
 #### `ref.getValue(): any`
 #### `ref.value: any`
-Get current value of the ref.
-
-#### `ref.getInitialValue(): any`
-#### `ref.initialValue: any`
-Get initial value of the ref. These getters extract value from the initial data of the model. 
-
-#### `ref.errors: Ref[]`
-Returns error refs related to the selected ref
-
-#### `ref.validatedErrors: Ref[]`
-Returns error refs related to the selected ref and marked as validated
-
-#### `ref.firstError: Ref | undefined`
-Get the error that occurred first if exists
-
-#### `ref.validatedFirstError: Ref | undefined`
-Get the error that occurred first among the validated refs (refs [marked](#refmarkasvalidated-void) as validated) if exists
-
-### Data validation state
-
-#### `ref.state: Object<Validation state>`
-Returns current validation state of the ref
-
-Validation state:
-```json5
-{
-  // validation state
-  valid: false,
-  message: {
-    keyword: 'minLength',
-    description: 'Should not be shorter than {limit} characters',
-    bindings: { limit: 6 }
-  },
-  // schema metadata
-  title: 'Password',
-  description: 'Password length must not be shorter than 6 characters.',
-  readOnly: false,
-  writeOnly: false,
-  validating: false,
-  dependencies: ['confirmPassword'],
-  // keywords shared metadata
-  presence: true,
-  minLength: 6
-}
-```
-
-#### `ref.message: ValidationMessage | undefined`
-Returns current [validation message](#validationmessage) if exists
-
-Example:
-```json5
-{
-  keyword: 'maxLength',
-  description: 'Should not be longer than {limit} characters',
-  bindings: {
-    limit: 5,
-  },
-}
-```
-
-#### `ref.messageDescription: string | any | undefined`
-Returns readable description of the validation message if exists
-
-Example:
+Get the current value of the ref.
 ```typescript
-console.log(ref.message);
-// {
-//   keyword: 'maxLength',
-//   description: 'Should not be longer than {limit} characters',
-//   bindings: {
-//     limit: 5,
-//   },
-// }
+import { Storage, Ref } from 'rjv';
 
-console.log(ref.messageDescription);
-// Should not be longer than 5 characters
-```
-
-#### `ref.isValid: boolean`
-Is ref has been validated and has a valid state?
-
-#### `ref.isInvalid: boolean`
-Is ref has been validated and has an invalid state?
-
-#### `ref.isRequired: boolean`
-Is the value of the required?
-
-#### `ref.isShouldNotBeBlank: boolean`
-Is ref should not be blank?
-
-#### `ref.isMutable: boolean`
-Is ref mutable?
-
-#### `ref.isReadOnly: boolean`
-Is ref marked as read only?
-
-#### `ref.isWriteOnly: boolean`
-Is ref marked as write only?
-
-### UI field state
-
-#### `ref.isTouched: boolean`
-Is ref touched?
-
-#### `ref.isUntouched: boolean`
-Is ref untouched?
-
-#### `ref.isChanged: boolean`
-Is the value of the ref changed?
-
-#### `ref.isDirty: boolean`
-Is ref dirty?
-
-#### `ref.isValidated: boolean`
-Is ref validated? Note that the model preparing doesn't affect this state.
-
-#### `ref.isPristine: boolean`
-Is ref pristine?
-
-### Changing UI field state
-
-#### `ref.markAsDirty(): void`
-Mark ref as dirty and emit ChangeRefUIStateEvent if the ref has not been dirty yet.
-
-#### `ref.markAsTouched(): void`
-Mark ref as touched and emit ChangeRefUIStateEvent if the ref has not been touched yet.
-
-#### `ref.markAsValidated(): void`
-Mark ref as validated and emit ChangeRefUIStateEvent if the ref has not been validated yet.
-> Note that by default `ref.validate()` call marks ref and all descendant refs as validated.
-
-#### `ref.markAsPristine(): void`
-Mark ref as pristine and emit ChangeRefUIStateEvent.
-
-#### `ref.markAsChanged(): void`
-Mark ref as changed. When the ref is marked as changed, the validation state of the ref becomes undefined.
-
-### Helpers
-
-#### `ref.resolvePath(path: string): string`
-Resolves given path relative to the path of the ref.
-
-#### `ref.checkDataType(dataType: 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean'): boolean`
-Checks if the value of the ref has the desired type
-
-#### `ref.createUndefinedResult(metadata?: Object<Metadata>): Object<Validation result>`
-Creates undefined validation result
-
-#### `ref.createErrorResult(message: ValidationMessage | string | any, metadata: Object<Metadata>): Object<Validation result>`
-Creates error validation result. If the message is a `ValidationMessage` [instance](#validationmessage), it is used as is.
-If message has other value, it will be used as a description for a newly created `ValidationMessage` instance with the `inline` keyword and empty bindings.
-
-#### `ref.createSuccessResult(message?: ValidationMessage | string | any, metadata?: Object<Metadata>): Object<Validation result>`
-Creates success validation result. If a message is provided, it is treated as a warning message. The message processing logic is the same as in `ref.createErrorResult`.
-
-## Events
-The `Model` instance generates data mutation, validation and UI field changing events.
-
-#### `changeRefValue`
-Generated when the model's data [changed](#refsetvaluevalue-any-void)
-```js
-const model = new Model({ type: 'number' }, 1 );
-
-model.observable.subscribe((event) => console.log('event: ', event));
-
-model.ref().value = 2;
-
-// event: { type: 'changeRefValue', path: '/', value: 2 }
-```
-
-#### `beforeValidation`, `changeRefValidationState`, `afterValidation`
-These events are generated during the validation process.
-
-`beforeValidation` - before the validation process begins.
-```json5
-{
-  type: 'beforeValidation',
-  path: '/', // the path of the ref caused validation process
-}
-```
-
-`changeRefValidationState` - during the validation process when a ref's [validation state](#data-validation-state) are changed
-```json5
-{
-  type: 'changeRefState',
-  path: '/foo', // the path to the ref that has changed state
-  state: {  // validation state object
-    validating: true,
-    // ...
-  },
-}
-```
-
-`afterValidation` - when the validation process ends.
-```json5
-{
-  type: 'afterValidation',
-  path: '/', // the path of the ref caused validation process
-}
-```
-
-Example:
-```js
-const model = new Model({ type: 'number' }, 1 );
-
-model.observable.subscribe((event) => console.log('event: ', event));
-
-model.validate()
-
-// event: { type: 'beforeValidation', path: '/' }
-// event: { type: 'changeRefUIState', path: '/', state: 'validated' }
-// event: { type: 'changeRefValidationState', path: '/', state: { validating: true } }
-// event: { type: 'changeRefValidationState', path: '/', state: { validating: false, required: false, readOnly: false, writeOnly: false, valid: true } }
-// event: { type: 'afterValidation', path: '/', valid: true }
-```
-
-#### `changeRefUIState`
-Generated when a ref's UI state are [changed](#changing-ui-field-state)
-```json5
-{
-  type: 'changeRefUIState',
-  path: '/foo', // the path to the ref that has changed state
-  state: 'touched',
-}
+const ref = new Ref(new Storage('foo'));
+// getter
+ref.value; // foo
+// as function
+ref.getValue(); // foo
 ```
 
 ## ValidationMessage
-Represents error / warning message.
+Implements IValidationMessage interface.
 
-#### `new ValidationMessage(keyword: string, description: string | any, bindings?: {}): ValidationMessage`
-Create a validation message description object with properties:
- - keyword: the name of the keyword causing the error/warning
- - bindings: the additional values describing message
- - description: the error/warning description, might have tags which can be replaced with values from the `bindings` field
+#### `IValidationMessage`
+An object representing the error / warning messages.
+```typescript
+export interface IValidationMessage {
+  /**
+   * `true` if it is a warning message, otherwise it is an error message
+   */
+  success: boolean;
+  /**
+   * the name of the keyword causing the error/warning
+   */
+  keyword: string;
+  /**
+   * the error/warning description
+   * might have {bindingName} tags which can be replaced with values from the `bindings` field
+   */
+  description: string;
+  /**
+   * the additional values describing message
+   */
+  bindings: {};
+}
+```
 
-Example:
+#### `new ValidationMessage(success: boolean, keyword: string, description: string, bindings?: {}): ValidationMessage`
+Create a validation message description object:
 ```typescript
 import { ValidationMessage } from 'rjv';
 
 const message = new ValidationMessage(
+  false,
   'format',
   'Should match format "{format}"',
   { format: 'email' }
@@ -689,9 +568,66 @@ const message = new ValidationMessage(
 console.log(message);
 /*
 {
+  success: false,
   keyword: 'format',
   description: 'Should match format "{format}"',
   bindings: { format: 'email' }
+}
+*/
+```
+
+#### `message.toString(): string`
+Returns a normalized description of the message, trying to replace `{bindingName}` tags
+of the description with the corresponding `bindings` values.
+```typescript
+import { ValidationMessage } from 'rjv';
+
+const message = new ValidationMessage(
+  false,
+  'format',
+  'Should match format "{format}"',
+  { format: 'email' }
+);
+console.log(message.toString()); // Should match format "email"
+```
+
+## ValidateFnResult
+Implements IValidateFnResult interface. Used by the build-in keywords and inline validation functions.
+
+#### `IValidateFnResult`
+An object describing the result of the value validating process.
+```typescript
+interface IValidateFnResult {
+  valid: boolean;
+  messages: IValidationMessage[];
+}
+```
+See [IValidationMessage](#ivalidationmessage)
+
+#### `new ValidateFnResult(valid: boolean, description?: string, keyword?: string, bindings?: {}): ValidateFnResult`
+Creates a validation result object.
+```typescript
+import { ValidateFnResult } from 'rjv';
+
+const result = new ValidateFnResult(
+  false,
+  'format',
+  'Should match format "{format}"',
+  { format: 'email' }
+);
+
+console.log(result);
+/*
+{
+  valid: false,
+  messages: [
+    {
+      success: false,
+      keyword: 'format',
+      description: 'Should match format "{format}"',
+      bindings: { format: 'email' }
+    }
+  ]
 }
 */
 ```
@@ -705,16 +641,15 @@ console.log(message);
     - [maximum / minimum and exclusiveMaximum / exclusiveMinimum](#maximum--minimum-and-exclusivemaximum--exclusiveminimum)
     - [multipleOf](#multipleof)
 - [Keywords for strings](#keywords-for-strings)
-    - [maxLength/minLength](#maxlength--minlength)
+    - [maxLength / minLength](#maxlength--minlength)
     - [pattern](#pattern)
     - [format](#format)
 - [Keywords for arrays](#keywords-for-arrays)
-    - [maxItems/minItems](#maxitems--minitems)
-    - [items](#items)
-    - [additionalItems](#additionalitems)
+    - [maxItems / minItems](#maxitems--minitems)
+    - [items / additionalItems](#items--additionalitems)
     - [contains](#contains)
 - [Keywords for objects](#keywords-for-objects)
-    - [maxProperties/minProperties](#maxproperties--minproperties)
+    - [maxProperties / minProperties](#maxproperties--minproperties)
     - [required](#required)
     - [properties](#properties)
     - [additionalProperties](#additionalproperties)
@@ -723,26 +658,20 @@ console.log(message);
     - [oneOf](#oneof)
     - [anyOf](#anyof)
     - [allOf](#allof)
-    - [if/then/else](#if--then--else)
+    - [if / then / else](#if--then--else)
     - [applySchemas](#applyschemas)
 - [Inline validation keywords](#inline-validation-keywords)
     - [validate](#validate)
     - [resolveSchema](#resolveschema)
 - [Annotation keywords](#annotation-keywords)
-    - [title](#title)
-    - [description](#description)
-    - [removeAdditional](#removeadditional)
-    - [readOnly/writeOnly](#readonly--writeonly)
-    - [dependencies](#dependencies)
+    - [readOnly](#readonly)
     - [error / errors](#error--errors)
     - [warning / warnings](#warning--warnings)
- - [Data mutation keywords](#data-mutation-keywords)
+- [Data mutation keywords](#data-mutation-keywords)
     - [default](#default)
     - [coerceTypes](#coercetypes)
     - [filter](#filter)
     - [removeAdditional](#removeadditional)
-
-The description of each keyword will consist of a specification of the scheme and the validation status produced during the verification process.
 
 ## Keywords for all types
 #### `type`
@@ -752,18 +681,17 @@ Schema:
 ```typescript
 type Type = 'number' | 'integer' | 'string' | 'boolean' | 'array' | 'object' | 'null'
 
-interface Schema {
+interface ISchema {
   type: Type | Type[]
 }
 ```
-State:
+Error message of the `{ type: ['number', 'string'] }`:
 ```json5
 {
-  message: {
-    keyword: 'type',
-    description: 'Should be {typesAsString}',
-    bindings: { types: ['number', 'string'], typesAsString: 'number, string' },
-  }
+  success: false,
+  keyword: 'type',
+  description: 'Should be {typesAsString}',
+  bindings: { types: ['number', 'string'], typesAsString: 'number, string' },
 }
 ```
 
@@ -772,19 +700,17 @@ The value of the keyword should be an array of unique items of any types. The da
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   enum: any[]
 }
 ```
-State:
+Error message of the `{ enum: [1, 2, 3] }`:
 ```json5
 {
-  enum: [1, 2, 3],
-  message: {
-    keyword: 'enum',
-    description: 'Should be equal to one of the allowed values',
-    bindings: { allowedValues: [1, 2, 3] }
-  }
+  success: false,
+  keyword: 'enum',
+  description: 'Should be equal to one of the allowed values',
+  bindings: { allowedValues: [1, 2, 3] }
 }
 ```
 
@@ -792,76 +718,64 @@ State:
 The value of this keyword can be anything. If a function is specified as a value, the value will be resolved by calling this function and passing the current ref as an argument.
 The data is valid if it is deeply equal to the value of the keyword.
 ```typescript
-interface Schema {
+interface ISchema {
   const: any | ((ref: Ref) => any)
 }
 ```
-State:
+Error message of the `{ const: 123 }`:
 ```json5
 {
-  const: 123,
-  message: {
-    keyword: 'const',
-    description: 'Should be equal to constant',
-    bindings: { allowedValue: 123 }
-  }
+  success: false,
+  keyword: 'const',
+  description: 'Should be equal to constant',
+  bindings: { allowedValue: 123 }
 }
 ```
 
 ## Keywords for numbers
 #### `maximum` / `minimum` and `exclusiveMaximum` / `exclusiveMinimum`
 ```typescript
-interface Schema {
+interface ISchema {
   maximum: number;
   minimum: number;
   exclusiveMaximum: boolean;
   exclusiveMinimum: boolean;
 }
 ```
-State of the `maximum`:
+Error message of the `{ maximum: 123 }`:
 ```json5
 {
-  maximum: 123,
-  message: {
-    keyword: 'maximum',
-    description: 'Should be less than or equal {limit}',
-    bindings: { limit: 123, exclusive: false }
-  }
+  success: false,
+  keyword: 'maximum',
+  description: 'Should be less than or equal {limit}',
+  bindings: { limit: 123, exclusive: false }
 }
 ```
-State of the `maximum` with `exclusiveMaximum`:
+Error message of the `{ maximum: 123, exclusiveMaximum: true }`:
 ```json5
 {
-  maximum: 123,
-  exclusiveMaximum: true,
-  message: {
-    keyword: 'exclusiveMaximum',
-    description: 'Should be less than {limit}',
-    bindings: { limit: 123, exclusive: true }
-  }
+  success: false,
+  keyword: 'exclusiveMaximum',
+  description: 'Should be less than {limit}',
+  bindings: { limit: 123, exclusive: true }
 }
 ```
-State of the `minimum`:
+Error message of the `{ minimum: 123 }`:
 ```json5
 {
-  minimum: 123,
-  message: {
-    keyword: 'minimum',
-    description: 'Should be greater than or equal {limit}',
-    bindings: { limit: 123, exclusive: false }
-  }
+  success: false,
+  keyword: 'minimum',
+  description: 'Should be greater than or equal {limit}',
+  bindings: { limit: 123, exclusive: false }
 }
 ```
-State of the `minimum` with `exclusiveMinimum`:
+Error message of the `{ maximum: 123, exclusiveMinimum: true }`:
 ```json5
 {
-  minimum: 123,
-  exclusiveMinimum: true,
-  message: {
-    keyword: 'exclusiveMinimum',
-    description: 'Should be greater than {limit}',
-    bindings: { limit: 123, exclusive: true }
-  }
+  success: false,
+  keyword: 'exclusiveMinimum',
+  description: 'Should be greater than {limit}',
+  bindings: { limit: 123, exclusive: true }
 }
 ```
 
@@ -870,18 +784,17 @@ The value of the keyword should be a number. The data to be valid should be a mu
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   multipleOf: number
 }
 ```
-State:
+Error message of the `{ multipleOf: 2 }`:
 ```json5
 {
-  message: {
-    keyword: 'multipleOf',
-    description: 'Should be multiple of {multiplier}',
-    bindings: { multiplier: 2 }
-  }
+  success: false,
+  keyword: 'multipleOf',
+  description: 'Should be multiple of {multiplier}',
+  bindings: { multiplier: 2 }
 }
 ```
 
@@ -891,31 +804,27 @@ The data to be valid should have length satisfying this rule.
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   maxLength: number
   minLength: number
 }
 ```
-State of the `maxLength`:
+Error message of the `{ maxLength: 5 }`:
 ```json5
 {
-  maxLength: 5,
-  message: {
-    keyword: 'maxLength',
-    description: 'Should not be longer than {limit} characters',
-    bindings: { limit: 5 }
-  }
+  success: false,
+  keyword: 'maxLength',
+  description: 'Should not be longer than {limit} characters',
+  bindings: { limit: 5 }
 }
 ```
-State of the `minLength`:
+Error message of the `{ minLength: 5 }`:
 ```json5
 {
-  minLength: 5,
-  message: {
-    keyword: 'minLength',
-    description: 'Should not be shorter than {limit} characters',
-    bindings: { limit: 5 }
-  }
+  success: false,
+  keyword: 'minLength',
+  description: 'Should not be shorter than {limit} characters',
+  bindings: { limit: 5 }
 }
 ```
 
@@ -925,19 +834,17 @@ Rjv uses new RegExp(value) to create the regular expression that will be used to
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   pattern: string
 }
 ```
-State:
+Error message of the `{ pattern: '/\d/' }`:
 ```json5
 {
-  pattern: '/\d/',
-  message: {
-    keyword: 'pattern',
-    description: 'Should match pattern {pattern}',
-    bindings: { pattern: '/\d/' }
-  }
+  success: false,
+  keyword: 'pattern',
+  description: 'Should match pattern {pattern}',
+  bindings: { pattern: '/\d/' }
 }
 ```
 
@@ -948,19 +855,17 @@ Schema:
 ```typescript
 type Format = 'date' | 'time' | 'date-time' | 'email' | 'uri' | 'url' | 'uri-reference' | 'uri-template' | 'hostname' | 'ipv4' | 'ipv6' | 'regex'
 
-interface Schema {
+interface ISchema {
   format: Format
 }
 ```
-State:
+Error message of the `{ format: 'email' }`:
 ```json5
 {
-  format: 'email',
-  message: {
-    keyword: 'format',
-    description: 'Should match format "{format}"',
-    bindings: { format: 'email' }
-  }
+  success: false,
+  keyword: 'format',
+  description: 'Should match format "{format}"',
+  bindings: { format: 'email' }
 }
 ```
 
@@ -971,31 +876,27 @@ The data array to be valid should not have more (less) items than the keyword va
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   maxItems: number
   minItems: number
 }
 ```
-State of the `maxItems`:
+Error message of the `{ maxItems: 3 }`:
 ```json5
 {
-  maxItems: 3,
-  message: {
-    keyword: 'maxItems',
-    description: 'Should not have more than {limit} items',
-    bindings: { limit: 3 }
-  }
+  success: false,
+  keyword: 'maxItems',
+  description: 'Should not have more than {limit} items',
+  bindings: { limit: 3 }
 }
 ```
-State of the `minItems`:
+Error message of the `{ minItems: 3 }`:
 ```json5
 {
-  minItems: 3,
-  message: {
-    keyword: 'minItems',
-    description: 'Should not have fewer than {limit} items',
-    bindings: { limit: 3 }
-  }
+  success: false,
+  keyword: 'minItems',
+  description: 'Should not have fewer than {limit} items',
+  bindings: { limit: 3 }
 }
 ```
 
@@ -1008,18 +909,18 @@ If the keyword value is an array, then items with indices less than the number o
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   items: Schema | Schema[]
   additionalItems: boolean | Schema
 }
 ```
-State of the `items`:
+Error message of the `{ items: [{ type: 'number' }, { type: 'number' }] }`:
 ```json5
 {
   message: {
     keyword: 'items',
     description: 'Should not have more than {limit} items',
-    bindings: { limit: 3 }
+    bindings: { limit: 2 }
   }
 }
 ```
@@ -1029,18 +930,18 @@ The value of the keyword is a JSON Schema. The array is valid if it contains at 
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   contains: Schema
   additionalItems: boolean | Schema
 }
 ```
-State:
+Error message of the `{ contains: 123 }`:
 ```json5
 {
-  message: {
-    keyword: 'contains',
-    description: 'Should contain a valid item'
-  }
+  success: false,
+  keyword: 'contains',
+  description: 'Should contain a valid item',
+  bindings: {}
 }
 ```
 
@@ -1051,31 +952,27 @@ The value of the keywords should be a number. The data object to be valid should
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   maxProperties: number
   minProperties: number
 }
 ```
-State of the `maxProperties`:
+Error message of the `{ maxProperties: 4 }`:
 ```json5
 {
-  maxProperties: 4,
-  message: {
-    keyword: 'maxProperties',
-    description: 'Should not have more than {limit} properties',
-    bindings: { limit: 4 }
-  }
+  success: false,
+  keyword: 'maxProperties',
+  description: 'Should not have more than {limit} properties',
+  bindings: { limit: 4 }
 }
 ```
-State of the `minProperties`:
+Error message of the `{ minProperties: 4 }`:
 ```json5
 {
-  minProperties: 4,
-  message: {
-    keyword: 'minProperties',
-    description: 'Should not have fewer than 4 properties',
-    bindings: { limit: 4 }
-  }
+  success: false,
+  keyword: 'minProperties',
+  description: 'Should not have fewer than 4 properties',
+  bindings: { limit: 4 }
 }
 ```
 
@@ -1084,18 +981,17 @@ The value of the keyword should be an array of unique strings. The data object t
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   required: string[]
 }
 ```
-State:
+Error message of the `{ required: ['foo', 'bar'] }`:
 ```json5
 {
-  message: {
-    keyword: 'required',
-    description: 'Should have all required properties',
-    bindings: { invalidProperties: ['foo', 'bar'] }
-  }
+  success: false,
+  keyword: 'required',
+  description: 'Should have all required properties',
+  bindings: { invalidProperties: ['foo', 'bar'] }
 }
 ```
 
@@ -1106,18 +1002,17 @@ The value of the keyword should be a map with keys equal to data object properti
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   properties: { [propertyName: string]: Schema }
 }
 ```
-State:
+Error message of the `{ properties: { foo: { type: 'string' } } }`:
 ```json5
 {
-  message: {
-    keyword: 'properties',
-    description: 'Should have valid properties',
-    bindings: { invalidProperties: ['foo', 'bar'] }
-  }
+  success: false,
+  keyword: 'properties',
+  description: 'Should have valid properties',
+  bindings: { invalidProperties: ['foo'] }
 }
 ```
 
@@ -1132,18 +1027,17 @@ If the value is a schema for the data object to be valid the values in all "addi
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   additionalProperties: boolean | Schema
 }
 ```
-State:
+Error message of the `{ properties: { foo: { type: 'string' } }, additionalProperties: false }`:
 ```json5
 {
-  message: {
-    keyword: 'properties',
-    description: 'Should have valid properties',
-    bindings: { invalidProperties: ['foo', 'bar'] }
-  }
+  success: false,
+  keyword: 'properties',
+  description: 'Should have valid properties',
+  bindings: { invalidProperties: ['bar'] }
 }
 ```
 
@@ -1154,17 +1048,17 @@ The value of the keyword should be a JSON Schema. The data is valid if it is inv
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   not: Schema
 }
 ```
-State:
+Error message of the `{ not: { type: 'string' } }`:
 ```json5
 {
-  message: {
-    keyword: 'not',
-    description: 'Should not be valid'
-  }
+  success: false,
+  keyword: 'not',
+  description: 'Should not be valid',
+  bindings: {}
 }
 ```
 
@@ -1173,17 +1067,17 @@ The value of the keyword should be an array of JSON Schemas. The data is valid i
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   oneOf: Schema[]
 }
 ```
-State:
+Error message of the `{ oneOf: [{ type: 'string' }, { type: 'number' }] }`:
 ```json5
 {
-  message: {
-    keyword: 'oneOf',
-    description: 'Should match exactly one schema in oneOf'
-  }
+  success: false,
+  keyword: 'oneOf',
+  description: 'Should match exactly one schema in oneOf',
+  bindings: {}
 }
 ```
 
@@ -1192,17 +1086,17 @@ The value of the keyword should be an array of JSON Schemas. The data is valid i
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   anyOf: Schema[]
 }
 ```
-State:
+Error message of the `{ anyOf: [{ type: 'string' }, { type: 'number' }] }`:
 ```json5
 {
-  message: {
-    keyword: 'anyOf',
-    description: 'Should match some schema in anyOf'
-  }
+  success: false,
+  keyword: 'anyOf',
+  description: 'Should match some schema in anyOf',
+  bindings: {}
 }
 ```
 
@@ -1211,17 +1105,17 @@ The value of the keyword should be an array of JSON Schemas. The data is valid i
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   allOf: Schema[]
 }
 ```
-State:
+Error message of the `{ allOf: [{ type: 'integer' }, { type: 'number' }] }`:
 ```json5
 {
-  message: {
-    keyword: 'allOf',
-    description: 'Should match all schema in allOf'
-  }
+  success: false,
+  keyword: 'allOf',
+  description: 'Should match all schema in allOf',
+  bindings: {}
 }
 ```
 
@@ -1230,7 +1124,7 @@ These keywords allow you to implement conditional validation. Their values shoul
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   if: Schema
   then: Schema
   else: Schema
@@ -1242,7 +1136,7 @@ Apply several validation schemas, useful when a property has several validation 
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   applySchemas: Schema[]
 }
 ```
@@ -1251,7 +1145,7 @@ interface Schema {
 
 #### `validate`
 Custom validation function receives current property ref and rule validation function being used for nested properties validation.
-The validation function must return a validation result object. 
+The validation function must return a validation result object.
 
 Schema:
 ```typescript
@@ -1261,7 +1155,7 @@ type RuleValidationResult = {
   [additionalMetadata: string]: any; // some additional state props
 }
 
-interface Schema {
+interface ISchema {
   validate: (ref: Ref, validateRuleFn: ValidateRuleFn) => RuleValidationResult | Promise<RuleValidationResult>
 }
 ```
@@ -1271,73 +1165,20 @@ Custom function receives the current property ref and returns a validation schem
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   resolveSchema: (ref: Ref) => Schema | Promise<Schema>
 }
 ```
 
 ## Annotation keywords
 
-#### `title`
-Provides title of the property.
+#### `readOnly`
+Marks property as read only.
 
 Schema:
 ```typescript
-interface Schema {
-  title: string
-}
-```
-State:
-```json5
-{
-  title: 'Password',
-}
-```
-
-#### `description`
-Provides additional description of the property.
-
-Schema:
-```typescript
-interface Schema {
-  description: string
-}
-```
-State:
-```json5
-{
-  description: 'Type at least 6 characters',
-}
-```
-
-#### `readOnly` / `writeOnly`
-Marks property as read only or write only.
-
-Schema:
-```typescript
-interface Schema {
+interface ISchema {
   readOnly: boolean
-  writeOnly: boolean
-}
-```
-State:
-```json5
-{
-  readOnly: true,
-  writeOnly: true
-}
-```
-
-#### `dependencies`
-The value of the keyword should be an array of paths to dependant properties.
-When a certain property is validated with a `dependencies` keyword it enforces validator to validate listed properties either.
-
-> Note that the path to the property could be absolute and relative. Also, validating properties listed in `dependencies` keyword don't mark them as validated.
-
-Schema:
-```typescript
-interface Schema {
-  dependencies: string[]
 }
 ```
 
@@ -1345,11 +1186,11 @@ interface Schema {
 These keywords are used to customize default error message descriptions if they are provided.
 The provided value will be used as the description of the error message instead of the default descriptions.
 `error` is used to customize any error message and takes precedence over `warnings` keyword, which is used
-to customize an error message of a particular keyword. 
+to customize an error message of a particular keyword.
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   error: any
   errors: { [keyword: string]: any }
 }
@@ -1359,11 +1200,11 @@ interface Schema {
 These keywords are used to customize default warning message descriptions if they are provided.
 The provided value will be used as the description of the warning message instead of the default descriptions.
 `warning` is used to customize any warning message and takes precedence over `warnings` keyword, which is used
-to customize a warning message of a particular keyword. 
+to customize a warning message of a particular keyword.
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   warning: any
   warnings: { [keyword: string]: any }
 }
@@ -1376,22 +1217,22 @@ If property is undefined, provides default value for it
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   default: any
 }
 ```
 
 #### `coerceTypes`
 If the keyword is true or the `coerceTypes` validation option is true - coerces data to the desired [type](#type) if it needed. Coerce type rules:
- - to `string`: `123` => `"123"`, `true` => `"true"`, `false` => `"false"`
- - to `number`: `false` => `0`, `true` => `1`, `null` => `0`, `"123.45"` => `123.45`, not numeric strings `"asd123"` and empty strings `""` are not being coerced.
- - to `integer`: `false` => `0`, `true` => `1`, `null` => `0`, `"123"` => `123`, not numeric strings `"asd123"`, not integer strings `"123.45"` and empty strings `""` are not being coerced.
- - to `boolean`: `null` => `false`, `0` => `false`, `1` => `true`
- - to `null`: `""` => `null`, `0` => `null`, `false` => `null`
+- to `string`: `123` => `"123"`, `true` => `"true"`, `false` => `"false"`
+- to `number`: `false` => `0`, `true` => `1`, `null` => `0`, `"123.45"` => `123.45`, not numeric strings `"asd123"` and empty strings `""` are not being coerced.
+- to `integer`: `false` => `0`, `true` => `1`, `null` => `0`, `"123"` => `123`, not numeric strings `"asd123"`, not integer strings `"123.45"` and empty strings `""` are not being coerced.
+- to `boolean`: `null` => `false`, `0` => `false`, `1` => `true`
+- to `null`: `""` => `null`, `0` => `null`, `false` => `null`
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   coerceTypes: boolean // default false
 }
 ```
@@ -1401,7 +1242,7 @@ The value of the keyword should be a function receiving a data value and returni
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   filter: (value: any) => any
 }
 ```
@@ -1410,20 +1251,21 @@ interface Schema {
 The value of the keyword should be a boolean.
 
 When the keyword is true or the `removeAdditional` validation option is true:
- - if the value being validated is an object, the invalid properties (i.e. properties other than those used in "properties" keyword and those that do not satisfy "additionalProperties" keyword) are removed from the data object.
- - if the value being validated is an array, the invalid items (i.e. items other than those used in "items" keyword and those that do not satisfy "additionalItems" keyword) are removed from the data array.
+- if the value being validated is an object, the invalid properties (i.e. properties other than those used in "properties" keyword and those that do not satisfy "additionalProperties" keyword) are removed from the data object.
+- if the value being validated is an array, the invalid items (i.e. items other than those used in "items" keyword and those that do not satisfy "additionalItems" keyword) are removed from the data array.
 
-> Note that the validated value will be replaced with a cleaned value when the `items` or `properties` keyword finishes validation. So the following keywords will validate the cleaned value. 
+> Note that the validated value will be replaced with a cleaned value when the `items` or `properties` keyword finishes validation. So the following keywords will validate the cleaned value.
 
 Schema:
 ```typescript
-interface Schema {
+interface ISchema {
   removeAdditional: boolean // default false
 }
 ```
 
-## License
-**RxJV** is released under the MIT license.
+# License
+**RJV** is released under the MIT license.
 See the [LICENSE file] for license text and copyright information.
 
 [LICENSE file]: https://github.com/gromver/rjv/blob/master/LICENSE
+
