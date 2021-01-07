@@ -16,7 +16,7 @@ export interface IRef {
   value: any;
   getValue: () => any;
   setValue: (value: any) => void;
-  ref: (relPath: Path) => IRef;
+  ref: (absOrRelPath: Path) => IRef;
 }
 
 // schema
@@ -78,7 +78,7 @@ export interface IValidatorOptions {
 export interface IValidationResult {
   valid: boolean;
   results: {
-    [path: string]: KeywordFnValidationResult;
+    [absPath: string]: KeywordFnValidationResult;
   };
 }
 

@@ -13,7 +13,7 @@ export default class Ref implements IRef {
    */
   constructor (private readonly dataStorage: IStorage, public readonly path: Path = '/') {
     // todo check if path is absolute
-    this.route = utils.pathToArray(path);
+    this.route = utils.pathToRoute(path);
   }
 
   get storage (): IStorage {

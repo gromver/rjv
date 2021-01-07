@@ -18,21 +18,21 @@ function normalizeSlug(slug): string | number {
   return slug;
 }
 
-const removeTrailingSlash = /\/+$/;
+const removeTrailingSlashRegExp = /\/+$/;
 
 const utils = {
   promiseAny,
   isObject(value: any): boolean {
     return value && typeof value === 'object' && !Array.isArray(value);
   },
-  resolvePath(path: Path, hostPath: Path): Path {
-    return pth.resolve(hostPath, path);
+  resolvePath(absOrRelPath: Path, hostPath: Path): Path {
+    return pth.resolve(hostPath, absOrRelPath);
   },
-  pathToKey(path: Route): Path {
-    return `/${path.join('/')}`;
+  routeToPath(route: Route): Path {
+    return `/${route.join('/')}`;
   },
-  pathToArray(path: string): Route {
-    const relPath =  path.substr(1);
+  pathToRoute(absPath: Path): Route {
+    const relPath = absPath.substr(1);
     return relPath ? relPath.split('/').map(normalizeSlug) : [];
   },
   mergeResults(results: IValidateFnResult[]): IValidateFnResult {
@@ -56,7 +56,7 @@ const utils = {
     };
   },
   withTrailingSlash(string: string): string {
-    return `${string.replace(removeTrailingSlash, '')}/`;
+    return `${string.replace(removeTrailingSlashRegExp, '')}/`;
   },
   checkDataType(dataType: ValueType, value: any): boolean {
     switch (dataType) {

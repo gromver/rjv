@@ -8,22 +8,22 @@ import utils from './index';
 
 describe('utils.resolvePath tests', () => {
   it('should get path as array properly', () => {
-    expect(utils.pathToArray(utils.resolvePath('foo/2/bar/03', '/')))
+    expect(utils.pathToRoute(utils.resolvePath('foo/2/bar/03', '/')))
       .toEqual(['foo', 2, 'bar', 3]);
-    expect(utils.pathToArray(utils.resolvePath('foo/bar', '/host')))
+    expect(utils.pathToRoute(utils.resolvePath('foo/bar', '/host')))
       .toEqual(['host', 'foo', 'bar']);
-    expect(utils.pathToArray(utils.resolvePath('foo/bar', '/1')))
+    expect(utils.pathToRoute(utils.resolvePath('foo/bar', '/1')))
       .toEqual([1, 'foo', 'bar']);
-    expect(utils.pathToArray(utils.resolvePath('../bar', '/a/b/c')))
+    expect(utils.pathToRoute(utils.resolvePath('../bar', '/a/b/c')))
       .toEqual(['a', 'b', 'bar']);
-    expect(utils.pathToArray(utils.resolvePath('../bar', '/a/b/c/../')))
+    expect(utils.pathToRoute(utils.resolvePath('../bar', '/a/b/c/../')))
       .toEqual(['a', 'bar']);
   });
 });
 
 describe('utils.pathToKey tests', () => {
   it('should get path as string properly', () => {
-    expect(utils.pathToKey(['foo', 2, 'bar', 3])).toEqual('/foo/2/bar/3');
+    expect(utils.routeToPath(['foo', 2, 'bar', 3])).toEqual('/foo/2/bar/3');
   });
 });
 
