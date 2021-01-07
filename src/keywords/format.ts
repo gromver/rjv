@@ -70,6 +70,6 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    format?: string;
+    format?: keyof typeof formats;
   }
 }

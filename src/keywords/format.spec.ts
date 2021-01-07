@@ -52,6 +52,7 @@ describe('format keyword', () => {
   it('Should expose error #2', async () => {
     await expect(() => new Validator(
       {
+        // @ts-ignore
         format: 'foo',
       },
     ))
