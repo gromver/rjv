@@ -42,4 +42,8 @@ declare module '../types' {
   export interface ISchema {
     minProperties?: number;
   }
+
+  export interface ICustomErrors {
+    minProperties?: string;
+  }
 }

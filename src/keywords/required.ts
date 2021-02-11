@@ -45,4 +45,8 @@ declare module '../types' {
   export interface ISchema {
     required?: string[];
   }
+
+  export interface ICustomErrors {
+    required?: string;
+  }
 }

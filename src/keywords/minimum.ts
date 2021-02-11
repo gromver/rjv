@@ -43,4 +43,9 @@ declare module '../types' {
     minimum?: number;
     exclusiveMinimum?: boolean;
   }
+
+  export interface ICustomErrors {
+    minimum?: string;
+    minimum_exclusive?: string;
+  }
 }

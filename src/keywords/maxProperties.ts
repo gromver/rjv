@@ -42,4 +42,8 @@ declare module '../types' {
   export interface ISchema {
     maxProperties?: number;
   }
+
+  export interface ICustomErrors {
+    maxProperties?: string;
+  }
 }

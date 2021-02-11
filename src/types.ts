@@ -20,14 +20,22 @@ export interface IRef {
 }
 
 // schema
+export interface ICustomErrors {
+  [keywordName: string]: string | undefined;
+}
+
+export interface ICustomWarnings {
+  [keywordName: string]: string | undefined;
+}
+
 export interface ISchema {
   default?: any;
   filter?: (value: any) => any;
   readonly?: boolean;
-  error?: any;
-  warning?: any;
-  errors?: { [keywordName: string]: any };
-  warnings?: { [keywordName: string]: any };
+  error?: string;
+  warning?: string;
+  errors?: ICustomErrors;
+  warnings?: ICustomWarnings;
   removeAdditional?: boolean;
 }
 
@@ -70,8 +78,8 @@ export interface IValidatorOptions {
   coerceTypes: boolean;
   removeAdditional: boolean;
   validateFirst: boolean;
-  errors: { [keywordName: string]: any };
-  warnings: { [keywordName: string]: any };
+  errors: ICustomErrors;
+  warnings: ICustomWarnings;
   keywords: IKeyword[];
 }
 

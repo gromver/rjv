@@ -43,4 +43,9 @@ declare module '../types' {
     maximum?: number;
     exclusiveMaximum?: boolean;
   }
+
+  export interface ICustomErrors {
+    maximum?: string;
+    maximum_exclusive?: string;
+  }
 }

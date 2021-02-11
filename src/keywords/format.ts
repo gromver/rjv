@@ -72,4 +72,8 @@ declare module '../types' {
   export interface ISchema {
     format?: keyof typeof formats;
   }
+
+  export interface ICustomErrors {
+    format?: string;
+  }
 }

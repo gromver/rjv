@@ -138,4 +138,8 @@ declare module '../types' {
     properties?: PropertiesSchema;
     additionalProperties?: boolean | ISchema;
   }
+
+  export interface ICustomErrors {
+    properties?: string;
+  }
 }

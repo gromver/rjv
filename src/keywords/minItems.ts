@@ -42,4 +42,8 @@ declare module '../types' {
   export interface ISchema {
     minItems?: number;
   }
+
+  export interface ICustomErrors {
+    minItems?: string;
+  }
 }

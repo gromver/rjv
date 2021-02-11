@@ -42,4 +42,8 @@ declare module '../types' {
   export interface ISchema {
     minLength?: number;
   }
+
+  export interface ICustomErrors {
+    minLength?: string;
+  }
 }

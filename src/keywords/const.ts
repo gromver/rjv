@@ -40,4 +40,8 @@ declare module '../types' {
   export interface ISchema {
     const?: ((ref: IRef) => ConstValue) | ConstValue;
   }
+
+  export interface ICustomErrors {
+    const?: string;
+  }
 }

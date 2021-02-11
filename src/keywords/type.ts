@@ -119,4 +119,8 @@ declare module '../types' {
     type?: ValueType | ValueType[];
     coerceTypes?: boolean;
   }
+
+  export interface ICustomErrors {
+    type?: string;
+  }
 }

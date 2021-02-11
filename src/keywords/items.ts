@@ -104,6 +104,8 @@ const keyword: IKeyword = {
           }
         } else {
           for (const index in value) {
+            if (!value.hasOwnProperty(index)) continue;
+
             const res = await applyValidateFn(
               ref.ref(`${index}`), rule as ValidateFn, options,
             );
@@ -159,5 +161,10 @@ declare module '../types' {
   export interface ISchema {
     items?: ISchema | ISchema[];
     additionalItems?: boolean | ISchema;
+  }
+
+  export interface ICustomErrors {
+    items?: string;
+    items_overflow?: string;
   }
 }

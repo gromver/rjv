@@ -37,4 +37,8 @@ declare module '../types' {
   export interface ISchema {
     pattern?: string;
   }
+
+  export interface ICustomErrors {
+    pattern?: string;
+  }
 }

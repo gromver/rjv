@@ -74,4 +74,8 @@ declare module '../types' {
   export interface ISchema {
     oneOf?: ISchema[];
   }
+
+  export interface ICustomErrors {
+    oneOf?: string;
+  }
 }

@@ -50,4 +50,8 @@ declare module '../types' {
   export interface ISchema {
     allOf?: ISchema[];
   }
+
+  export interface ICustomErrors {
+    allOf?: string;
+  }
 }

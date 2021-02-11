@@ -54,4 +54,8 @@ declare module '../types' {
   export interface ISchema {
     not?: ISchema;
   }
+
+  export interface ICustomErrors {
+    not?: string;
+  }
 }

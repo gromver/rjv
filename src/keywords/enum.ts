@@ -33,4 +33,8 @@ declare module '../types' {
   export interface ISchema {
     enum?: any[];
   }
+
+  export interface ICustomErrors {
+    enum?: string;
+  }
 }

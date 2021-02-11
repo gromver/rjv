@@ -637,6 +637,7 @@ console.log(result);
     - [type](#type)
     - [enum](#enum)
     - [const](#const)
+    - [presence](#presence)
 - [Keywords for numbers](#keywords-for-numbers)
     - [maximum / minimum and exclusiveMaximum / exclusiveMinimum](#maximum--minimum-and-exclusivemaximum--exclusiveminimum)
     - [multipleOf](#multipleof)
@@ -675,7 +676,7 @@ console.log(result);
 
 ## Keywords for all types
 #### `type`
-This keyword requires that the data is of certain type (or some of types)
+This keyword requires that the data is of certain type (or some of the types)
 
 Schema:
 ```typescript
@@ -732,6 +733,26 @@ Error message of the `{ const: 123 }`:
 }
 ```
 
+#### `presence`
+The data is valid if it is not undefined and is not an empty string. If the `trim` option equals `true`
+and the value is a string, it will be trimmed.
+```typescript
+interface ISchema {
+  presence: boolean | {
+    trim: boolean;
+  }
+}
+```
+Error message of the `{ presence: true }`:
+```json5
+{
+  success: false,
+  keyword: 'presence',
+  description: 'Should not be blank',
+  bindings: { path: '/' }
+}
+```
+
 ## Keywords for numbers
 #### `maximum` / `minimum` and `exclusiveMaximum` / `exclusiveMinimum`
 ```typescript
@@ -755,7 +776,7 @@ Error message of the `{ maximum: 123, exclusiveMaximum: true }`:
 ```json5
 {
   success: false,
-  keyword: 'exclusiveMaximum',
+  keyword: 'maximum_exclusive',
   description: 'Should be less than {limit}',
   bindings: { limit: 123, exclusive: true }
 }
@@ -773,7 +794,7 @@ Error message of the `{ maximum: 123, exclusiveMinimum: true }`:
 ```json5
 {
   success: false,
-  keyword: 'exclusiveMinimum',
+  keyword: 'minimum_exclusive',
   description: 'Should be greater than {limit}',
   bindings: { limit: 123, exclusive: true }
 }
@@ -859,6 +880,21 @@ interface ISchema {
   format: Format
 }
 ```
+
+Formats description:
+- `date` - full-date according to [RFC3339](http://tools.ietf.org/html/rfc3339#section-5.6).
+- `time` - time with optional time-zone.
+- `date-time` - date-time from the same source (time-zone is mandatory).
+- `uri` - full URI.
+- `uri-reference` - URI reference, including full and relative URIs.
+- `uri-template` - URI template according to [RFC6570](https://datatracker.ietf.org/doc/rfc6570/)
+- `url` - [URL record](https://url.spec.whatwg.org/#concept-url).
+- `email` - email address.
+- `hostname` - host name according to [RFC1034](http://tools.ietf.org/html/rfc1034#section-3.5).
+- `ipv4` - IP address v4.
+- `ipv6` - IP address v6.
+- `regex` - tests whether a string is a valid regular expression by passing it to RegExp constructor.
+
 Error message of the `{ format: 'email' }`:
 ```json5
 {
@@ -914,11 +950,21 @@ interface ISchema {
   additionalItems: boolean | Schema
 }
 ```
-Error message of the `{ items: [{ type: 'number' }, { type: 'number' }] }`:
+Error message of the `{ items: { type: 'number' } }`:
 ```json5
 {
   message: {
     keyword: 'items',
+    description: 'Should have valid items',
+    bindings: { invalidIndexes: [1] }
+  }
+}
+```
+Error message of the `{ items: [{ type: 'number' }, { type: 'number' }] }`:
+```json5
+{
+  message: {
+    keyword: 'items_overflow',
     description: 'Should not have more than {limit} items',
     bindings: { limit: 2 }
   }
@@ -971,7 +1017,7 @@ Error message of the `{ minProperties: 4 }`:
 {
   success: false,
   keyword: 'minProperties',
-  description: 'Should not have fewer than 4 properties',
+  description: 'Should not have fewer than {limit} properties',
   bindings: { limit: 4 }
 }
 ```
@@ -1149,14 +1195,13 @@ The validation function must return a validation result object.
 
 Schema:
 ```typescript
-type RuleValidationResult = {
-  valid?: boolean;  // is value valid? might be undefined
-  message?: ValidationMessage;  // error or warning message
-  [additionalMetadata: string]: any; // some additional state props
-}
+type InlineFnValidationResult = ValidateFnResult
+  | string
+  | boolean
+  | undefined
 
 interface ISchema {
-  validate: (ref: Ref, validateRuleFn: ValidateRuleFn) => RuleValidationResult | Promise<RuleValidationResult>
+  validate: (ref: Ref) => InlineFnValidationResult | Promise<InlineFnValidationResult>
 }
 ```
 
@@ -1191,8 +1236,43 @@ to customize an error message of a particular keyword.
 Schema:
 ```typescript
 interface ISchema {
-  error: any
-  errors: { [keyword: string]: any }
+  error: string
+  errors: {
+    // common
+    type?: string
+    const?: string
+    enum?: string
+    presence?: string
+    // string
+    format?: string
+    pattern?: string
+    minLength?: string
+    maxLength?: string
+    // number
+    maximum?: string
+    maximum_exclusive?: string
+    minimum?: string
+    minimum_exclusive?: string
+    multipleOf?: string
+    // array
+    contains?: string
+    minItems?: string
+    maxItems?: string
+    items?: string
+    items_overflow?: string
+    // object
+    minProperties?: string
+    maxProperties?: string
+    properties?: string
+    required?: string
+    // conditionals
+    allOf?: string
+    anyOf?: string
+    not?: string
+    oneOf?: string
+    // added custom keywords
+    [keyword: string]: string
+  }
 }
 ```
 
@@ -1206,7 +1286,7 @@ Schema:
 ```typescript
 interface ISchema {
   warning: any
-  warnings: { [keyword: string]: any }
+  warnings: { [keyword: string]: any }  // default keywords don't expose warnings
 }
 ```
 

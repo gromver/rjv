@@ -68,4 +68,8 @@ declare module '../types' {
   export interface ISchema {
     presence?: boolean | IPresenceSchema;
   }
+
+  export interface ICustomErrors {
+    presence?: string;
+  }
 }

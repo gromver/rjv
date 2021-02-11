@@ -42,4 +42,8 @@ declare module '../types' {
   export interface ISchema {
     multipleOf?: number;
   }
+
+  export interface ICustomErrors {
+    multipleOf?: string;
+  }
 }

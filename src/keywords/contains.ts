@@ -17,6 +17,8 @@ const keyword: IKeyword = {
 
       if (utils.checkDataType('array', value)) {
         for (const index in value) {
+          if (!value.hasOwnProperty(index)) continue;
+
           const res = await applyValidateFn(
             ref.ref(`${index}`), validateFn as ValidateFn, options,
           );
@@ -47,5 +49,9 @@ export default keyword;
 declare module '../types' {
   export interface ISchema {
     contains?: ISchema;
+  }
+
+  export interface ICustomErrors {
+    contains?: string;
   }
 }
