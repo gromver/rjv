@@ -1,30 +1,33 @@
-import Ref from '../Ref';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, ValidateFn, ApplyValidateFn,
 } from '../types';
 import utils from '../utils';
 
-const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
-  return rule.validate
-    ? rule.validate(ref, validateFn, {
+const silentValidateFn: ApplyValidateFn = async (ref, validateFn) => {
+  return validateFn(
+    ref,
+    {
       coerceTypes: false,
       removeAdditional: false,
-    })
-    : Promise.resolve({});
+    },
+    silentValidateFn,
+  );
 };
 
 const keyword: IKeyword = {
   name: 'if',
   reserveNames: ['then', 'else'],
-  compile(compile: CompileFn, schema: ISchema, parentSchema: ISchema): IRule {
+  compile(compile, schema: ISchema, parentSchema) {
     if (!utils.isObject(schema)) {
       throw new Error('The value of the "if" keyword should be a schema object.');
     }
 
     // all rules have validate() fn
-    const ifRule: IRule = compile(schema, parentSchema);
-    const thenRule: IRule | void = parentSchema.then && compile(parentSchema.then, parentSchema);
-    const elseRule: IRule | void = parentSchema.else && compile(parentSchema.else, parentSchema);
+    const ifRule: ValidateFn = compile(schema, parentSchema);
+    const thenRule: ValidateFn | void =
+      parentSchema.then && compile(parentSchema.then, parentSchema);
+    const elseRule: ValidateFn | void =
+      parentSchema.else && compile(parentSchema.else, parentSchema);
 
     if (!(thenRule || elseRule)) {
       throw new Error(
@@ -32,29 +35,30 @@ const keyword: IKeyword = {
       );
     }
 
-    return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
-        : Promise<IRuleValidationResult> {
-        return (
-          (ifRule as any).validate(ref, validateFn, {
-            coerceTypes: false,
-            removeAdditional: false,
-          }) as Promise<IRuleValidationResult>
-        )
-          .then((result) => {
-            if (result.valid === false) {
+    return async (ref, options, applyValidateFn) => {
+      return ifRule(
+        ref,
+        {
+          coerceTypes: false,
+          removeAdditional: false,
+        },
+        silentValidateFn,
+      )
+        .then((result) => {
+          if (result) {
+            if (!result.valid) {
               if (elseRule) {
-                return (elseRule as any).validate(ref, validateRuleFn, options);
+                return elseRule(ref, options, applyValidateFn);
               }
-            } else if (result.valid === true) {
+            } else {
               if (thenRule) {
-                return (thenRule as any).validate(ref, validateRuleFn, options);
+                return thenRule(ref, options, applyValidateFn);
               }
             }
+          }
 
-            return ref.createUndefinedResult();
-          });
-      },
+          return undefined;
+        });
     };
   },
 };

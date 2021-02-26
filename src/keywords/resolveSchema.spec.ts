@@ -2,12 +2,11 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
-import Ref from '../Ref';
+import Validator from '../Validator';
 
 describe('resolveSchema keyword', () => {
   it('Async integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           expect: {
@@ -15,7 +14,7 @@ describe('resolveSchema keyword', () => {
           },
           value: {
             resolveSchema: (ref) => {
-              const expect = ref.ref('/expect').getValue();
+              const expect = ref.ref('/expect').value;
 
               return Promise.resolve({
                 type: expect,
@@ -24,35 +23,30 @@ describe('resolveSchema keyword', () => {
           },
         },
       },
-      {
-        expect: 'number',
-        value: 1,
-      },
     );
-    await model.prepare();
+    await expect(validator.validateData({
+      expect: 'number',
+      value: 1,
+    })).resolves.toMatchObject({ valid: true });
 
-    const ref = model.ref();
-    const expectRef = model.ref('expect');
-    const valueRef = model.ref('value');
+    await expect(validator.validateData({
+      expect: 'number',
+      value: 'foo',
+    })).resolves.toMatchObject({ valid: false });
 
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    await expect(validator.validateData({
+      expect: 'string',
+      value: 'foo',
+    })).resolves.toMatchObject({ valid: true });
 
-    valueRef.setValue('foo');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-
-    expectRef.setValue('string');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
-
-    valueRef.setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    await expect(validator.validateData({
+      expect: 'string',
+      value: 1,
+    })).resolves.toMatchObject({ valid: false });
   });
 
   it('Sync integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           expect: {
@@ -60,7 +54,7 @@ describe('resolveSchema keyword', () => {
           },
           value: {
             resolveSchema: (ref) => {
-              const expect = ref.ref('/expect').getValue();
+              const expect = ref.ref('/expect').value;
 
               return {
                 type: expect,
@@ -69,69 +63,34 @@ describe('resolveSchema keyword', () => {
           },
         },
       },
-      {
-        expect: 'number',
-        value: 1,
-      },
     );
-    await model.prepare();
+    await expect(validator.validateData({
+      expect: 'number',
+      value: 1,
+    })).resolves.toMatchObject({ valid: true });
 
-    const ref = model.ref();
-    const expectRef = model.ref('expect');
-    const valueRef = model.ref('value');
+    await expect(validator.validateData({
+      expect: 'number',
+      value: 'foo',
+    })).resolves.toMatchObject({ valid: false });
 
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    await expect(validator.validateData({
+      expect: 'string',
+      value: 'foo',
+    })).resolves.toMatchObject({ valid: true });
 
-    valueRef.setValue('foo');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-
-    expectRef.setValue('string');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
-
-    valueRef.setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-  });
-
-  it('Check state merging', async () => {
-    const model = new Model(
-      {
-        resolveSchema: () => Promise.resolve({
-          properties: {
-            foo: {
-              readOnly: true,
-            },
-          },
-        }),
-        properties: {
-          foo: {
-            type: 'string',
-          },
-        },
-      },
-      {
-        foo: 'test',
-      },
-    );
-    await model.prepare();
-
-    const ref = model.ref();
-    const fooRef = model.ref('foo');
-    await ref.validate();
-    expect(fooRef.state.valid).toBe(true);
-    expect(fooRef.state.readOnly).toBe(true);
+    await expect(validator.validateData({
+      expect: 'string',
+      value: 1,
+    })).resolves.toMatchObject({ valid: false });
   });
 
   it('Should expose error', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         resolveSchema: {},
       },
-      '',
     ))
       .toThrow('The schema of the "resolveSchema" keyword should be a function returns a schema.');
   });
@@ -139,7 +98,7 @@ describe('resolveSchema keyword', () => {
   it('Should get error description specified in resolveSchema', async () => {
     const CUSTOM_MESSAGE = 'Custom error message';
 
-    const model = new Model(
+    const validator = new Validator(
       {
         resolveSchema: async () => ({
           presence: true,
@@ -149,14 +108,9 @@ describe('resolveSchema keyword', () => {
           },
         }),
       },
-      'a',
     );
-    await model.prepare();
+    const res = await validator.validateData('a');
 
-    await model.validate();
-    const state = (model.ref().firstError as Ref).state;
-
-    expect(state && state.message && state.message.description).toBe(CUSTOM_MESSAGE);
+    expect(res.results['/']!.messages[0].description).toBe(CUSTOM_MESSAGE);
   });
-
 });

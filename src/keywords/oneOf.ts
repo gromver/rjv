@@ -1,66 +1,69 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
+import ValidateFnResult from '../ValidateFnResult';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, ValidateFn, ApplyValidateFn, KeywordFnValidationResult,
 } from '../types';
 import utils from '../utils';
 
-const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
-  return rule.validate
-    ? rule.validate(ref, validateFn, {
+const silentValidateFn: ApplyValidateFn = async (ref, validateFn) => {
+  return validateFn(
+    ref,
+    {
       coerceTypes: false,
       removeAdditional: false,
-    })
-    : Promise.resolve({});
+    },
+    silentValidateFn,
+  );
 };
 
 const keyword: IKeyword = {
   name: 'oneOf',
-  compile(compile: CompileFn, schema: ISchema[], parentSchema: ISchema): IRule {
+  compile(compile, schema: ISchema[], parentSchema) {
     if (!Array.isArray(schema)) {
       throw new Error('The schema of the "oneOf" keyword should be an array of schemas.');
     }
 
-    const rules: IRule[] = [];
+    const rules: ValidateFn[] = [];
 
     schema.forEach((item) => {
       if (!utils.isObject(item)) {
         throw new Error('Items of "oneOf" keyword should be a schema object.');
       }
 
-      rules.push(compile(item, parentSchema));  // all rules have validate() fn
+      rules.push(compile(item, parentSchema));
     });
 
-    return {
-      validate(ref: Ref, validateRuleFn: ValidateRuleFn, options): Promise<IRuleValidationResult> {
-        const jobs: Promise<IRuleValidationResult>[] = rules
-          .map(
-            (rule) => (rule as any)
-              .validate(ref, validateFn, {
-                coerceTypes: false,
-                removeAdditional: false,
-              }) as Promise<IRuleValidationResult>,
-          );
+    return (ref, options, applyValidateFn) => {
+      const jobs: Promise<KeywordFnValidationResult>[] = rules
+        .map(
+          (rule) => rule(
+            ref,
+            {
+              coerceTypes: false,
+              removeAdditional: false,
+            },
+            silentValidateFn,
+          ),
+        );
 
-        return Promise.all(jobs).then((results) => {
-          const validRules: IRule[] = [];
+      return Promise.all(jobs).then((results) => {
+        const validRules: ValidateFn[] = [];
 
-          results.forEach((result, index) => {
-            if (result.valid === true) {
-              validRules.push(rules[index]);
-            }
-          });
-
-          if (validRules.length === 1) {
-            return validateRuleFn(ref, validRules[0], options);
+        results.forEach((result, index) => {
+          if (result && result.valid) {
+            validRules.push(rules[index]);
           }
-
-          return ref.createErrorResult(new ValidationMessage(
-            keyword.name,
-            'Should match exactly one schema in oneOf',
-          ));
         });
-      },
+
+        if (validRules.length === 1) {
+          return applyValidateFn(ref, validRules[0], options);
+        }
+
+        return new ValidateFnResult(
+          false,
+          'Should match exactly one schema in oneOf',
+          keyword.name,
+        );
+      });
     };
   },
 };
@@ -70,5 +73,9 @@ export default keyword;
 declare module '../types' {
   export interface ISchema {
     oneOf?: ISchema[];
+  }
+
+  export interface ICustomErrors {
+    oneOf?: string;
   }
 }

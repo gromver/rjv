@@ -2,11 +2,13 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('oneOf keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         oneOf: [
           {
@@ -23,29 +25,28 @@ describe('oneOf keyword', () => {
           },
         ],
       },
-      1,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage(1));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue('abc');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(4);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('abcd');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('Properties integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         oneOf: [
           {
@@ -74,46 +75,43 @@ describe('oneOf keyword', () => {
           },
         ],
       },
-      { a: 1 },
     );
-    await model.prepare();
 
-    const ref = model.ref();
+    const ref = new Ref(new Storage({ a: 1 }));
     const aRef = ref.ref('a');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     aRef.setValue('abc');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     aRef.setValue(4);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     aRef.setValue('ab');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('Should expose error #1', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         oneOf: 1,
       },
-      '',
     ))
       .toThrow('The schema of the "oneOf" keyword should be an array of schemas.');
   });
 
   it('Should expose error 2', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         oneOf: [1],
       },
-      '',
     ))
       .toThrow('Items of "oneOf" keyword should be a schema object.');
   });

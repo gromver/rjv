@@ -1,8 +1,6 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult, ValueType,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import utils from '../utils';
+import { IKeyword, ValueType } from '../types';
 
 /**
  * Like typeof but supports 'array' type
@@ -21,7 +19,7 @@ function getValueType(value: any): string {
 const keyword: IKeyword = {
   name: 'type',
   reserveNames: ['coerceTypes'],
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any, parentSchema) {
     // Type can be: number, integer, string, boolean, array, object or null.
     let types: ValueType[] = [];
     const data = schema.data ? schema.data : schema;
@@ -34,84 +32,82 @@ const keyword: IKeyword = {
 
     const coerceTypes = !!parentSchema.coerceTypes;
 
-    return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
-        : Promise<IRuleValidationResult> {
-        const curValue = ref.getValue();
-        const curType = getValueType(curValue);
+    return async (ref, options) => {
+      const curValue = ref.value;
+      const curType = getValueType(curValue);
 
-        if (curValue === undefined) {
-          return Promise.resolve(ref.createUndefinedResult());
-        }
+      if (curValue === undefined) {
+        return Promise.resolve(undefined);
+      }
 
-        const valid = types.some((type) => {
-          if (!ref.checkDataType(type)) {
-            // try to coerce type
-            if (coerceTypes || options.coerceTypes) {
-              switch (type) {
-                case 'string':
-                  if (curType === 'number' || curType === 'boolean') {
-                    ref.setValue(`${curValue}`);
-                  }
-                  break;
+      const valid = types.some((type) => {
+        if (!utils.checkDataType(type, curValue)) {
+          // try to coerce type
+          if (coerceTypes || options.coerceTypes) {
+            switch (type) {
+              case 'string':
+                if (curType === 'number' || curType === 'boolean') {
+                  ref.value = `${curValue}`;
+                }
+                break;
 
-                case 'number':
-                  if (
-                    curType === 'boolean' || curValue === null
+              case 'number':
+                if (
+                  curType === 'boolean' || curValue === null
+                  // tslint:disable-next-line:triple-equals
+                  || (curType === 'string' && curValue && curValue == +curValue)
+                ) {
+                  ref.value = +curValue;
+                }
+                break;
+
+              case 'integer':
+                if (
+                  curType === 'boolean' || curValue === null
+                  || (
                     // tslint:disable-next-line:triple-equals
-                    || (curType === 'string' && curValue && curValue == +curValue)
-                  ) {
-                    ref.setValue(+curValue);
-                  }
-                  break;
+                    curType === 'string' && curValue && curValue == +curValue && !(curValue % 1)
+                  )
+                ) {
+                  ref.value = +curValue;
+                }
+                break;
 
-                case 'integer':
-                  if (
-                    curType === 'boolean' || curValue === null
-                    || (
-                      // tslint:disable-next-line:triple-equals
-                      curType === 'string' && curValue && curValue == +curValue && !(curValue % 1)
-                    )
-                  ) {
-                    ref.setValue(+curValue);
-                  }
-                  break;
+              case 'boolean':
+                if (curValue === 'false' || curValue === 0 || curValue === null) {
+                  ref.value = false;
+                } else if (curValue === 'true' || curValue === 1) {
+                  ref.value = true;
+                }
+                break;
 
-                case 'boolean':
-                  if (curValue === 'false' || curValue === 0 || curValue === null) {
-                    ref.setValue(false);
-                  } else if (curValue === 'true' || curValue === 1) {
-                    ref.setValue(true);
-                  }
-                  break;
-
-                case 'null':
-                  if (curValue === '' || curValue === 0 || curValue === false) {
-                    ref.setValue(null);
-                  }
-                  break;
-              }
-
-              // check type again
-              return ref.checkDataType(type);
+              case 'null':
+                if (curValue === '' || curValue === 0 || curValue === false) {
+                  ref.value = null;
+                }
+                break;
             }
 
-            return false;
+            // check type again
+            return utils.checkDataType(type, ref.value);
           }
 
-          return true;
-        });
+          return false;
+        }
 
-        const typesAsString = types.join(', ');
+        return true;
+      });
 
-        return valid
-          ? ref.createSuccessResult()
-          : ref.createErrorResult(new ValidationMessage(
-            keyword.name,
-            'Should be {typesAsString}',
-            { types, typesAsString },
-          ));
-      },
+      const typesAsString = types.join(', ');
+
+      return valid
+        ? new ValidateFnResult(true)
+        : new ValidateFnResult(
+          false,
+          'Should be {typesAsString}',
+          keyword.name,
+          { types, typesAsString },
+        );
     };
   },
 };
@@ -120,7 +116,11 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    type?: string | string[];
+    type?: ValueType | ValueType[];
     coerceTypes?: boolean;
+  }
+
+  export interface ICustomErrors {
+    type?: string;
   }
 }

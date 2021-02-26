@@ -1,8 +1,5 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword, IRef } from '../types';
 
 const _ = {
   isEqual: require('lodash/isEqual'),
@@ -10,8 +7,8 @@ const _ = {
 
 const keyword: IKeyword = {
   name: 'const',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
-    let resolve: (ref: Ref) => any;
+  compile(compile, schema: any) {
+    let resolve: (ref: IRef) => any;
 
     if (typeof schema === 'function') {
       resolve = schema;
@@ -19,26 +16,18 @@ const keyword: IKeyword = {
       resolve = () => schema;
     }
 
-    return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        const value = ref.getValue();
-        const allowedValue = resolve(ref);
+    return async (ref) => {
+      const value = ref.value;
+      const allowedValue = resolve(ref);
 
-        const metadata: IRuleValidationResult = {
-          const: allowedValue,
-        };
-
-        return _.isEqual(value, allowedValue)
-          ? ref.createSuccessResult(undefined, metadata)
-          : ref.createErrorResult(
-            new ValidationMessage(
-              keyword.name,
-              'Should be equal to constant',
-              { allowedValue },
-            ),
-            metadata,
-          );
-      },
+      return _.isEqual(value, allowedValue)
+        ? new ValidateFnResult(true)
+        : new ValidateFnResult(
+          false,
+          'Should be equal to constant',
+          keyword.name,
+          { allowedValue },
+        );
     };
   },
 };
@@ -49,10 +38,10 @@ type ConstValue = number | string | null | {} | [];
 
 declare module '../types' {
   export interface ISchema {
-    const?: ((ref: Ref) => ConstValue) | ConstValue;
+    const?: ((ref: IRef) => ConstValue) | ConstValue;
   }
 
-  export interface IRuleValidationResult {
-    const?: ConstValue;
+  export interface ICustomErrors {
+    const?: string;
   }
 }

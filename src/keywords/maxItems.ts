@@ -1,10 +1,10 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import { ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult } from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'maxItems',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     const limit = schema;
 
     if (typeof limit !== 'number') {
@@ -15,31 +15,23 @@ const keyword: IKeyword = {
       throw new Error('The "maxItems" keyword can\'t be less then 0.');
     }
 
-    return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('array')) {
-          const value = ref.getValue();
+    return async (ref) => {
+      const value = ref.value;
 
-          const metadata: IRuleValidationResult = {
-            maxItems: limit,
-          };
-
-          if (value.length > limit) {
-            return ref.createErrorResult(
-              new ValidationMessage(
-                keyword.name,
-                'Should not have more than {limit} items',
-                { limit },
-              ),
-              metadata,
-            );
-          }
-
-          return ref.createSuccessResult(undefined, metadata);
+      if (utils.checkDataType('array', value)) {
+        if (value.length > limit) {
+          return new ValidateFnResult(
+            false,
+            'Should not have more than {limit} items',
+            keyword.name,
+            { limit },
+          );
         }
 
-        return ref.createUndefinedResult();
-      },
+        return new ValidateFnResult(true);
+      }
+
+      return undefined;
     };
   },
 };
@@ -51,7 +43,7 @@ declare module '../types' {
     maxItems?: number;
   }
 
-  export interface IRuleValidationResult {
-    maxItems?: number;
+  export interface ICustomErrors {
+    maxItems?: string;
   }
 }

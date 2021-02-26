@@ -1,37 +1,37 @@
-import Ref from '../Ref';
-import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword, ValidateFn, IValidateFnResult } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'applySchemas',
-  compile(compile: CompileFn, schema: ISchema[], parentSchema: ISchema): IRule {
+  compile(compile, schema: ISchema[], parentSchema) {
     if (!Array.isArray(schema)) {
       throw new Error('The schema of the "applySchemas" keyword should be an array of schemas.');
     }
 
-    const rules: IRule[] = [];
+    const rules: ValidateFn[] = [];
 
     schema.forEach((item) => {
       if (!utils.isObject(item)) {
         throw new Error('Items of "applySchemas" keyword should be a schema object.');
       }
 
-      rules.push(compile(item, parentSchema));  // all rules have validate() fn
+      rules.push(compile(item, parentSchema));
     });
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<IRuleValidationResult> => {
+    return async (ref, options, applyValidateFn) => {
+      const results: IValidateFnResult[] = [];
+
       for (const rule of rules) {
-        await validateRuleFn(ref, rule, options);
+        const res = await applyValidateFn(ref, rule, options);
+
+        res && results.push(res);
       }
 
-      return ref.createUndefinedResult();
-    };
+      if (results.length) {
+        return utils.mergeResults(results);
+      }
 
-    return {
-      validate,
+      return undefined;
     };
   },
 };

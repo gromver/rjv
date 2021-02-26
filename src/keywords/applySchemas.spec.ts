@@ -2,11 +2,13 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('applySchemas keyword', () => {
   it('Some integration tests #1', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         applySchemas: [
           {
@@ -19,33 +21,32 @@ describe('applySchemas keyword', () => {
           },
         ],
       },
-      3,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage(3));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('abc');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(6);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('Some integration tests #2', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         applySchemas: [
           {
@@ -57,29 +58,28 @@ describe('applySchemas keyword', () => {
           },
         ],
       },
-      3,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    const ref = new Ref(new Storage(3));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(6);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('abc');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('Some integration tests #3', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         applySchemas: [
           {
@@ -92,33 +92,33 @@ describe('applySchemas keyword', () => {
           },
         ],
       },
-      3,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage(3));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(6);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue('abc');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue('ab');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBe(undefined);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Properties integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         applySchemas: [
           {
@@ -139,46 +139,43 @@ describe('applySchemas keyword', () => {
           },
         ],
       },
-      { a: 4 },
     );
-    await model.prepare();
 
-    const ref = model.ref();
+    const ref = new Ref(new Storage({ a: 4 }));
     const aRef = ref.ref('a');
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     aRef.setValue(1);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     aRef.setValue('abc');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     aRef.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('Should expose error #1', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         applySchemas: 1,
       },
-      '',
     ))
       .toThrow('The schema of the "applySchemas" keyword should be an array of schemas.');
   });
 
   it('Should expose error #2', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         applySchemas: [1],
       },
-      '',
     ))
       .toThrow('Items of "applySchemas" keyword should be a schema object.');
   });

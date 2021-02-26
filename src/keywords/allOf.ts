@@ -1,50 +1,45 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
+import ValidateFnResult from '../ValidateFnResult';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, ValidateFn, KeywordFnValidationResult,
 } from '../types';
 import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'allOf',
-  compile(compile: CompileFn, schema: ISchema[], parentSchema: ISchema): IRule {
+  compile(compile, schema: ISchema[], parentSchema) {
     if (!Array.isArray(schema)) {
       throw new Error('The schema of the "allOf" keyword should be an array of schemas.');
     }
 
-    const rules: IRule[] = [];
+    const rules: ValidateFn[] = [];
 
     schema.forEach((item) => {
       if (!utils.isObject(item)) {
         throw new Error('Items of "allOf" keyword should be a schema object.');
       }
 
-      rules.push(compile(item, parentSchema));  // all rules have validate() fn
+      rules.push(compile(item, parentSchema));
     });
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<IRuleValidationResult> => {
-      const results: IRuleValidationResult[] = [];
+    return async (ref, options, applyValidateFn) => {
+      const results: (KeywordFnValidationResult)[] = [];
 
       for (const rule of rules) {
-        const res = await validateRuleFn(ref, rule, options);
+        const res = await applyValidateFn(ref, rule, options);
         results.push(res);
       }
 
-      const validRules = results.filter((result) => result.valid === true).length;
+      const validRules = results.filter((result) => result && result.valid).length;
 
       if (validRules === results.length) {
-        return ref.createSuccessResult();
+        return new ValidateFnResult(true);
       }
 
-      return ref.createErrorResult(new ValidationMessage(
-        keyword.name,
+      return new ValidateFnResult(
+        false,
         'Should match all schema in allOf',
-      ));
-    };
-
-    return {
-      validate,
+        keyword.name,
+      );
     };
   },
 };
@@ -54,5 +49,9 @@ export default keyword;
 declare module '../types' {
   export interface ISchema {
     allOf?: ISchema[];
+  }
+
+  export interface ICustomErrors {
+    allOf?: string;
   }
 }

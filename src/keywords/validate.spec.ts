@@ -1,104 +1,103 @@
+import utils from '../utils';
+
 declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
-import ValidationMessage from '../ValidationMessage';
+import Validator from '../Validator';
 
 describe('validate keyword', () => {
   it('Should work with async validation function', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         validate: (ref) => {
           return Promise.resolve().then(() => {
-            if (ref.checkDataType('number')) {
-              const value = ref.getValue();
+            if (utils.checkDataType('number', ref.value)) {
+              const value = ref.value;
 
               if (value > 5) {
-                return ref.createSuccessResult();
+                return true;
               }
 
-              return ref.createErrorResult(new ValidationMessage(
-                'customFn',
-                'Value should be greater than 5.',
-              ));
+              return 'Value should be greater than 5.';
             }
 
-            return ref.createUndefinedResult();
+            return undefined;
           });
         },
       },
-      10,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    expect(ref.state.valid).toBe(true);
+    await expect(validator.validateData(10)).resolves.toMatchObject({ valid: true });
 
-    ref.setValue(5);
-    await ref.validate();
-    expect(ref.state).toMatchObject({
+    await expect(validator.validateData(5)).resolves.toMatchObject({
       valid: false,
-      message: {
-        keyword: 'customFn',
-        description: 'Value should be greater than 5.',
+      results: {
+        '/': {
+          valid: false,
+          messages: [
+            {
+              success: false,
+              keyword: 'inline',
+              description: 'Value should be greater than 5.',
+            },
+          ],
+        },
       },
     });
 
-    ref.setValue('string');
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const res = await validator.validateData('string');
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBe(undefined);
   });
 
   it('Should work with sync validation function', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         validate: (ref) => {
-          if (ref.checkDataType('number')) {
-            const value = ref.getValue();
+          if (utils.checkDataType('number', ref.value)) {
+            const value = ref.value;
 
             if (value > 5) {
-              return ref.createSuccessResult();
+              return true;
             }
 
-            return ref.createErrorResult(new ValidationMessage(
-              'customFn',
-              'Value should be greater than 5.',
-            ));
+            return 'Value should be greater than 5.';
           }
 
-          return ref.createUndefinedResult();
+          return undefined;
         },
       },
-      10,
     );
-    await model.prepare();
+    await expect(validator.validateData(10)).resolves.toMatchObject({ valid: true });
 
-    const ref = model.ref();
-    expect(ref.state.valid).toBe(true);
-
-    ref.setValue(5);
-    await ref.validate();
-    expect(ref.state).toMatchObject({
+    await expect(validator.validateData(5)).resolves.toMatchObject({
       valid: false,
-      message: {
-        keyword: 'customFn',
-        description: 'Value should be greater than 5.',
+      results: {
+        '/': {
+          valid: false,
+          messages: [
+            {
+              success: false,
+              keyword: 'inline',
+              description: 'Value should be greater than 5.',
+            },
+          ],
+        },
       },
     });
 
-    ref.setValue('string');
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const res = await validator.validateData('string');
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBe(undefined);
   });
 
   it('Should expose error', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         validate: {},
       },
-      '',
     ))
       .toThrow('The schema of the "validate" keyword should be an async validation function.');
   });

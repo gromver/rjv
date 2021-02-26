@@ -2,11 +2,13 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('presence keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           foo: {
@@ -20,71 +22,62 @@ describe('presence keyword', () => {
           car: {},
         },
       },
-      {
-        bar: null,
-      },
     );
-    await model.prepare();
 
-    const ref = model.ref();
+    const ref = new Ref(new Storage({
+      bar: null,
+    }));
     const fooRef = ref.ref('foo');
     const barRef = ref.ref('bar');
-    const carRef = ref.ref('car');
-    expect(fooRef.isShouldNotBeBlank).toBe(true);
-    expect(barRef.isShouldNotBeBlank).toBe(true);
-    expect(carRef.isShouldNotBeBlank).toBe(false);
 
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-    expect(fooRef.state.valid).toBe(false);
-    expect(fooRef.state.message).toMatchObject({
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/foo']!.valid).toBe(false);
+    expect(res.results['/foo']!.messages[0]).toMatchObject({
       keyword: 'presence',
       description: 'Should not be blank',
       bindings: { path: '/foo' },
     });
-    expect(barRef.state.valid).toBe(true);
-    expect(carRef.state.valid).toBeUndefined();
-    expect(fooRef.isShouldNotBeBlank).toBe(true);
-    expect(barRef.isShouldNotBeBlank).toBe(true);
-    expect(carRef.isShouldNotBeBlank).toBe(false);
+    expect(res.results['/bar']!.valid).toBe(true);
+    expect(res.results['/car']).toBeUndefined();
 
     fooRef.setValue('');
-    await ref.validate();
-    expect(fooRef.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.results['/foo']!.valid).toBe(false);
 
     fooRef.setValue('abc');
-    await ref.validate();
-    expect(fooRef.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     fooRef.setValue(null);
-    await ref.validate();
-    expect(fooRef.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     fooRef.setValue(0);
-    await ref.validate();
-    expect(fooRef.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     fooRef.setValue([]);
-    await ref.validate();
-    expect(fooRef.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     fooRef.setValue({});
-    await ref.validate();
-    expect(fooRef.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.results['/foo']!.valid).toBe(true);
 
     barRef.setValue('   ');
-    await ref.validate();
-    expect(barRef.state.valid).toBe(false);
-    expect(barRef.getValue()).toBe('');
+    res = await validator.validateRef(ref);
+    expect(res.results['/bar']!.valid).toBe(false);
+    expect(barRef.value).toBe('');
 
     barRef.setValue(' foo ');
-    await ref.validate();
-    expect(barRef.state.valid).toBe(true);
-    expect(barRef.getValue()).toBe('foo');
+    res = await validator.validateRef(ref);
+    expect(res.results['/bar']!.valid).toBe(true);
+    expect(barRef.value).toBe('foo');
   });
 
   it('Test default and presence keywords case #1', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           foo: {
@@ -95,19 +88,17 @@ describe('presence keyword', () => {
           },
         },
       },
-      {},
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const fooRef = ref.ref('foo');
+    const ref = new Ref(new Storage({}));
 
-    await ref.validate();
-    expect(fooRef.state.valid).toBe(false);
+    const res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/foo']!.valid).toBe(false);
   });
 
   it('Test default and presence keywords case #2', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         properties: {
           foo: {
@@ -118,20 +109,17 @@ describe('presence keyword', () => {
           },
         },
       },
-      {},
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    const fooRef = ref.ref('foo');
+    const ref = new Ref(new Storage({}));
 
-    await ref.validate();
-    expect(fooRef.state.valid).toBe(true);
-    expect(fooRef.getValue()).toBe('abc');
+    const res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
+    expect(ref.ref('foo').value).toBe('abc');
   });
 
   it('Should expose error', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         properties: {
@@ -140,7 +128,6 @@ describe('presence keyword', () => {
           },
         },
       },
-      '',
     ))
       .toThrow('The schema of the "presence" keyword should be a boolean value or an object.');
   });

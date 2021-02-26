@@ -1,119 +1,104 @@
-import Ref from './Ref';
-import { IModelValidationOptions } from './Model';
-
 export type Path = string;
 export type Route = (string | number)[];
 
 export type ValueType = 'null' | 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean';
 
-// Model
-export interface IModelOptionsPartial {
-  // utilized by Ref::messageDescription to make messages readable
-  descriptionResolver?: (message: IValidationMessage) => string | any;
-  // default validator options
-  validator?: IValidatorOptionsPartial;
-  // additional keywords
-  keywords?: IKeyword[];
-  // mode
-  debug?: boolean;
+// storage
+export interface IStorage {
+  get(path: Route): any;
+  set(path: Route, value: any): void;
 }
 
-export interface IModelOptions extends IModelOptionsPartial {
-  // validation's process default opts
-  validator: IModelValidationOptions;
-  descriptionResolver: (message: IValidationMessage) => string | any;
-  debug: boolean;
+// ref
+export interface IRef {
+  readonly path: string;
+  readonly route: Route;
+  value: any;
+  getValue: () => any;
+  setValue: (value: any) => void;
+  ref: (absOrRelPath: Path) => IRef;
 }
 
-// Validator
+// schema
+export interface ICustomErrors {
+  [keywordName: string]: string | undefined;
+}
+
+export interface ICustomWarnings {
+  [keywordName: string]: string | undefined;
+}
+
+export interface ISchema {
+  default?: any;
+  filter?: (value: any) => any;
+  readonly?: boolean;
+  error?: string;
+  warning?: string;
+  errors?: ICustomErrors;
+  warnings?: ICustomWarnings;
+  removeAdditional?: boolean;
+}
+
+// validation messages
 export interface IValidationMessage {
+  success: boolean;
   keyword: string;
   description: any;
   bindings: {};
 }
 
-export interface IValidatorOptionsPartial {
+// validate fn
+export interface IValidateFnOptions {
   coerceTypes?: boolean;
   removeAdditional?: boolean;
-  errors?: { [keywordName: string]: any };
-  warnings?: { [keywordName: string]: any };
-  keywords?: IKeyword[];
+  validateFirst?: boolean;
 }
 
-export interface IValidatorOptions extends IValidatorOptionsPartial {
+export interface ValidateFn {
+  (ref: IRef, options: IValidateFnOptions, applyValidateFn: ApplyValidateFn)
+    : Promise<KeywordFnValidationResult>;
+}
+
+export interface ApplyValidateFn {
+  (ref: IRef, validateFn: ValidateFn, options: IValidateFnOptions)
+    : Promise<KeywordFnValidationResult>;
+}
+
+export interface IValidateFnResult {
+  valid: boolean;
+  messages: IValidationMessage[];
+}
+
+export type KeywordFnValidationResult = IValidateFnResult | undefined;
+
+export type InlineFnValidationResult = IValidateFnResult | string | boolean | undefined;
+
+// validator
+export interface IValidatorOptions {
   coerceTypes: boolean;
   removeAdditional: boolean;
-  errors: { [keywordName: string]: any };
-  warnings: { [keywordName: string]: any };
+  validateFirst: boolean;
+  errors: ICustomErrors;
+  warnings: ICustomWarnings;
   keywords: IKeyword[];
 }
 
-// schema
-export interface ISchema {
-  title?: string;
-  description?: string;
-  default?: any;
-  filter?: (value: any) => any;
-  readOnly?: boolean;
-  writeOnly?: boolean;
-  examples?: any[];
-  error?: any;
-  warning?: any;
-  errors?: { [keywordName: string]: any };
-  warnings?: { [keywordName: string]: any };
-  dependencies?: string[];
-  dependsOn?: string[];
-  removeAdditional?: boolean;
-}
-
-// rules
-export interface IRuleValidationOptions {
-  coerceTypes?: boolean;
-  removeAdditional?: boolean;
-}
-
-export interface ValidateRuleFn {
-  (ref: Ref, rule: IRule, options: IRuleValidationOptions): Promise<IRuleValidationResult>;
-}
-
-export interface IRule {
-  validate?: (ref: Ref, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
-    => Promise<IRuleValidationResult>;
-}
-
-export interface IRuleCompiled extends IRule {
-  keyword: string;
-}
-
-export interface IRuleValidationResult {
-  valid?: boolean;
-  message?: IValidationMessage;
-  title?: any;
-  description?: any;
-  required?: boolean;
-  readOnly?: boolean;
-  writeOnly?: boolean;
-  validating?: boolean;
-  dependencies?: string[];
-  dependsOn?: string[];
-  [additionalMetadata: string]: any;
+export interface IValidationResult {
+  valid: boolean;
+  results: {
+    [absPath: string]: KeywordFnValidationResult;
+  };
 }
 
 // keywords
-export type CompileFn = (schema: any, parentSchema: ISchema) => IRule;
+export type CompileFn = (schema: any, parentSchema: ISchema) => ValidateFn;
 
 export interface IKeyword {
   name: string;
   reserveNames?: string[];
-  compile(compileFn: CompileFn, schema: any, parentSchema: ISchema): IRule;
+  compile(compileFn: CompileFn, schema: any, parentSchema: ISchema): ValidateFn;
 }
 
 export interface IKeywordMap {
   [keyword: string]: IKeyword;
-}
-
-// storage
-export interface IStorage {
-  get(path: Route): any;
-  set(path: Route, value: any): void;
 }

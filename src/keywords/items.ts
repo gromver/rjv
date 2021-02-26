@@ -1,19 +1,29 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
+import ValidateFnResult from '../ValidateFnResult';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, ValidateFn, ApplyValidateFn, KeywordFnValidationResult,
 } from '../types';
 import utils from '../utils';
+
+const silentValidateFn: ApplyValidateFn = async (ref, validateFn) => {
+  return validateFn(
+    ref,
+    {
+      coerceTypes: false,
+      removeAdditional: false,
+    },
+    silentValidateFn,
+  );
+};
 
 const keyword: IKeyword = {
   name: 'items',
   reserveNames: ['additionalItems'],
-  compile(compile: CompileFn, schema: ISchema | ISchema[], parentSchema: ISchema): IRule {
+  compile(compile, schema: ISchema | ISchema[], parentSchema) {
     if (!utils.isObject(schema) && !Array.isArray(schema)) {
       throw new Error('The schema of the "items" keyword should be an object or array of schemas.');
     }
 
-    let rule: IRule | IRule[] = [];
+    let rule: ValidateFn | ValidateFn[] = [];
 
     if (Array.isArray(schema)) {
       schema.forEach((itemSchema) => {
@@ -21,7 +31,7 @@ const keyword: IKeyword = {
           throw new Error('Each item of the "items" keyword should be a schema object.');
         }
 
-        (rule as IRule[]).push(compile(itemSchema, parentSchema));
+        (rule as ValidateFn[]).push(compile(itemSchema, parentSchema));
       });
     } else {
       rule = compile(schema, parentSchema);
@@ -30,7 +40,7 @@ const keyword: IKeyword = {
     // additionalItems
     const noAdditional = parentSchema.additionalItems === false;
 
-    let additionalRule: IRule;
+    let additionalRule: ValidateFn;
 
     if (utils.isObject(parentSchema.additionalItems)) {
       additionalRule = compile(parentSchema.additionalItems, parentSchema);
@@ -38,27 +48,24 @@ const keyword: IKeyword = {
 
     const removeAdditional = !!parentSchema.removeAdditional;
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<IRuleValidationResult> => {
-      const results: IRuleValidationResult[] = [];
+    return async (ref, options, applyValidateFn) => {
+      const results: (KeywordFnValidationResult)[] = [];
       const invalidIndexes: number[] = [];
-      const value = ref.getValue() as [];
+      const value = ref.value as [];
       let hasValidProps = false;
       let hasInvalidProps = false;
       let hasItemsOverflow = false;
 
-      if (ref.checkDataType('array')) {
+      if (utils.checkDataType('array', value)) {
         if (Array.isArray(rule)) {
           for (const index in rule) {
             const itemRule = rule[index];
 
-            if (itemRule.validate) {
-              const res = await validateRuleFn(
-                ref.ref(index), itemRule, options,
-              ) as IRuleValidationResult;
+            const res = await applyValidateFn(
+              ref.ref(index), itemRule, options,
+            );
 
-              results.push(res);
-            }
+            results.push(res);
           }
 
           // check additional items
@@ -66,74 +73,84 @@ const keyword: IKeyword = {
             if (noAdditional && !removeAdditional && !options.removeAdditional) {
               hasItemsOverflow = true;
             } else if (additionalRule) {
-              const removeIndices: number[] = [];
+              if (removeAdditional) {
+                const removeIndices: number[] = [];
 
-              for (let i = rule.length; i < value.length; i += 1) {
-                const res = await validateRuleFn(
-                  ref.ref(`${i}`), additionalRule, options,
-                ) as IRuleValidationResult;
+                for (let i = rule.length; i < value.length; i += 1) {
+                  // just need to know is value valid
+                  const preValidationRes = await silentValidateFn(
+                    ref.ref(`${i}`), additionalRule, options,
+                  );
 
-                if (res.valid === false && removeAdditional) {
-                  removeIndices.push(i);
-                } else {
-                  results.push(res);
+                  if (preValidationRes === undefined || !preValidationRes.valid) {
+                    removeIndices.push(i);
+                  }
                 }
+
+                ref.value = value.filter((v, i) => !removeIndices.includes(i));
               }
 
-              ref.setValue(value.filter((v, i) => removeIndices.indexOf(i) === -1));
+              // now check items without wrong additional items
+              for (let i = rule.length; i < value.length; i += 1) {
+                const res = await applyValidateFn(
+                  ref.ref(`${i}`), additionalRule, options,
+                );
+
+                results.push(res);
+              }
             } else if (removeAdditional || options.removeAdditional) {
-              ref.setValue(value.slice(0, rule.length));
+              ref.value = value.slice(0, rule.length);
             }
           }
         } else {
           for (const index in value) {
-            if (rule.validate) {
-              const res = await validateRuleFn(
-                ref.ref(`${index}`), rule as IRule, options,
-              ) as IRuleValidationResult;
+            if (!value.hasOwnProperty(index)) continue;
 
-              results.push(res);
-            }
+            const res = await applyValidateFn(
+              ref.ref(`${index}`), rule as ValidateFn, options,
+            );
+
+            results.push(res);
           }
         }
 
         results.forEach((result, index) => {
-          if (result.valid === true) {
-            hasValidProps = true;
-          } else if (result.valid === false) {
-            hasInvalidProps = true;
-            invalidIndexes.push(index);
+          if (result) {
+            if (result.valid) {
+              hasValidProps = true;
+            } else {
+              hasInvalidProps = true;
+              invalidIndexes.push(index);
+            }
           }
         });
 
         if (hasInvalidProps) {
-          return ref.createErrorResult(new ValidationMessage(
-            keyword.name,
+          return new ValidateFnResult(
+            false,
             'Should have valid items',
+            keyword.name,
             { invalidIndexes },
-          ));
+          );
         }
 
         if (hasItemsOverflow) {
-          const limit = (rule as IRule[]).length;
+          const limit = (rule as ValidateFn[]).length;
 
-          return ref.createErrorResult(new ValidationMessage(
-            `${keyword.name}_overflow`,
+          return new ValidateFnResult(
+            false,
             'Should not have more than {limit} items',
+            `${keyword.name}_overflow`,
             { limit },
-          ));
+          );
         }
 
         if (hasValidProps) {
-          return ref.createSuccessResult();
+          return new ValidateFnResult(true);
         }
       }
 
-      return ref.createUndefinedResult();
-    };
-
-    return {
-      validate,
+      return undefined;
     };
   },
 };
@@ -144,5 +161,10 @@ declare module '../types' {
   export interface ISchema {
     items?: ISchema | ISchema[];
     additionalItems?: boolean | ISchema;
+  }
+
+  export interface ICustomErrors {
+    items?: string;
+    items_overflow?: string;
   }
 }
