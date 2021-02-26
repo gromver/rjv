@@ -87,7 +87,7 @@ validator
 ## Accessing data
 The `Ref` is a main [interface](#ref) to access and change data.
 Each `Ref` points to a specific data property, to determine that property a `path` is being used.
-The `path` is a simple string working like a file system path, it could be absolute - `/`, `/a/b/c` or relative - `../b/c`, `b/c`.
+The `path` is a simple string working like a file system path, it can be absolute - `/`, `/a/b/c` or relative - `../b/c`, `b/c`.
 The numeric parts of the `path` are treated as an array index, the rest as an object key.
 Refs are provided to the validation functions, also refs can be created manually or retrieved from any other `Ref`.
 
