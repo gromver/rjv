@@ -1,8 +1,5 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword } from '../types';
 import utils from '../utils';
 
 interface IPresenceSchema {
@@ -11,7 +8,7 @@ interface IPresenceSchema {
 
 const keyword: IKeyword = {
   name: 'presence',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     let presence = false;
     let trim = false;
 
@@ -26,51 +23,41 @@ const keyword: IKeyword = {
       );
     }
 
-    return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (presence) {
-          const value = ref.getValue();
+    return async (ref) => {
+      if (presence) {
+        const value = ref.value;
 
-          if (value === undefined) {
-            return ref.createErrorResult(
-              new ValidationMessage(
-                keyword.name,
-                'Should not be blank',
-                { path: ref.path },
-              ),
-              { presence },
-            );
-          }
-
-          if (ref.checkDataType('string')) {
-            let stringValue: string = value;
-
-            if (trim) {
-              stringValue = (value as string).trim();
-              ref.setValue(stringValue);
-            }
-
-            if (!stringValue.length) {
-              return ref.createErrorResult(
-                new ValidationMessage(
-                  keyword.name,
-                  'Should not be blank',
-                  { path: ref.path },
-                ),
-                { presence },
-              );
-            }
-          }
-
-          return ref.createSuccessResult(undefined, {
-            presence,
-          });
+        if (value === undefined) {
+          return new ValidateFnResult(
+            false,
+            'Should not be blank',
+            keyword.name,
+            { path: ref.path },
+          );
         }
 
-        return ref.createUndefinedResult({
-          presence,
-        });
-      },
+        if (utils.checkDataType('string', ref.value)) {
+          let stringValue: string = value;
+
+          if (trim) {
+            stringValue = (value as string).trim();
+            ref.value = stringValue;
+          }
+
+          if (!stringValue.length) {
+            return new ValidateFnResult(
+              false,
+              'Should not be blank',
+              keyword.name,
+              { path: ref.path },
+            );
+          }
+        }
+
+        return new ValidateFnResult(true);
+      }
+
+      return undefined;
     };
   },
 };
@@ -82,7 +69,7 @@ declare module '../types' {
     presence?: boolean | IPresenceSchema;
   }
 
-  export interface IRuleValidationResult {
-    presence?: boolean;
+  export interface ICustomErrors {
+    presence?: string;
   }
 }

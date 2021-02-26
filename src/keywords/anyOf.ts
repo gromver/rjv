@@ -1,27 +1,32 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
+import ValidateFnResult from '../ValidateFnResult';
 import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
+  ISchema, IKeyword, ValidateFn, IRef, ApplyValidateFn,
 } from '../types';
 import utils from '../utils';
 
-const validateFn: ValidateRuleFn = (ref: Ref, rule: IRule): Promise<IRuleValidationResult> => {
-  return rule.validate
-    ? rule.validate(ref, validateFn, {
+const silentValidateFn: ApplyValidateFn = async (ref, validateFn) => {
+  return validateFn(
+    ref,
+    {
       coerceTypes: false,
       removeAdditional: false,
-    })
-    : Promise.resolve({});
+    },
+    silentValidateFn,
+  );
 };
 
-async function findValidSchemaRule(rules: IRule[], ref: Ref) {
+async function findValidSchemaRule(rules: ValidateFn[], ref: IRef) {
   for (let i = 0; i < rules.length; i += 1) {
     const rule = rules[i] as any;
 
-    const result = await rule.validate(ref, validateFn, {
-      coerceTypes: false,
-      removeAdditional: false,
-    });
+    const result = await rule(
+      ref,
+      {
+        coerceTypes: false,
+        removeAdditional: false,
+      },
+      silentValidateFn,
+    );
 
     if (result.valid === true) {
       return rule;
@@ -31,35 +36,34 @@ async function findValidSchemaRule(rules: IRule[], ref: Ref) {
 
 const keyword: IKeyword = {
   name: 'anyOf',
-  compile(compile: CompileFn, schema: ISchema[], parentSchema: ISchema): IRule {
+  compile(compile, schema: ISchema[], parentSchema) {
     if (!Array.isArray(schema)) {
       throw new Error('The schema of the "anyOf" keyword should be an array of schemas.');
     }
 
-    const rules: IRule[] = [];
+    const rules: ValidateFn[] = [];
 
     schema.forEach((item) => {
       if (!utils.isObject(item)) {
         throw new Error('Items of "anyOf" keyword should be a schema object.');
       }
 
-      rules.push(compile(item, parentSchema));  // all rules have validate() fn
+      rules.push(compile(item, parentSchema));
     });
 
-    return {
-      validate(ref: Ref, validateRuleFn: ValidateRuleFn, options): Promise<IRuleValidationResult> {
-        return findValidSchemaRule(rules, ref)
-          .then((rule) => {
-            if (rule) {
-              return validateRuleFn(ref, rule, options);
-            }
+    return (ref, options, applyValidateFn) => {
+      return findValidSchemaRule(rules, ref)
+        .then((rule) => {
+          if (rule) {
+            return applyValidateFn(ref, rule, options);
+          }
 
-            return ref.createErrorResult(new ValidationMessage(
-              keyword.name,
-              'Should match some schema in anyOf',
-            ));
-          });
-      },
+          return new ValidateFnResult(
+            false,
+            'Should match some schema in anyOf',
+            keyword.name,
+          );
+        });
     };
   },
 };
@@ -69,5 +73,9 @@ export default keyword;
 declare module '../types' {
   export interface ISchema {
     anyOf?: ISchema[];
+  }
+
+  export interface ICustomErrors {
+    anyOf?: string;
   }
 }

@@ -1,138 +1,127 @@
-import Ref from './Ref';
+/// <reference path="./defaultKeywords.ts" />
+import Ref from './utils/Ref';
+import SimpleStorage from './utils/Storage';
+import _extend from 'lodash/extend';
+import _cloneDeep from 'lodash/cloneDeep';
 import {
   ISchema,
   IKeyword,
   IKeywordMap,
-  IRuleCompiled,
-  ValidateRuleFn,
-  IRuleValidationResult,
   IValidatorOptions,
-  IValidatorOptionsPartial,
+  IValidateFnOptions,
+  IRef,
+  IStorage,
+  ValidateFn,
+  IValidationResult,
+  IValidateFnResult,
+  KeywordFnValidationResult,
 } from './types';
 import defaultKeywords, { addKeyword } from './defaultKeywords';
 import utils from './utils';
 
-const _ = {
-  extend: require('lodash/extend'),
-  cloneDeep: require('lodash/cloneDeep'),
-  memoize: require('lodash/memoize'),
-  get: require('lodash/get'),
-  set: require('lodash/set'),
-};
-
 const DEFAULT_OPTIONS: IValidatorOptions = {
   coerceTypes: false,
   removeAdditional: false,
+  validateFirst: true,
   errors: {},
   warnings: {},
   keywords: [],
 };
 
 const SCHEMA_ANNOTATIONS = [
-  'title',
-  'description',
   'default',
-  'readOnly',
-  'writeOnly',
-  'examples',
   'filter',
+  'readonly',
   'error',
   'errors',
   'warning',
   'warnings',
-  'dependencies',
-  'dependsOn',
   'removeAdditional',
 ];
 
 /**
- * Compiles given schema to a validation rule and gives an ability to validate ref using this schema
+ * Creates a Validator instance using the given schema for data validation
  */
 export default class Validator {
   private readonly options: IValidatorOptions;
   private readonly keywords: IKeywordMap;
-  private readonly rule: IRuleCompiled;
+  private readonly validateFn: ValidateFn;
+  private readonly validateFnOptions: IValidateFnOptions;
 
-  constructor(schema: {}, options: IValidatorOptionsPartial = {}) {
-    this.options = _.extend({}, DEFAULT_OPTIONS, options);
+  constructor(schema: ISchema, options: Partial<IValidatorOptions> = {}) {
+    this.options = _extend({}, DEFAULT_OPTIONS, options);
     this.keywords = { ...defaultKeywords };
 
     this.options.keywords.forEach((keyword) => {
       this.addKeyword(keyword);
     });
 
-    this.rule = this.compile(schema);
+    this.validateFnOptions = {
+      removeAdditional: options.removeAdditional,
+      coerceTypes: options.coerceTypes,
+      validateFirst: options.validateFirst,
+    };
+
+    this.validateFn = this.compile(schema);
   }
 
   /**
-   * Compiles the schema
+   * Compiles the schema according to the validator options
    * @param schema
    */
-  private compile = (schema: ISchema): IRuleCompiled => {
-    const annotationResult: IRuleValidationResult = {
-      title: schema.title,
-      description: schema.description,
-      readOnly: schema.readOnly,
-      writeOnly: schema.writeOnly,
-      dependencies: schema.dependencies,
-      dependsOn: schema.dependsOn,
-    };
-
+  private compile = (schema: ISchema): ValidateFn => {
     const defaultValue = schema.default;
     const filterFn = schema.filter;
     const errorDesc = schema.error;
     const warningDesc = schema.warning;
     const schemaErrors = schema.errors || {};
     const schemaWarnings = schema.warnings || {};
-    const modelErrors = this.options.errors;
-    const modelWarnings = this.options.warnings;
+    const validatorErrors = this.options.errors;
+    const validatorWarnings = this.options.warnings;
 
     if (filterFn !== undefined && typeof filterFn !== 'function') {
       throw new Error('The schema of the "filter" keyword should be a function.');
     }
 
-    function addSchemaMessageDescriptions(result: IRuleValidationResult) {
-      const { message } = result;
+    function applyCustomMessageDescriptions(result: IValidateFnResult) {
+      const { messages } = result;
 
-      if (message) {
-        if (result.valid === true) {
+      messages.forEach((message) => {
+        if (message.success) {
           message.description = warningDesc
             || schemaWarnings[message.keyword]
-            || modelWarnings[message.keyword]
+            || validatorWarnings[message.keyword]
             || message.description;
-        } else if (result.valid === false) {
+        } else {
           message.description = errorDesc
             || schemaErrors[message.keyword]
-            || modelErrors[message.keyword]
+            || validatorErrors[message.keyword]
             || message.description;
         }
-      }
+      });
 
       return result;
     }
 
     // get rules
-    const rules: IRuleCompiled[] = [{
-      keyword: 'annotations',
-      validate: async (ref: Ref): Promise<IRuleValidationResult> => {
-        const value = ref.getValue();
+    const rules: ValidateFn[] = [async (ref: Ref): Promise<undefined> => {
+      const value = ref.value;
 
-        if (value === undefined) {
-          if (defaultValue !== undefined) {
-            ref.setValue(_.cloneDeep(defaultValue));
-          }
-        } else {
-          if (filterFn) {
-            const filteredValue = filterFn(value);
+      if (value === undefined) {
+        if (defaultValue !== undefined) {
+          ref.value = _cloneDeep(defaultValue);
+        }
+      } else {
+        if (filterFn) {
+          const filteredValue = filterFn(value);
 
-            if (filteredValue !== value) {
-              ref.setValue(filteredValue);
-            }
+          if (filteredValue !== value) {
+            ref.value = filteredValue;
           }
         }
+      }
 
-        return annotationResult;
-      },
+      return undefined;
     }];
 
     Object.entries(schema).forEach(([keywordName, keywordSchema]) => {
@@ -146,43 +135,88 @@ export default class Validator {
         throw new Error(`Keyword "${keywordName}" doesn't exists.`);
       }
 
-      const rule = keyword.compile(this.compile, keywordSchema, schema) as IRuleCompiled;
-      rule.keyword = keyword.name;
+      const rule = keyword.compile(this.compile, keywordSchema, schema);
 
       rules.push(rule);
     });
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<IRuleValidationResult> => {
-      const results: IRuleValidationResult[] = [];
+    return async (ref, options, applyValidateFn) => {
+      const results: IValidateFnResult[] = [];
 
       for (const rule of rules) {
-        if (rule.validate) {
-          const res = await rule.validate(ref, validateRuleFn, options);
+        const res = await rule(ref, options, applyValidateFn);
 
+        if (res) {
+          // todo check correctness of the result
           results.push(res);
+
+          if (options.validateFirst && !res.valid) break;
         }
       }
 
-      return addSchemaMessageDescriptions(utils.mergeResults(results));
-    };
+      if (results.length) {
+        return applyCustomMessageDescriptions(utils.mergeResults(results));
+      }
 
-    return {
-      validate,
-      keyword: 'schema',
+      return undefined;
     };
   }
 
   /**
    * Validates ref and returns a validation result object
    * @param ref
-   * @param validateRuleFn
    * @param options
    */
-  validate(ref: Ref, validateRuleFn: ValidateRuleFn, options = {}): Promise<IRuleValidationResult> {
-    const validationOptions = _.extend({}, this.options, options);
+  async validateRef(
+    ref: IRef,
+    options: Partial<IValidateFnOptions> = {},
+  ): Promise<IValidationResult> {
+    const validationOptions = _extend({}, this.validateFnOptions, options);
+    const results = {};
 
-    return validateRuleFn(ref, this.rule, validationOptions);
+    async function applyValidateFn(ref: IRef, validateFn: ValidateFn, options: IValidateFnOptions)
+      : Promise<KeywordFnValidationResult> {
+      return validateFn(ref, options, applyValidateFn)
+        .then((result: KeywordFnValidationResult) => {
+          results[ref.path] = result;
+          return result;
+        });
+    }
+
+    const result = await applyValidateFn(ref, this.validateFn, validationOptions);
+
+    return {
+      results,
+      valid: result ? result.valid : false,
+    };
+  }
+
+  /**
+   * Validates storage and returns a validation result object
+   * @param storage
+   * @param options
+   */
+  async validateStorage(
+    storage: IStorage,
+    options: Partial<IValidateFnOptions> = {},
+  ): Promise<IValidationResult> {
+    const ref = new Ref(storage);
+
+    return this.validateRef(ref, options);
+  }
+
+  /**
+   * Validates data and returns a validation result object
+   * @param data
+   * @param options
+   */
+  async validateData(
+    data: any,
+    options: Partial<IValidateFnOptions> = {},
+  ): Promise<IValidationResult> {
+    const ref = new Ref(new SimpleStorage(data));
+
+    return this.validateRef(ref, options);
   }
 
   /**

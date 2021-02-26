@@ -2,11 +2,13 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('if keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         if: {
           type: 'number',
@@ -19,33 +21,32 @@ describe('if keyword', () => {
           type: 'number',
         },
       },
-      5,
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage(5));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(4.5);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(6);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue('abc');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('Properties integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         if: {
           properties: {
@@ -55,51 +56,49 @@ describe('if keyword', () => {
         then: { required: ['disbelief'] },
         else: { required: ['confidence'] },
       },
-      { power: 10000, disbelief: true },
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage({ power: 10000, disbelief: true }));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue({ power: 1000, confidence: true });
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue({});
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue({ power: 10000 });
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue({ power: 10000, confidence: true });
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue({ power: 1000 });
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('Should expose error #1', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         if: 1,
       },
-      '',
     ))
       .toThrow('The value of the "if" keyword should be a schema object.');
   });
 
   it('Should expose error #2', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         if: {},
       },
-      '',
     ))
       .toThrow('For the "if" keyword You must specify at least the keyword "then" or "else".');
   });

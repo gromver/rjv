@@ -1,42 +1,28 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
-} from '../types';
-
-const _ = {
-  isEqual: require('lodash/isEqual'),
-};
+import _isEqual from 'lodash/isEqual';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword } from '../types';
 
 const keyword: IKeyword = {
   name: 'enum',
-  compile(compile: CompileFn, schema: any[], parentSchema: ISchema): IRule {
+  compile(compile, schema: any[]) {
     const allowedValues = schema;
 
     if (!Array.isArray(allowedValues)) {
       throw new Error('The schema of the "enum" keyword should be an array.');
     }
 
-    return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        const value = ref.getValue();
-        const valid = allowedValues.some((item) => _.isEqual(value, item));
+    return async (ref) => {
+      const value = ref.value;
+      const valid = allowedValues.some((item) => _isEqual(value, item));
 
-        const metadata: IRuleValidationResult = {
-          enum: allowedValues,
-        };
-
-        return valid
-          ? ref.createSuccessResult(undefined, metadata)
-          : ref.createErrorResult(
-            new ValidationMessage(
-              keyword.name,
-              'Should be equal to one of the allowed values',
-              { allowedValues },
-            ),
-            metadata,
-          );
-      },
+      return valid
+        ? new ValidateFnResult(true)
+        : new ValidateFnResult(
+          false,
+          'Should be equal to one of the allowed values',
+          keyword.name,
+          { allowedValues },
+        );
     };
   },
 };
@@ -48,7 +34,7 @@ declare module '../types' {
     enum?: any[];
   }
 
-  export interface IRuleValidationResult {
-    enum?: any[];
+  export interface ICustomErrors {
+    enum?: string;
   }
 }

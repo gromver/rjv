@@ -2,50 +2,68 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('const keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         const: 'test',
       },
-      'test',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    expect(ref.state.valid).toBe(true);
-    expect(ref.state.const).toBe('test');
+    const ref = new Ref(new Storage('test'));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue('foo');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']!.messages[0]).toMatchObject({
+      keyword: 'const',
+      description: 'Should be equal to constant',
+      bindings: { allowedValue: 'test' },
+    });
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+
+    ref.setValue(undefined);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('Some integration tests with custom func', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         const: () => 'test',
       },
-      'test',
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage('test'));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue('foo');
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']!.messages[0]).toMatchObject({
+      keyword: 'const',
+      description: 'Should be equal to constant',
+      bindings: { allowedValue: 'test' },
+    });
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+
+    ref.setValue(undefined);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 });

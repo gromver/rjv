@@ -2,11 +2,13 @@ declare const describe;
 declare const it;
 declare const expect;
 
-import Model from '../Model';
+import Validator from '../Validator';
+import Ref from '../utils/Ref';
+import Storage from '../utils/Storage';
 
 describe('items keyword', () => {
   it('Some integration tests', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: {
           anyOf: [
@@ -15,139 +17,134 @@ describe('items keyword', () => {
           ],
         },
       },
-      [1, 'test'],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage([1, 'test']));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 'test', null]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Some ajv tests #1', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: {
           type: 'number',
         },
       },
-      [1, 2, 3],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage([1, 2, 3]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 'test']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue([]);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Some ajv tests #2', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { type: 'integer' },
           { type: 'string' },
         ],
       },
-      [1],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    const ref = new Ref(new Storage([1]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 'test']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 'test', 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue(['test', 1]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue(['test']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue([]);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue(null);
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    res = await validator.validateRef(ref);
+    expect(res.results['/']).toBeUndefined();
   });
 
   it('Should expose error #1', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         items: 1,
       },
-      '',
     ))
       .toThrow('The schema of the "items" keyword should be an object or array of schemas.');
   });
 
   it('Should expose error #2', async () => {
-    await expect(() => new Model(
+    await expect(() => new Validator(
       {
         // @ts-ignore
         items: [1],
       },
-      '',
     ))
       .toThrow('Each item of the "items" keyword should be a schema object.');
   });
 
   it('additionalItems test #1', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: { type: 'integer' },
         additionalItems: { type: 'string' },
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 'abc']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('additionalItems test #2', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { type: 'integer' },
@@ -155,33 +152,33 @@ describe('items keyword', () => {
         ],
         additionalItems: true,
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 'abc']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 'abc']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue([1, 'abc', 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('additionalItems test #3', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { type: 'integer' },
@@ -189,29 +186,29 @@ describe('items keyword', () => {
         ],
         additionalItems: { type: 'string' },
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 'abc']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 3]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('additionalItems test #4', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { type: 'integer' },
@@ -219,52 +216,52 @@ describe('items keyword', () => {
         ],
         additionalItems: false,
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 3]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-    expect(ref.state.message).toMatchObject({
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']!.messages[0]).toMatchObject({
       description: 'Should not have more than {limit} items',
       bindings: { limit: 2 },
     });
   });
 
   it('additionalItems async test #1', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: { type: 'integer' },
         additionalItems: { resolveSchema: () => Promise.resolve({ type: 'string' }) },
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await  ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 'abc']);
-    await  ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('additionalItems async test #2', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { resolveSchema: () => Promise.resolve({ type: 'integer' }) },
@@ -272,33 +269,33 @@ describe('items keyword', () => {
         ],
         additionalItems: true,
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 'abc']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 'abc']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
 
     ref.setValue([1, 'abc', 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('additionalItems async test #3', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { resolveSchema: () => Promise.resolve({ type: 'integer' }) },
@@ -306,29 +303,29 @@ describe('items keyword', () => {
         ],
         additionalItems: { type: 'string' },
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 'abc']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 3]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('additionalItems async test #4', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { type: 'integer' },
@@ -336,29 +333,29 @@ describe('items keyword', () => {
         ],
         additionalItems: { resolveSchema: () => Promise.resolve({ type: 'string' }) },
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 'abc']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 3]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
   });
 
   it('additionalItems async test #5', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { resolveSchema: () => Promise.resolve({ type: 'integer' }) },
@@ -366,22 +363,22 @@ describe('items keyword', () => {
         ],
         additionalItems: false,
       },
-      [],
     );
-    await model.prepare();
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 3]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(false);
-    expect(ref.state.message).toMatchObject({
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']!.messages[0]).toMatchObject({
       keyword: 'items_overflow',
       description: 'Should not have more than {limit} items',
       bindings: { limit: 2 },
@@ -389,7 +386,7 @@ describe('items keyword', () => {
   });
 
   it('removeAdditional test #1', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { type: 'integer' },
@@ -398,29 +395,30 @@ describe('items keyword', () => {
         additionalItems: { type: 'string' },
         removeAdditional: true,
       },
-      [],
     );
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 'abc']);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 3, 'abc', 4]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
     expect(ref.value).toMatchObject([1, 2, 'abc']);
   });
 
   it('removeAdditional test #2', async () => {
-    const model = new Model(
+    const validator = new Validator(
       {
         items: [
           { type: 'integer' },
@@ -428,20 +426,21 @@ describe('items keyword', () => {
         ],
         removeAdditional: true,
       },
-      [],
     );
 
-    const ref = model.ref();
-    await ref.validate();
-    expect(ref.state.valid).toBeUndefined();
+    const ref = new Ref(new Storage([]));
+
+    let res = await validator.validateRef(ref);
+    expect(res.valid).toBe(false);
+    expect(res.results['/']).toBeUndefined();
 
     ref.setValue([1, 2]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
 
     ref.setValue([1, 2, 'abc', 3, 5, true]);
-    await ref.validate();
-    expect(ref.state.valid).toBe(true);
+    res = await validator.validateRef(ref);
+    expect(res.valid).toBe(true);
     expect(ref.value).toMatchObject([1, 2]);
   });
 });

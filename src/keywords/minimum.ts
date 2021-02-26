@@ -1,13 +1,11 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'minimum',
   reserveNames: ['exclusiveMinimum'],
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any, parentSchema) {
     const limit = schema;
     const exclusive = (parentSchema as any).exclusiveMinimum || false;
 
@@ -15,34 +13,25 @@ const keyword: IKeyword = {
       throw new Error('The schema of the "minimum" keyword should be a number.');
     }
 
-    return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('number')) {
-          const value = ref.getValue();
+    return async (ref) => {
+      const value = ref.value;
 
-          const metadata: IRuleValidationResult = {
-            minimum: limit,
-            exclusiveMinimum: exclusive,
-          };
-
-          if (exclusive ? value <= limit : value < limit) {
-            return ref.createErrorResult(
-              new ValidationMessage(
-                exclusive ? `${keyword.name}_exclusive` : keyword.name,
-                exclusive
-                  ? 'Should be greater than {limit}'
-                  : 'Should be greater than or equal {limit}',
-                { limit, exclusive },
-              ),
-              metadata,
-            );
-          }
-
-          return ref.createSuccessResult(undefined, metadata);
+      if (utils.checkDataType('number', value)) {
+        if (exclusive ? value <= limit : value < limit) {
+          return new ValidateFnResult(
+            false,
+            exclusive
+              ? 'Should be greater than {limit}'
+              : 'Should be greater than or equal {limit}',
+            exclusive ? `${keyword.name}_exclusive` : keyword.name,
+            { limit, exclusive },
+          );
         }
 
-        return ref.createUndefinedResult();
-      },
+        return new ValidateFnResult(true);
+      }
+
+      return undefined;
     };
   },
 };
@@ -55,8 +44,8 @@ declare module '../types' {
     exclusiveMinimum?: boolean;
   }
 
-  export interface IRuleValidationResult {
-    minimum?: number;
-    exclusiveMinimum?: boolean;
+  export interface ICustomErrors {
+    minimum?: string;
+    minimum_exclusive?: string;
   }
 }

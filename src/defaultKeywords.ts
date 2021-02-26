@@ -21,7 +21,7 @@ export function addKeyword(keyword: IKeyword, keywords: IKeywordMap = defaultKey
   }
 }
 
-const dummyCompile = () => ({});
+const dummyCompile = () => async () => undefined;
 
 function dummyKeyword(name: string): IKeyword {
   return {

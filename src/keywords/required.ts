@@ -1,56 +1,40 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'required',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     const required: string[] = schema;
 
     if (!Array.isArray(required)) {
       throw new Error('The schema of the "required" keyword should be an array.');
     }
 
-    const propRequiredRule: IRule = {
-      validate(ref: Ref): Promise<IRuleValidationResult> {
-        return Promise.resolve(ref.createUndefinedResult({
-          required: true,
-        }));
-      },
-    };
+    return async (ref) => {
+      if (utils.checkDataType('object', ref.value)) {
+        const value = ref.value;
+        const invalidProperties: string[] = [];
 
-    return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
-        : Promise<IRuleValidationResult> {
-        if (ref.checkDataType('object')) {
-          const value = ref.getValue();
-          const invalidProperties: string[] = [];
-
-          for (const propName of required) {
-            const propRef = ref.ref(propName);
-
-            await validateRuleFn(propRef, propRequiredRule, options);
-
-            if (!Object.prototype.hasOwnProperty.call(value, propName)) {
-              invalidProperties.push(propName);
-            }
+        for (const propName of required) {
+          if (!Object.prototype.hasOwnProperty.call(value, propName)) {
+            invalidProperties.push(propName);
           }
-
-          if (invalidProperties.length) {
-            return ref.createErrorResult(new ValidationMessage(
-              keyword.name,
-              'Should have all required properties',
-              { invalidProperties },
-            ));
-          }
-
-          return ref.createSuccessResult();
         }
 
-        return ref.createUndefinedResult();
-      },
+        if (invalidProperties.length) {
+          return new ValidateFnResult(
+            false,
+            'Should have all required properties',
+            keyword.name,
+            { invalidProperties },
+          );
+        }
+
+        return new ValidateFnResult(true);
+      }
+
+      return undefined;
     };
   },
 };
@@ -60,5 +44,9 @@ export default keyword;
 declare module '../types' {
   export interface ISchema {
     required?: string[];
+  }
+
+  export interface ICustomErrors {
+    required?: string;
   }
 }

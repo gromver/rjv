@@ -1,9 +1,7 @@
 // tslint:disable:max-line-length
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword } from '../types';
+import utils from '../utils';
 
 const formats = {
   regex,
@@ -34,7 +32,7 @@ function regex(str) {
 
 const keyword: IKeyword = {
   name: 'format',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     if (typeof schema !== 'string') {
       throw new Error('The schema of the "format" keyword should be a string.');
     }
@@ -47,31 +45,23 @@ const keyword: IKeyword = {
       ? (value) => formats[schema].test(value)
       : formats[schema];
 
-    return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('string')) {
-          const value = ref.getValue();
+    return async (ref) => {
+      const value = ref.value;
 
-          const metadata: IRuleValidationResult = {
-            format: schema,
-          };
-
-          if (checkFormatFn(value)) {
-            return ref.createSuccessResult(undefined, metadata);
-          }
-
-          return ref.createErrorResult(
-            new ValidationMessage(
-              keyword.name,
-              'Should match format "{format}"',
-              { format: schema },
-            ),
-            metadata,
-          );
+      if (utils.checkDataType('string', value)) {
+        if (checkFormatFn(value)) {
+          return new ValidateFnResult(true);
         }
 
-        return ref.createUndefinedResult();
-      },
+        return new ValidateFnResult(
+          false,
+          'Should match format "{format}"',
+          keyword.name,
+          { format: schema },
+        );
+      }
+
+      return undefined;
     };
   },
 };
@@ -80,10 +70,10 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    format?: string;
+    format?: keyof typeof formats;
   }
 
-  export interface IRuleValidationResult {
+  export interface ICustomErrors {
     format?: string;
   }
 }

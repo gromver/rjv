@@ -1,8 +1,5 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { ISchema, IKeyword, ValidateFn } from '../types';
 import utils from '../utils';
 
 type PropertiesSchema = { [propertyName: string]: ISchema };
@@ -14,12 +11,12 @@ const keyword: IKeyword = {
     'patternProperties',    // todo
     'propertyNames',        // todo
   ],
-  compile(compile: CompileFn, schema: PropertiesSchema, parentSchema: ISchema): IRule {
+  compile(compile, schema: PropertiesSchema, parentSchema) {
     if (!utils.isObject(schema)) {
       throw new Error('The schema of the "properties" keyword should be an object.');
     }
 
-    const properties: { [prop: string]: IRule } = {};
+    const properties: { [prop: string]: ValidateFn } = {};
 
     Object.entries(schema).forEach(([propName, propSchema]) => {
       if (!utils.isObject(propSchema)) {
@@ -33,7 +30,7 @@ const keyword: IKeyword = {
       parentSchema.additionalProperties === undefined
       || parentSchema.additionalProperties === true;
 
-    let additionalRule: IRule;
+    let additionalRule: ValidateFn;
 
     if (utils.isObject(parentSchema.additionalProperties)) {
       additionalRule = compile(parentSchema.additionalProperties, parentSchema);
@@ -41,30 +38,31 @@ const keyword: IKeyword = {
 
     const removeAdditional = !!parentSchema.removeAdditional;
 
-    const validate = async (ref: Ref, validateRuleFn: ValidateRuleFn, options)
-      : Promise<IRuleValidationResult> => {
+    return async (ref, options, applyValidateFn) => {
       const invalidProperties: string[] = [];
       let hasValidProps = false;
       let hasInvalidProps = false;
 
-      if (ref.checkDataType('object')) {
+      if (utils.checkDataType('object', ref.value)) {
         for (const propName in properties) {
           const propRule = properties[propName];
           const propRef = ref.ref(propName);
 
-          const result = await validateRuleFn(propRef, propRule, options);
+          const result = await applyValidateFn(propRef, propRule, options);
 
-          if (result.valid === true) {
-            hasValidProps = true;
-          } else if (result.valid === false) {
-            hasInvalidProps = true;
-            invalidProperties.push(propName);
+          if (result) {
+            if (result.valid) {
+              hasValidProps = true;
+            } else {
+              hasInvalidProps = true;
+              invalidProperties.push(propName);
+            }
           }
         }
 
         // check additional props
         if (!allowAdditional) {
-          const value = ref.getValue();
+          const value = ref.value;
           const valueProps = Object.keys(value);
           const removeProps: string[] = [];
 
@@ -73,17 +71,19 @@ const keyword: IKeyword = {
               if (additionalRule) {
                 const propRef = ref.ref(propName);
 
-                const result = await validateRuleFn(propRef, additionalRule, options);
+                const result = await applyValidateFn(propRef, additionalRule, options);
 
-                if (result.valid === true) {
-                  hasValidProps = true;
-                } else if (result.valid === false) {
-                  if (removeAdditional || options.removeAdditional) {
-                    // store prop to remove later
-                    removeProps.push(propName);
+                if (result) {
+                  if (result.valid) {
+                    hasValidProps = true;
                   } else {
-                    hasInvalidProps = true;
-                    invalidProperties.push(propName);
+                    if (removeAdditional || options.removeAdditional) {
+                      // store prop to remove later
+                      removeProps.push(propName);
+                    } else {
+                      hasInvalidProps = true;
+                      invalidProperties.push(propName);
+                    }
                   }
                 }
               } else {
@@ -108,28 +108,25 @@ const keyword: IKeyword = {
               }
             });
 
-            ref.setValue(cleanedValue);
+            ref.value = cleanedValue;
           }
         }
 
         if (hasInvalidProps) {
-          return ref.createErrorResult(new ValidationMessage(
-            keyword.name,
+          return new ValidateFnResult(
+            false,
             'Should have valid properties',
+            keyword.name,
             { invalidProperties },
-          ));
+          );
         }
 
         if (hasValidProps) {
-          return ref.createSuccessResult();
+          return new ValidateFnResult(true);
         }
       }
 
-      return ref.createUndefinedResult();
-    };
-
-    return {
-      validate,
+      return undefined;
     };
   },
 };
@@ -140,5 +137,9 @@ declare module '../types' {
   export interface ISchema {
     properties?: PropertiesSchema;
     additionalProperties?: boolean | ISchema;
+  }
+
+  export interface ICustomErrors {
+    properties?: string;
   }
 }

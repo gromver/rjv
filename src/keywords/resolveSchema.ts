@@ -1,35 +1,25 @@
-import Ref from '../Ref';
-import {
-  ISchema, IKeyword, CompileFn, IRule, ValidateRuleFn, IRuleValidationResult,
-} from '../types';
+import { ISchema, IKeyword, IRef } from '../types';
 
-type SchemaResolver = (ref: Ref) => ISchema | Promise<ISchema>;
+type SchemaResolver = (ref: IRef) => ISchema | Promise<ISchema>;
 
-async function resolveSchema(schema: SchemaResolver, ref: Ref): Promise<ISchema> {
+async function resolveSchema(schema: SchemaResolver, ref: IRef): Promise<ISchema> {
   return schema(ref);
 }
 
 const keyword: IKeyword = {
   name: 'resolveSchema',
-  compile(compile: CompileFn, schema: SchemaResolver, parentSchema: ISchema): IRule {
+  compile(compile, schema: SchemaResolver, parentSchema) {
     if (typeof schema !== 'function') {
       throw new Error(
         'The schema of the "resolveSchema" keyword should be a function returns a schema.',
       );
     }
 
-    return {
-      async validate(ref: Ref, validateRuleFn: ValidateRuleFn, options)
-        : Promise<IRuleValidationResult> {
-        const resolvedSchema = await resolveSchema(schema, ref);
-        const rule = compile(resolvedSchema, parentSchema);
+    return async (ref, options, applyValidateFn) => {
+      const resolvedSchema = await resolveSchema(schema, ref);
+      const validateFn = compile(resolvedSchema, parentSchema);
 
-        if (rule.validate) {
-          return rule.validate(ref, validateRuleFn, options);
-        }
-
-        return Promise.resolve(ref.createUndefinedResult());
-      },
+      return validateFn(ref, options, applyValidateFn);
     };
   },
 };

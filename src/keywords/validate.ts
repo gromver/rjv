@@ -1,32 +1,29 @@
-import Ref from '../Ref';
 import {
-  ISchema,
   IKeyword,
-  CompileFn,
-  IRule,
-  ValidateRuleFn,
-  IRuleValidationResult,
-  IRuleValidationOptions,
+  IRef,
+  ApplyValidateFn,
+  IValidateFnOptions,
+  InlineFnValidationResult,
 } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'validate',
   compile(
-    compile: CompileFn,
-    schema: (ref: Ref, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
-      => IRuleValidationResult | Promise<IRuleValidationResult>,
-    parentSchema: ISchema,
-  ): IRule {
+    compile,
+    schema: (ref: IRef, applyValidateFn: ApplyValidateFn, options: IValidateFnOptions)
+      => InlineFnValidationResult | Promise<InlineFnValidationResult>,
+  ) {
     if (typeof schema !== 'function') {
       throw new Error(
         'The schema of the "validate" keyword should be an async validation function.',
       );
     }
 
-    return {
-      async validate(ref, validateRuleFn, options): Promise<IRuleValidationResult> {
-        return schema(ref, validateRuleFn, options);
-      },
+    return async (ref, options, applyValidateFn) => {
+      const result = await schema(ref, applyValidateFn, options);
+
+      return result !== undefined ? utils.toValidationResult(result) : undefined;
     };
   },
 };
@@ -35,7 +32,7 @@ export default keyword;
 
 declare module '../types' {
   export interface ISchema {
-    validate?: (ref: Ref, validateRuleFn: ValidateRuleFn, options: IRuleValidationOptions)
-      => IRuleValidationResult | Promise<IRuleValidationResult>;
+    validate?: (ref: IRef, applyValidateFn: ApplyValidateFn, options: IValidateFnOptions)
+      => InlineFnValidationResult | Promise<InlineFnValidationResult>;
   }
 }

@@ -1,12 +1,10 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'minLength',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     const limit = schema;
 
     if (typeof limit !== 'number') {
@@ -17,31 +15,23 @@ const keyword: IKeyword = {
       throw new Error('The "minLength" keyword can\'t be less then 1.');
     }
 
-    return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('string')) {
-          const value = ref.getValue();
+    return async (ref) => {
+      const value = ref.value;
 
-          const metadata: IRuleValidationResult = {
-            minLength: limit,
-          };
-
-          if (value.length < limit) {
-            return ref.createErrorResult(
-              new ValidationMessage(
-                keyword.name,
-                'Should not be shorter than {limit} characters',
-                { limit },
-              ),
-              metadata,
-            );
-          }
-
-          return ref.createSuccessResult(undefined, metadata);
+      if (utils.checkDataType('string', value)) {
+        if (value.length < limit) {
+          return new ValidateFnResult(
+              false,
+              'Should not be shorter than {limit} characters',
+              keyword.name,
+              { limit },
+          );
         }
 
-        return ref.createUndefinedResult();
-      },
+        return new ValidateFnResult(true);
+      }
+
+      return undefined;
     };
   },
 };
@@ -53,7 +43,7 @@ declare module '../types' {
     minLength?: number;
   }
 
-  export interface IRuleValidationResult {
-    minLength?: number;
+  export interface ICustomErrors {
+    minLength?: string;
   }
 }

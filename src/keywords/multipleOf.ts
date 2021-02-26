@@ -1,12 +1,10 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'multipleOf',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     const multiplier = schema;
 
     if (typeof multiplier !== 'number') {
@@ -17,24 +15,23 @@ const keyword: IKeyword = {
       throw new Error('The "multipleOf" keyword can\'t be zero.');
     }
 
-    return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('number')) {
-          const value = ref.getValue();
+    return async (ref) => {
+      const value = ref.value;
 
-          if ((value / multiplier) % 1 !== 0) {
-            return ref.createErrorResult(new ValidationMessage(
-              keyword.name,
-              'Should be multiple of {multiplier}',
-              { multiplier },
-            ));
-          }
-
-          return ref.createSuccessResult();
+      if (utils.checkDataType('number', value)) {
+        if ((value / multiplier) % 1 !== 0) {
+          return new ValidateFnResult(
+            false,
+            'Should be multiple of {multiplier}',
+            keyword.name,
+            { multiplier },
+          );
         }
 
-        return ref.createUndefinedResult();
-      },
+        return new ValidateFnResult(true);
+      }
+
+      return undefined;
     };
   },
 };
@@ -44,5 +41,9 @@ export default keyword;
 declare module '../types' {
   export interface ISchema {
     multipleOf?: number;
+  }
+
+  export interface ICustomErrors {
+    multipleOf?: string;
   }
 }

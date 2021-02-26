@@ -1,43 +1,32 @@
-import Ref from '../Ref';
-import ValidationMessage from '../ValidationMessage';
-import {
-  ISchema, IKeyword, CompileFn, IRule, IRuleValidationResult,
-} from '../types';
+import ValidateFnResult from '../ValidateFnResult';
+import { IKeyword } from '../types';
+import utils from '../utils';
 
 const keyword: IKeyword = {
   name: 'pattern',
-  compile(compile: CompileFn, schema: any, parentSchema: ISchema): IRule {
+  compile(compile, schema: any) {
     if (typeof schema !== 'string') {
       throw new Error('The schema of the "pattern" keyword should be a string.');
     }
 
     const regexp = new RegExp(schema);
 
-    return {
-      async validate(ref: Ref): Promise<IRuleValidationResult> {
-        if (ref.checkDataType('string')) {
-          const value = ref.getValue();
-
-          const metadata: IRuleValidationResult = {
-            pattern: schema,
-          };
-
-          if (!regexp.test(value)) {
-            return ref.createErrorResult(
-              new ValidationMessage(
-                keyword.name,
-                'Should match pattern {pattern}',
-                { pattern: schema },
-              ),
-              metadata,
-            );
-          }
-
-          return ref.createSuccessResult(undefined, metadata);
+    return async (ref) => {
+      const value = ref.value;
+      if (utils.checkDataType('string', value)) {
+        if (!regexp.test(value)) {
+          return new ValidateFnResult(
+            false,
+            'Should match pattern {pattern}',
+            keyword.name,
+            { pattern: schema },
+          );
         }
 
-        return ref.createUndefinedResult();
-      },
+        return new ValidateFnResult(true);
+      }
+
+      return undefined;
     };
   },
 };
@@ -49,7 +38,7 @@ declare module '../types' {
     pattern?: string;
   }
 
-  export interface IRuleValidationResult {
+  export interface ICustomErrors {
     pattern?: string;
   }
 }
